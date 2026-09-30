@@ -42,6 +42,49 @@ SMOKE = 0x0E210E           # IDLM NPCSmokeIdleMarker (FurnitureClassRelaxation),
 
 SETTINGS = [('On', 1.0)]
 
+# ---- phase 3: spots by object kind (research/cal2_*, 2026-10-01) -------------------------------------
+# Vanilla has no fixed rule for counters, workbenches or benches (its few spots near them sit at random);
+# railings have one (lean spot ~12 out, back to the rail). The placement rules are ours, built from
+# vanilla spots and vanilla distances; the script reads each base's bounds from the arrays baked here.
+import re
+ANCHORS = json.loads((pathlib.Path(__file__).resolve().parents[1] / 'research' / 'anchors.json').read_text())
+
+
+def pick(kind, keep, drop, min_long, limit):
+    out = []
+    for a in sorted(ANCHORS[kind], key=lambda a: -a['refs']):
+        if a['plugin'] != 'Fallout4.esm' or not re.search(keep, a['edid']) or (drop and re.search(drop, a['edid'])):
+            continue
+        x1, y1, _, x2, y2, _ = a['obnd']
+        if max(x2 - x1, y2 - y1) < min_long or min(x2 - x1, y2 - y1) < 4:
+            continue
+        if a['refs'] == 0 and not a.get('cobj'):
+            continue
+        out.append((int(a['fid'], 16), a['edid'], (x1, y1, x2, y2)))
+        if len(out) == limit:
+            break
+    return out
+
+
+KINDS = {
+    'Counter': pick('bar', r'Counter', r'Panel|Cap|Corner|End|Door|Inner|NoCounter', 60, 30),
+    'Rail': pick('lean', r'Railing|Fence', r'Post|Gate|Pole|Wire|Destroyed|Dest', 100, 40),
+    'Work': pick('work', r'^[Ww]orkbench|^WorkshopWorkbench', r'Cooking', 40, 25),
+    'Bench': pick('bench', r'Bench', r'[Ww]orkbench', 100, 20),
+}
+RADIOS = [0x082447, 0x1B2370, 0x143AD1, 0x0CA89D, 0x14507B]   # DC radio (on, new, workshop off), Institute on/off
+
+# Spots per kind: vanilla FURN/IDLM (idlm_catalog, cal2_*).
+COFFEE = 0x1A6AFC      # NPCStandDrinkCoffee
+NOODLES = 0x1411CB     # NPCEatingNoodlesStanding
+LEAN = 0x024572        # NPCInvWallLean01 (578 placed)
+NEWSPAPER = 0x1338FC   # NPCNewspaperStanding
+TOOLS = [0x0D96C9, 0x0D96C7, 0x0D96CD, 0x0D96C5, 0x0D96C3, 0x0D96C1, 0x0D96BF]   # stand/kneel hammer/wrench
+# Our dance spot: no dance marker exists in the game. An IDLM cloned from vanilla's shape (IDLF 08, a timer,
+# an idle list) listing the two dance loops nothing in vanilla uses, the drunk sway and the clap.
+DANCE_IDLES = [0x083BE4, 0x083BE5, 0x083BE3, 0x141F3C]   # IdleDrunkDancing, ...Drunker, IdleDrunkFaster, IdleClapping
+KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
+
 # The MCM Testing page (owner 2026-10-01: "spawn idiotic npcs ... to test it without wasting time"):
 # harmless settlers placed around the player, held in a reference collection whose package makes them
 # sandbox right there, so they wander and pick up the spots.
@@ -125,6 +168,41 @@ def build():
 
     test_quest_id = new_id('TestQuest')
 
+    kind_lists = {}
+    for kind, rows in KINDS.items():
+        kid = new_id('Anchors' + kind)
+        kl = field('EDID', zstring('IL_Anchors' + kind))
+        for base, _, _ in rows:
+            kl += field('LNAM', struct.pack('<I', base))
+        flst += record('FLST', kid, kl)
+        kind_lists[kind] = kid
+    radio_id = new_id('AnchorsRadio')
+    rl = field('EDID', zstring('IL_AnchorsRadio'))
+    for base in RADIOS:
+        rl += field('LNAM', struct.pack('<I', base))
+    flst += record('FLST', radio_id, rl)
+
+    dance_id = new_id('DanceMarker')
+    dm = field('EDID', zstring('IL_DanceMarker'))
+    dm += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))
+    dm += field('KSIZ', struct.pack('<I', 1))
+    dm += field('KWDA', struct.pack('<I', KW_RELAXATION))
+    dm += field('IDLF', b'\x08')
+    dm += field('IDLC', struct.pack('<B', len(DANCE_IDLES)))
+    dm += field('IDLT', struct.pack('<f', 8.0))
+    dm += field('IDLA', b''.join(struct.pack('<I', i) for i in DANCE_IDLES))
+    idlm = record('IDLM', dance_id, dm)
+
+    # Bounds of every counter/rail/work/bench base, one table (<= 128 entries: a Papyrus array's limit).
+    geo = [(b, box) for kind in KINDS for b, _, box in KINDS[kind]]
+    assert len(geo) <= 128, len(geo)
+
+    def objs(xs):
+        return struct.pack('<I', len(xs)) + b''.join(obj(x) for x in xs)
+
+    def floats(xs):
+        return struct.pack('<I', len(xs)) + b''.join(struct.pack('<f', float(x)) for x in xs)
+
     q = field('EDID', zstring('IL_Spawner'))
     q += field('VMAD', vmad('IdleLife:Spawner', [
         ('FireAnchors', 1, obj(fire_id)),
@@ -136,6 +214,22 @@ def build():
         ('TestQuest', 1, obj(test_quest_id)),
         ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),
         ('TestNpc', 1, obj(TEST_NPC)),
+        ('CounterAnchors', 1, obj(kind_lists['Counter'])),
+        ('RailAnchors', 1, obj(kind_lists['Rail'])),
+        ('WorkAnchors', 1, obj(kind_lists['Work'])),
+        ('BenchAnchors', 1, obj(kind_lists['Bench'])),
+        ('RadioAnchors', 1, obj(radio_id)),
+        ('GeoBases', 11, objs([b for b, _ in geo])),
+        ('GeoX1', 14, floats([box[0] for _, box in geo])),
+        ('GeoY1', 14, floats([box[1] for _, box in geo])),
+        ('GeoX2', 14, floats([box[2] for _, box in geo])),
+        ('GeoY2', 14, floats([box[3] for _, box in geo])),
+        ('Coffee', 1, obj(COFFEE)),
+        ('Noodles', 1, obj(NOODLES)),
+        ('Lean', 1, obj(LEAN)),
+        ('Newspaper', 1, obj(NEWSPAPER)),
+        ('Tools', 11, objs(TOOLS)),
+        ('Dance', 1, obj(dance_id)),
     ]))
     q += field('DNAM', bytes.fromhex('110064670000000000000000'))   # start game enabled
     q += field('NEXT', b'')
@@ -166,7 +260,7 @@ def build():
     header += field('CNAM', zstring(AUTHOR))
     header += field('MAST', zstring(MASTER))
     header += field('DATA', struct.pack('<Q', 0))
-    body = group('GLOB', glob) + group('FLST', flst) + group('QUST', quest)
+    body = group('GLOB', glob) + group('IDLM', idlm) + group('FLST', flst) + group('QUST', quest)
     return record('TES4', 0, header, flags=TES4_LIGHT) + body, ids
 
 
@@ -175,7 +269,7 @@ def main():
     out.parent.mkdir(parents=True, exist_ok=True)
     data, ids = build()
     out.write_bytes(data)
-    print(f'{out}: {len(data)} bytes, light, {len(ids)} records')
+    print(f'{out}: {len(data)} bytes, light, {len(ids)} records; ' + ', '.join(f'{k} {len(v)}' for k, v in KINDS.items()))
 
 
 if __name__ == '__main__':

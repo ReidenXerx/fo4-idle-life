@@ -3,5 +3,11 @@
  "Setting_On": "801",
  "FireAnchors": "802",
  "FireLights": "803",
- "TestQuest": "804"
+ "TestQuest": "804",
+ "AnchorsCounter": "805",
+ "AnchorsRail": "806",
+ "AnchorsWork": "807",
+ "AnchorsBench": "808",
+ "AnchorsRadio": "809",
+ "DanceMarker": "80A"
 }

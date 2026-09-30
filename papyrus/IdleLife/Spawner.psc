@@ -1,21 +1,39 @@
 Scriptname IdleLife:Spawner extends Quest
-{Idle Life, phase 2: fires. Around every lit fire near the player it places a small ring of vanilla spots
--- warm your hands standing or kneeling, have a smoke -- facing the fire, so anyone sandboxing nearby can
-walk over and use them. The spots exist only around the player: placed when a fire comes in range,
-deleted when the player leaves. The same fire always gets the same ring (seeded from the fire itself).
-Every 30 s the log says how many spots are taken: that is premise 0 (docs/DESIGN.md), measured.}
+{Idle Life: spots where people spend their time, placed at run time around the player, each kind where it
+belongs. Fires get people warming their hands (and a smoker); counters, people with a coffee or a bowl of
+noodles; railings and fences, people leaning on them; workbenches, someone tinkering; benches, a pair
+standing about and a smoker; a playing radio, dancers. Anyone sandboxing nearby walks over and uses them
+(premise 0, proved 2026-10-01). The spots exist only around the player: placed when a place comes in range,
+deleted when the player leaves; the same place always gets the same spots (seeded from the object itself).
+Every 30 s the log says how many spots are taken.}
 
 FormList Property FireAnchors Auto Const Mandatory
 {Lit fire barrels and the workshop cooking fire (Fallout4.esm); DLC braziers and barrels join at run time.}
 FormList Property FireLights Auto Const Mandatory
 {Fire lights: most fires in the game are a plain barrel or a burn pile lit by one of these.}
-Float Property LightDrop = 68.0 Auto Const
-{How far below a fire flame the floor is: vanilla's hand-warming spots, median (research/calib).}
-Float Property SameFire = 150.0 Auto Const
-{A flame this close to a fire that already has spots is that fire's flame, not another fire.}
+FormList Property CounterAnchors Auto Const Mandatory
+FormList Property RailAnchors Auto Const Mandatory
+FormList Property WorkAnchors Auto Const Mandatory
+FormList Property BenchAnchors Auto Const Mandatory
+FormList Property RadioAnchors Auto Const Mandatory
+Form[] Property GeoBases Auto Const Mandatory
+{Every counter, rail, workbench and bench base, with its bounds in the four arrays below (OBND, local).}
+Float[] Property GeoX1 Auto Const Mandatory
+Float[] Property GeoY1 Auto Const Mandatory
+Float[] Property GeoX2 Auto Const Mandatory
+Float[] Property GeoY2 Auto Const Mandatory
+
 Form Property WarmStanding Auto Const Mandatory
 Form Property WarmKneeling Auto Const Mandatory
 Form Property Smoke Auto Const Mandatory
+Form Property Coffee Auto Const Mandatory
+Form Property Noodles Auto Const Mandatory
+Form Property Lean Auto Const Mandatory
+Form Property Newspaper Auto Const Mandatory
+Form[] Property Tools Auto Const Mandatory
+Form Property Dance Auto Const Mandatory
+{Our own idle marker: vanilla's two unused dance loops, the drunk sway and the clap.}
+
 Quest Property TestQuest Auto Const Mandatory
 RefCollectionAlias Property Testers Auto Const Mandatory
 {The MCM Testing page's settlers: their alias package makes them sandbox where they stand.}
@@ -28,27 +46,47 @@ Float Property ScanSeconds = 5.0 Auto Const
 Float Property Radius = 3000.0 Auto Const
 {About 43 m around the player.}
 Float Property Ring = 70.0 Auto Const
-{Units from the fire's centre to a hand-warming spot. Vanilla's 74: median 69, facing the fire (research).}
+{Units from a fire's centre to a hand-warming spot. Vanilla's 74: median 69, facing the fire (research).}
 Float Property SmokeRing = 170.0 Auto Const
-{A smoker stands a little off, facing anywhere (vanilla smoke markers have no fire convention).}
-Int Property MaxAnchors = 20 Auto Const
-{Fires dressed at once; at most 4 spots each, so 80 spots, inside Papyrus' 128-element arrays.}
+Float Property LightDrop = 68.0 Auto Const
+{How far below a fire light the floor is: vanilla's hand-warming spots, median (research/calib).}
+Float Property SameFire = 150.0 Auto Const
+{A fire light this close to a fire that already has spots is that fire's flame, not another fire.}
+Float Property CounterOut = 30.0 Auto Const
+Float Property RailOut = 12.0 Auto Const
+{Vanilla's lean spots at railings: ~12 out, back to the rail (research/cal2_counter).}
+Float Property WorkOut = 50.0 Auto Const
+Float Property BenchOut = 110.0 Auto Const
+{Vanilla's standing spots near benches: ~110 out (research/cal2_work).}
+Float Property PairGap = 110.0 Auto Const
+Int Property MaxSpots = 120 Auto Const
+{Inside Papyrus' 128-element arrays.}
+
+Int Property K_FIRE = 0 AutoReadOnly
+Int Property K_COUNTER = 1 AutoReadOnly
+Int Property K_RAIL = 2 AutoReadOnly
+Int Property K_WORK = 3 AutoReadOnly
+Int Property K_BENCH = 4 AutoReadOnly
+Int Property K_RADIO = 5 AutoReadOnly
 
 Int Property SCAN_TIMER = 1 AutoReadOnly
 Int Property DEBUG_SPAWN_TIMER = 10 AutoReadOnly
 Int Property DEBUG_STATUS_TIMER = 11 AutoReadOnly
 Int Property REPORT_EVERY = 6 AutoReadOnly     ; scans between two "spots in use" lines
 Int Property SPAWNER_QUEST = 0x000800 AutoReadOnly
-; DLC fires, by form id: DLCRobot braziers, the Vault-Tec and Contraptions fire barrels.
+; DLC fires and radios, by form id.
 Int Property DLC01_BRAZIER01 = 0x00A5DD AutoReadOnly
 Int Property DLC01_BRAZIER02 = 0x00A5DE AutoReadOnly
 Int Property DLC01_BRAZIER03 = 0x00A5DF AutoReadOnly
 Int Property DLC05_FIRE_BARREL = 0x000918 AutoReadOnly   ; DLCworkshop01 workshopMetalFireBarrel (buildable)
 Int Property DLC06_FIRE_BARREL = 0x0052E7 AutoReadOnly   ; DLCworkshop03 DLC06ScrapableMetalBarrel01Fire02_Static
+Int Property DLC04_RAIDER_RADIO = 0x025B40 AutoReadOnly  ; DLCNukaWorld DLC04RaiderRadioReceiver
+Int Property DLC04_CAFE_RADIO = 0x0557EF AutoReadOnly    ; DLCNukaWorld DLC04RadioRaiderAmplifierCafeOn
 
-ObjectReference[] _anchors     ; fires that have their ring
+ObjectReference[] _anchors     ; places that have their spots
+Int[] _anchorKind              ; K_* of each (same index)
 ObjectReference[] _spots       ; every spot placed
-ObjectReference[] _spotFire    ; the fire each spot belongs to (same index as _spots)
+ObjectReference[] _spotFire    ; the place each spot belongs to (same index as _spots)
 Int _scans = 0
 Int _lastSeen = -1
 Bool _toldInUse = False
@@ -82,20 +120,31 @@ Function Begin()
 		_spots = new ObjectReference[0]
 		_spotFire = new ObjectReference[0]
 	EndIf
-	AddAnchor(DLC01_BRAZIER01, "DLCRobot.esm")
-	AddAnchor(DLC01_BRAZIER02, "DLCRobot.esm")
-	AddAnchor(DLC01_BRAZIER03, "DLCRobot.esm")
-	AddAnchor(DLC05_FIRE_BARREL, "DLCworkshop01.esm")
-	AddAnchor(DLC06_FIRE_BARREL, "DLCworkshop03.esm")
-	Debug.Trace("Idle Life: fires - " + FireAnchors.GetSize() + " kinds of fire, " + _anchors.Length + " dressed, " + _spots.Length + " spots", 0)
+	; A save from the fires-only build has spots but no kinds: every one of them was a fire.
+	If !_anchorKind || _anchorKind.Length != _anchors.Length
+		_anchorKind = new Int[0]
+		Int i = 0
+		While i < _anchors.Length
+			_anchorKind.Add(K_FIRE)
+			i += 1
+		EndWhile
+	EndIf
+	AddAnchor(FireAnchors, DLC01_BRAZIER01, "DLCRobot.esm")
+	AddAnchor(FireAnchors, DLC01_BRAZIER02, "DLCRobot.esm")
+	AddAnchor(FireAnchors, DLC01_BRAZIER03, "DLCRobot.esm")
+	AddAnchor(FireAnchors, DLC05_FIRE_BARREL, "DLCworkshop01.esm")
+	AddAnchor(FireAnchors, DLC06_FIRE_BARREL, "DLCworkshop03.esm")
+	AddAnchor(RadioAnchors, DLC04_RAIDER_RADIO, "DLCNukaWorld.esm")
+	AddAnchor(RadioAnchors, DLC04_CAFE_RADIO, "DLCNukaWorld.esm")
+	Debug.Trace("Idle Life: started - " + FireAnchors.GetSize() + " fires, " + CounterAnchors.GetSize() + " counters, " + RailAnchors.GetSize() + " rails, " + WorkAnchors.GetSize() + " workbenches, " + BenchAnchors.GetSize() + " benches, " + RadioAnchors.GetSize() + " radios known; " + _anchors.Length + " places dressed, " + _spots.Length + " spots", 0)
 	StartTimer(ScanSeconds, SCAN_TIMER)
 EndFunction
 
-Function AddAnchor(Int aiFormID, String asPlugin)
+Function AddAnchor(FormList akList, Int aiFormID, String asPlugin)
 	If Game.IsPluginInstalled(asPlugin)
 		Form f = Game.GetFormFromFile(aiFormID, asPlugin)
-		If f && !FireAnchors.HasForm(f)
-			FireAnchors.AddForm(f)
+		If f && !akList.HasForm(f)
+			akList.AddForm(f)
 		EndIf
 	EndIf
 EndFunction
@@ -116,33 +165,15 @@ Event OnTimer(Int aiTimerID)
 	Actor player = Game.GetPlayer()
 	Prune(player, Enabled.GetValueInt() == 0)
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
-		ObjectReference[] fires = player.FindAllReferencesOfType(FireAnchors, Radius)
-		ObjectReference[] lights = player.FindAllReferencesOfType(FireLights, Radius)
-		; Not Is3DLoaded: a fire baked into precombined meshes reads unloaded while it is right there (AN76
-		; Toilets' world toilets, 2026-09-29). Its cell being attached is what "near and real" means here.
-		Int dressed = 0
-		Int i = 0
-		While i < fires.Length && _anchors.Length < MaxAnchors
-			ObjectReference fire = fires[i]
-			If fire && !fire.IsDisabled() && _anchors.Find(fire) < 0 && fire.GetParentCell() && fire.GetParentCell().IsAttached()
-				Dress(fire)
-				dressed += 1
-			EndIf
-			i += 1
-		EndWhile
-		i = 0
-		While i < lights.Length && _anchors.Length < MaxAnchors
-			ObjectReference flame = lights[i]
-			If flame && !flame.IsDisabled() && _anchors.Find(flame) < 0 && flame.GetParentCell() && flame.GetParentCell().IsAttached() && !NearDressed(flame)
-				Dress(flame)
-				dressed += 1
-			EndIf
-			i += 1
-		EndWhile
-		Int seen = fires.Length + lights.Length
-		If seen != _lastSeen
-			_lastSeen = seen
-			Debug.Trace("Idle Life: " + fires.Length + " fire models and " + lights.Length + " fire lights within " + (Radius as Int) + " units (" + dressed + " newly dressed, " + _anchors.Length + " dressed) in " + player.GetParentCell(), 0)
+		Int dressed = ScanFires(player)
+		dressed += ScanKind(player, CounterAnchors, K_COUNTER, 5, 300.0)
+		dressed += ScanKind(player, RailAnchors, K_RAIL, 5, 400.0)
+		dressed += ScanKind(player, WorkAnchors, K_WORK, 6, 0.0)
+		dressed += ScanKind(player, BenchAnchors, K_BENCH, 5, 300.0)
+		dressed += ScanKind(player, RadioAnchors, K_RADIO, 3, 0.0)
+		If dressed > 0 || _anchors.Length != _lastSeen
+			_lastSeen = _anchors.Length
+			Debug.Trace("Idle Life: " + dressed + " places newly dressed; " + KindCounts() + " in " + player.GetParentCell(), 0)
 		EndIf
 	EndIf
 	_scans += 1
@@ -152,15 +183,100 @@ Event OnTimer(Int aiTimerID)
 	StartTimer(ScanSeconds, SCAN_TIMER)
 EndEvent
 
-; ---- the ring --------------------------------------------------------------------------------
+; ---- finding places ------------------------------------------------------------------------------
 
-; 1 to 3 hand-warming spots around the fire (vanilla: 1-3, never 5), unevenly spaced as vanilla's are,
-; each facing it; mostly standing, now and then one kneeling; and sometimes a smoker a little off. All of it from the fire's own form id, so
-; the same fire gets the same ring every time the player comes back.
-Function Dress(ObjectReference akFire)
-	Int seed = akFire.GetFormID()
+; Not Is3DLoaded: an object baked into precombined meshes reads unloaded while it is right there (AN76
+; Toilets' world toilets, 2026-09-29). Its cell being attached is what "near and real" means here.
+Bool Function Usable(ObjectReference akRef)
+	Return akRef && !akRef.IsDisabled() && _anchors.Find(akRef) < 0 && akRef.GetParentCell() && akRef.GetParentCell().IsAttached()
+EndFunction
+
+Int Function ScanFires(Actor akPlayer)
+	Int dressed = 0
+	ObjectReference[] fires = akPlayer.FindAllReferencesOfType(FireAnchors, Radius)
+	Int i = 0
+	While i < fires.Length && CountKind(K_FIRE) < 12 && _spots.Length < MaxSpots - 4
+		If Usable(fires[i])
+			DressFire(fires[i], False)
+			dressed += 1
+		EndIf
+		i += 1
+	EndWhile
+	ObjectReference[] lights = akPlayer.FindAllReferencesOfType(FireLights, Radius)
+	i = 0
+	While i < lights.Length && CountKind(K_FIRE) < 12 && _spots.Length < MaxSpots - 4
+		If Usable(lights[i]) && !NearKind(lights[i], K_FIRE, SameFire)
+			DressFire(lights[i], True)
+			dressed += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return dressed
+EndFunction
+
+; Up to aiMax places of one kind, none within afSpacing of another of its kind (modular counters and long
+; fences would otherwise get spots on every piece).
+Int Function ScanKind(Actor akPlayer, FormList akList, Int aiKind, Int aiMax, Float afSpacing)
+	Int dressed = 0
+	ObjectReference[] found = akPlayer.FindAllReferencesOfType(akList, Radius)
+	Int i = 0
+	While i < found.Length && CountKind(aiKind) < aiMax && _spots.Length < MaxSpots - 4
+		ObjectReference a = found[i]
+		If Usable(a) && (afSpacing <= 0.0 || !NearKind(a, aiKind, afSpacing))
+			If aiKind != K_RADIO || a.IsRadioOn()
+				Dress(a, aiKind)
+				dressed += 1
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	Return dressed
+EndFunction
+
+Bool Function NearKind(ObjectReference akRef, Int aiKind, Float afDistance)
+	Int i = 0
+	While i < _anchors.Length
+		If _anchorKind[i] == aiKind && _anchors[i] && _anchors[i].GetDistance(akRef) < afDistance
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
+EndFunction
+
+Int Function CountKind(Int aiKind)
+	Int n = 0
+	Int i = 0
+	While i < _anchorKind.Length
+		If _anchorKind[i] == aiKind
+			n += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return n
+EndFunction
+
+String Function KindCounts()
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios dressed, " + _spots.Length + " spots"
+EndFunction
+
+Int Function Seed(ObjectReference akRef)
+	Int seed = akRef.GetFormID()
 	If seed < 0
 		seed = -seed
+	EndIf
+	Return seed
+EndFunction
+
+; ---- the rules -----------------------------------------------------------------------------------
+
+; Fires: 1 to 3 hand-warming spots around the fire (vanilla: 1-3, never 5), unevenly spaced as vanilla's
+; are, each facing it; mostly standing, now and then one kneeling; sometimes a smoker a little off.
+Function DressFire(ObjectReference akFire, Bool abLight)
+	Int seed = Seed(akFire)
+	Float z = akFire.GetPositionZ()
+	If abLight
+		z -= LightDrop
 	EndIf
 	Int count = 1 + seed % 3
 	Float start = (seed % 360) as Float
@@ -172,59 +288,228 @@ Function Dress(ObjectReference akFire)
 		If (seed / (k + 7)) % 5 == 0
 			kind = WarmKneeling
 		EndIf
-		Place(akFire, kind, angle, Ring, angle + 180.0)   ; +Y turned by the angle, then back at the fire
+		PlaceWorld(akFire, kind, akFire.GetPositionX() + Ring * Math.Sin(angle), akFire.GetPositionY() + Ring * Math.Cos(angle), z, angle + 180.0)
 		k += 1
 	EndWhile
 	If (seed / 11) % 3 == 0
 		Float away = start + step / 2.0
-		Place(akFire, Smoke, away, SmokeRing, (seed % 360) as Float)
+		PlaceWorld(akFire, Smoke, akFire.GetPositionX() + SmokeRing * Math.Sin(away), akFire.GetPositionY() + SmokeRing * Math.Cos(away), z, (seed % 360) as Float)
 		count += 1
 	EndIf
-	_anchors.Add(akFire)
-	Debug.Trace("Idle Life: " + akFire + " (" + akFire.GetBaseObject() + ") gets " + count + " spots", 0)
+	AddAnchorRef(akFire, K_FIRE)
+	Debug.Trace("Idle Life: fire " + akFire + " (" + akFire.GetBaseObject() + ") gets " + count + " spots", 0)
 EndFunction
 
-; Already a dressed fire within SameFire: this flame is its flame.
-Bool Function NearDressed(ObjectReference akLight)
-	Int i = 0
-	While i < _anchors.Length
-		If _anchors[i] && _anchors[i].GetDistance(akLight) < SameFire
-			Return True
+; Everything else works in the object's own frame: local +Y is its forward, +X its right; its bounds come
+; from the arrays baked from the catalog (a box can sit off-centre on its origin).
+Function Dress(ObjectReference akRef, Int aiKind)
+	Int seed = Seed(akRef)
+	If aiKind == K_RADIO
+		DressRadio(akRef, seed)
+		Return
+	EndIf
+	Int g = GeoBases.Find(akRef.GetBaseObject())
+	If g < 0
+		Return
+	EndIf
+	Float s = akRef.GetScale()
+	Float x1 = GeoX1[g] * s
+	Float y1 = GeoY1[g] * s
+	Float x2 = GeoX2[g] * s
+	Float y2 = GeoY2[g] * s
+	Bool alongX = (x2 - x1) >= (y2 - y1)      ; the long axis
+	Bool plus = seed % 2 == 0                ; which long side
+	Int count = 0
+	If aiKind == K_COUNTER
+		; Customers at a stall: 1 or 2 standing with a coffee or a bowl, facing the counter.
+		Int n = 1 + (seed / 3) % 2
+		Int k = 0
+		While k < n
+			Float t = 0.5
+			If n == 2
+				t = 0.3 + 0.4 * k
+			EndIf
+			Form kind = Coffee
+			If (seed / (k + 5)) % 2 == 0
+				kind = Noodles
+			EndIf
+			AlongSide(akRef, kind, x1, y1, x2, y2, alongX, plus, t, CounterOut, True)
+			k += 1
+			count += 1
+		EndWhile
+	ElseIf aiKind == K_RAIL
+		; Someone leaning back against it, somewhere along it.
+		Float t = 0.2 + ((seed / 7) % 61) / 100.0
+		AlongSide(akRef, Lean, x1, y1, x2, y2, alongX, plus, t, RailOut, False)
+		count = 1
+	ElseIf aiKind == K_WORK
+		; Someone at one end, working with a hammer or a wrench, facing the bench.
+		Form kind = Tools[(seed / 3) % Tools.Length]
+		AtEnd(akRef, kind, x1, y1, x2, y2, alongX, plus, WorkOut)
+		count = 1
+	ElseIf aiKind == K_BENCH
+		; Two standing about in front of it, facing each other; now and then a smoker at the far end.
+		Form a = Coffee
+		Form b = Smoke
+		If (seed / 5) % 3 == 1
+			a = Newspaper
+		ElseIf (seed / 5) % 3 == 2
+			b = Coffee
 		EndIf
-		i += 1
+		PairInFront(akRef, a, b, x1, y1, x2, y2, alongX, plus, BenchOut, PairGap)
+		count = 2
+	EndIf
+	AddAnchorRef(akRef, aiKind)
+	Debug.Trace("Idle Life: " + KindName(aiKind) + " " + akRef + " (" + akRef.GetBaseObject() + ") gets " + count + " spots", 0)
+EndFunction
+
+; A playing radio: 2 to 4 dancers around it, 150-220 out, facing it.
+Function DressRadio(ObjectReference akRadio, Int aiSeed)
+	Int count = 2 + aiSeed % 3
+	Float start = (aiSeed % 360) as Float
+	Int k = 0
+	While k < count
+		Float angle = start + (360.0 / count) * k
+		Float r = 150.0 + ((aiSeed / (k + 3)) % 71) as Float
+		PlaceWorld(akRadio, Dance, akRadio.GetPositionX() + r * Math.Sin(angle), akRadio.GetPositionY() + r * Math.Cos(angle), akRadio.GetPositionZ(), angle + 180.0)
+		k += 1
 	EndWhile
-	Return False
+	AddAnchorRef(akRadio, K_RADIO)
+	Debug.Trace("Idle Life: radio " + akRadio + " (" + akRadio.GetBaseObject() + ") gets " + count + " dancers", 0)
 EndFunction
 
-Function Place(ObjectReference akFire, Form akKind, Float afAngle, Float afDistance, Float afFacing)
-	ObjectReference spot = akFire.PlaceAtMe(akKind, 1, False, True, True)
-	If spot
-		Float z = akFire.GetPositionZ()
-		If FireLights.HasForm(akFire.GetBaseObject())
-			z -= LightDrop
+String Function KindName(Int aiKind)
+	If aiKind == K_COUNTER
+		Return "counter"
+	ElseIf aiKind == K_RAIL
+		Return "rail"
+	ElseIf aiKind == K_WORK
+		Return "workbench"
+	ElseIf aiKind == K_BENCH
+		Return "bench"
+	ElseIf aiKind == K_RADIO
+		Return "radio"
+	EndIf
+	Return "fire"
+EndFunction
+
+; A spot on one long side, afT of the way along it, afOut beyond the face; facing into the object
+; (abFaceIn) or away from it (back against it).
+Function AlongSide(ObjectReference akRef, Form akKind, Float x1, Float y1, Float x2, Float y2, Bool abAlongX, Bool abPlus, Float afT, Float afOut, Bool abFaceIn)
+	Float lx
+	Float ly
+	Float out    ; local heading pointing away from the object
+	If abAlongX
+		lx = x1 + afT * (x2 - x1)
+		If abPlus
+			ly = y2 + afOut
+			out = 0.0
+		Else
+			ly = y1 - afOut
+			out = 180.0
 		EndIf
-		spot.SetPosition(akFire.GetPositionX() + afDistance * Math.Sin(afAngle), akFire.GetPositionY() + afDistance * Math.Cos(afAngle), z)
-		spot.SetAngle(0.0, 0.0, afFacing)
-		spot.Enable(False)
-		_spots.Add(spot)
-		_spotFire.Add(akFire)
+	Else
+		ly = y1 + afT * (y2 - y1)
+		If abPlus
+			lx = x2 + afOut
+			out = 90.0
+		Else
+			lx = x1 - afOut
+			out = 270.0
+		EndIf
+	EndIf
+	Float facing = out
+	If abFaceIn
+		facing = out + 180.0
+	EndIf
+	PlaceLocal(akRef, akKind, lx, ly, facing)
+EndFunction
+
+; A spot beyond one end of the long axis, centred on the short axis, facing the object.
+Function AtEnd(ObjectReference akRef, Form akKind, Float x1, Float y1, Float x2, Float y2, Bool abAlongX, Bool abPlus, Float afOut)
+	If abAlongX
+		If abPlus
+			PlaceLocal(akRef, akKind, x2 + afOut, (y1 + y2) / 2.0, 270.0)
+		Else
+			PlaceLocal(akRef, akKind, x1 - afOut, (y1 + y2) / 2.0, 90.0)
+		EndIf
+	Else
+		If abPlus
+			PlaceLocal(akRef, akKind, (x1 + x2) / 2.0, y2 + afOut, 180.0)
+		Else
+			PlaceLocal(akRef, akKind, (x1 + x2) / 2.0, y1 - afOut, 0.0)
+		EndIf
 	EndIf
 EndFunction
 
-; Spots whose fire is gone, disabled, or far behind the player (or in another cell where either is an
-; interior: a distance across walls means nothing) are deleted; abAll takes every one.
+; Two spots afOut in front of one long side, afGap apart along it, facing each other.
+Function PairInFront(ObjectReference akRef, Form akA, Form akB, Float x1, Float y1, Float x2, Float y2, Bool abAlongX, Bool abPlus, Float afOut, Float afGap)
+	If abAlongX
+		Float cx = (x1 + x2) / 2.0
+		Float ly = y1 - afOut
+		If abPlus
+			ly = y2 + afOut
+		EndIf
+		PlaceLocal(akRef, akA, cx - afGap / 2.0, ly, 90.0)
+		PlaceLocal(akRef, akB, cx + afGap / 2.0, ly, 270.0)
+	Else
+		Float cy = (y1 + y2) / 2.0
+		Float lx = x1 - afOut
+		If abPlus
+			lx = x2 + afOut
+		EndIf
+		PlaceLocal(akRef, akA, lx, cy - afGap / 2.0, 0.0)
+		PlaceLocal(akRef, akB, lx, cy + afGap / 2.0, 180.0)
+	EndIf
+EndFunction
+
+; Local (x right, y forward, heading relative to the object's) to world: FO4 heading is clockwise from
+; north, so forward is (sin h, cos h) and right is (cos h, -sin h).
+Function PlaceLocal(ObjectReference akRef, Form akKind, Float afX, Float afY, Float afFacing)
+	Float h = akRef.GetAngleZ()
+	Float wx = akRef.GetPositionX() + afX * Math.Cos(h) + afY * Math.Sin(h)
+	Float wy = akRef.GetPositionY() - afX * Math.Sin(h) + afY * Math.Cos(h)
+	PlaceWorld(akRef, akKind, wx, wy, akRef.GetPositionZ(), h + afFacing)
+EndFunction
+
+; The spot, then onto the nearest walkable floor: a radio on a table, a fire light's height, a point the
+; maths put inside a wall -- the navmesh settles all three.
+Function PlaceWorld(ObjectReference akAnchor, Form akKind, Float afX, Float afY, Float afZ, Float afFacing)
+	ObjectReference spot = akAnchor.PlaceAtMe(akKind, 1, False, True, True)
+	If spot
+		spot.SetPosition(afX, afY, afZ)
+		spot.SetAngle(0.0, 0.0, afFacing)
+		spot.Enable(False)
+		spot.MoveToNearestNavmeshLocation()
+		spot.SetAngle(0.0, 0.0, afFacing)
+		_spots.Add(spot)
+		_spotFire.Add(akAnchor)
+	EndIf
+EndFunction
+
+Function AddAnchorRef(ObjectReference akRef, Int aiKind)
+	_anchors.Add(akRef)
+	_anchorKind.Add(aiKind)
+EndFunction
+
+; Spots whose place is gone, disabled, far behind the player (or in another cell where either is an
+; interior: a distance across walls means nothing), or a radio that went quiet, are deleted; abAll takes
+; every one.
 Function Prune(Actor akPlayer, Bool abAll)
 	Cell here = akPlayer.GetParentCell()
 	Int i = _spots.Length - 1
 	While i >= 0
 		ObjectReference spot = _spots[i]
-		ObjectReference fire = _spotFire[i]
-		Bool keep = !abAll && spot && fire && !fire.IsDisabled() && fire.GetDistance(akPlayer) <= Radius * 1.5
+		ObjectReference place = _spotFire[i]
+		Bool keep = !abAll && spot && place && !place.IsDisabled() && place.GetDistance(akPlayer) <= Radius * 1.5
 		If keep
-			Cell there = fire.GetParentCell()
+			Cell there = place.GetParentCell()
 			If there != here && (!here || !there || here.IsInterior() || there.IsInterior())
 				keep = False
 			EndIf
+		EndIf
+		If keep && spot.GetBaseObject() == Dance && !place.IsRadioOn()
+			keep = False
 		EndIf
 		If !keep
 			If spot
@@ -233,9 +518,10 @@ Function Prune(Actor akPlayer, Bool abAll)
 			EndIf
 			_spots.Remove(i, 1)
 			_spotFire.Remove(i, 1)
-			Int a = _anchors.Find(fire)
+			Int a = _anchors.Find(place)
 			If a >= 0
 				_anchors.Remove(a, 1)
+				_anchorKind.Remove(a, 1)
 			EndIf
 		EndIf
 		i -= 1
@@ -291,46 +577,46 @@ Function SpawnTesters()
 		EndIf
 		k += 1
 	EndWhile
-	Debug.Notification("Idle Life: " + made + " test settlers - watch the fires near you.")
+	Debug.Notification("Idle Life: " + made + " test settlers - watch the spots near you.")
 	Debug.Trace("Idle Life: " + made + " test settlers placed around the player (collection " + Testers.GetCount() + ")", 0)
 EndFunction
 
-String Function StatusText()
-	Int warming = 0
+; Furniture spots only: the engine does not say who stands at an idle marker (smoke, dance).
+Int Function InUse()
 	Int used = 0
 	Int i = 0
 	While i < _spots.Length
 		ObjectReference spot = _spots[i]
-		If spot && spot.GetBaseObject() != Smoke
-			warming += 1
-			If spot.IsFurnitureInUse(False)
-				used += 1
-			EndIf
+		If spot && spot.GetBaseObject() != Smoke && spot.GetBaseObject() != Dance && spot.IsFurnitureInUse(False)
+			used += 1
 		EndIf
 		i += 1
 	EndWhile
-	Return "Idle Life\n\n" + _anchors.Length + " fires near you have spots, " + _spots.Length + " spots in all.\n" + used + " of " + warming + " hand-warming spots are in use right now.\n" + Testers.GetCount() + " test settlers."
+	Return used
 EndFunction
 
-; How many of our spots someone is using right now (furniture spots only: the engine does not say who
-; stands at an idle marker).
-Function Report()
-	Int warming = 0
-	Int used = 0
+Int Function FurnitureSpots()
+	Int n = 0
 	Int i = 0
 	While i < _spots.Length
 		ObjectReference spot = _spots[i]
-		If spot && spot.GetBaseObject() != Smoke
-			warming += 1
-			If spot.IsFurnitureInUse(False)
-				used += 1
-			EndIf
+		If spot && spot.GetBaseObject() != Smoke && spot.GetBaseObject() != Dance
+			n += 1
 		EndIf
 		i += 1
 	EndWhile
-	Debug.Trace("Idle Life: " + _anchors.Length + " fires dressed, " + _spots.Length + " spots, " + used + " of " + warming + " hand-warming spots in use", 0)
+	Return n
+EndFunction
+
+String Function StatusText()
+	Return "Idle Life\n\n" + KindCounts() + ".\n" + InUse() + " of " + FurnitureSpots() + " furniture spots are in use right now (smoke and dance spots cannot be counted).\n" + Testers.GetCount() + " test settlers."
+EndFunction
+
+Function Report()
+	Int used = InUse()
+	Debug.Trace("Idle Life: " + KindCounts() + ", " + used + " of " + FurnitureSpots() + " furniture spots in use", 0)
 	If used > 0 && !_toldInUse
 		_toldInUse = True
-		Debug.Notification("Idle Life: someone is warming their hands at one of the new spots.")
+		Debug.Notification("Idle Life: someone is using one of the new spots.")
 	EndIf
 EndFunction

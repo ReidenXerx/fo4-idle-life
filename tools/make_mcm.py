@@ -32,10 +32,11 @@ def build():
         {'text': "<p align='center'><font size='28'><b>IDLE LIFE</b></font><br>"
                  "<font size='12'>More spots for people to spend their time</font></p>",
          'html': True, 'type': 'text'},
-        {'text': 'Fires', 'type': 'section'},
+        {'text': 'Spots', 'type': 'section'},
         {'text': 'On', 'type': 'switcher',
-         'help': 'Around every fire near you, people get places to warm their hands (and now and then a '
-                 'smoke). Off takes every spot away again.',
+         'help': 'Near you, people get new places to spend their time: warming their hands at fires, a coffee '
+                 'or noodles at counters, leaning on railings and fences, tinkering at workbenches, standing '
+                 'about by benches, dancing by a playing radio. Off takes every spot away again.',
          'valueOptions': {'sourceType': 'GlobalValue', 'sourceForm': form(ids, 'Setting_On')}},
     ]
     testing = [
@@ -44,7 +45,7 @@ def build():
         {'text': 'Test settlers', 'type': 'section'},
         button('Spawn test settlers here', 'DebugSpawnTesters',
                'Four harmless settlers appear a few steps around you and sandbox right there: they wander, '
-               'sit, and take the spots near a fire. Stand by a fire first.'),
+               'sit, and take the spots near you. Stand near a fire, counter, bench or radio first.'),
         button('Remove test settlers', 'DebugRemoveTesters', 'Deletes every test settler.'),
         {'text': 'Status', 'type': 'section'},
         button('Show status', 'DebugStatus',
