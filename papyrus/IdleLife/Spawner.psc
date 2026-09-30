@@ -16,6 +16,11 @@ Float Property SameFire = 150.0 Auto Const
 Form Property WarmStanding Auto Const Mandatory
 Form Property WarmKneeling Auto Const Mandatory
 Form Property Smoke Auto Const Mandatory
+Quest Property TestQuest Auto Const Mandatory
+RefCollectionAlias Property Testers Auto Const Mandatory
+{The MCM Testing page's settlers: their alias package makes them sandbox where they stand.}
+Form Property TestNpc Auto Const Mandatory
+Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
 
@@ -30,6 +35,8 @@ Int Property MaxAnchors = 20 Auto Const
 {Fires dressed at once; at most 4 spots each, so 80 spots, inside Papyrus' 128-element arrays.}
 
 Int Property SCAN_TIMER = 1 AutoReadOnly
+Int Property DEBUG_SPAWN_TIMER = 10 AutoReadOnly
+Int Property DEBUG_STATUS_TIMER = 11 AutoReadOnly
 Int Property REPORT_EVERY = 6 AutoReadOnly     ; scans between two "spots in use" lines
 Int Property SPAWNER_QUEST = 0x000800 AutoReadOnly
 ; DLC fires, by form id: DLCRobot braziers, the Vault-Tec and Contraptions fire barrels.
@@ -94,7 +101,16 @@ Function AddAnchor(Int aiFormID, String asPlugin)
 EndFunction
 
 Event OnTimer(Int aiTimerID)
-	If !OnOwnRecord() || aiTimerID != SCAN_TIMER
+	If !OnOwnRecord()
+		Return
+	EndIf
+	If aiTimerID == DEBUG_SPAWN_TIMER
+		SpawnTesters()
+		Return
+	ElseIf aiTimerID == DEBUG_STATUS_TIMER
+		Debug.MessageBox(StatusText())
+		Return
+	ElseIf aiTimerID != SCAN_TIMER
 		Return
 	EndIf
 	Actor player = Game.GetPlayer()
@@ -224,6 +240,76 @@ Function Prune(Actor akPlayer, Bool abAll)
 		EndIf
 		i -= 1
 	EndWhile
+EndFunction
+
+; ---- the MCM Testing page (buttons that play out in the world wait until the menu closes) --------
+
+Function DebugSpawnTesters()
+	StartTimer(0.5, DEBUG_SPAWN_TIMER)
+	Debug.Notification("Idle Life: " + TesterCount + " test settlers when you close the menu.")
+EndFunction
+
+Function DebugRemoveTesters()
+	Int removed = 0
+	Int i = Testers.GetCount() - 1
+	While i >= 0
+		ObjectReference t = Testers.GetAt(i)
+		Testers.RemoveRef(t)
+		If t
+			t.Disable(False)
+			t.Delete()
+			removed += 1
+		EndIf
+		i -= 1
+	EndWhile
+	Debug.Notification("Idle Life: " + removed + " test settlers removed.")
+	Debug.Trace("Idle Life: " + removed + " test settlers removed", 0)
+EndFunction
+
+Function DebugStatus()
+	StartTimer(0.5, DEBUG_STATUS_TIMER)
+EndFunction
+
+; Around the player, a few steps out: settlers who sandbox right there (their alias package), so they
+; wander, sit, and take whatever spots are near.
+Function SpawnTesters()
+	If !TestQuest.IsRunning()
+		TestQuest.Start()
+	EndIf
+	Actor player = Game.GetPlayer()
+	Int made = 0
+	Int k = 0
+	While k < TesterCount
+		Float angle = k * (360.0 / TesterCount) + 45.0
+		Actor t = player.PlaceAtMe(TestNpc, 1, False, True, True) as Actor
+		If t
+			t.SetPosition(player.GetPositionX() + 250.0 * Math.Sin(angle), player.GetPositionY() + 250.0 * Math.Cos(angle), player.GetPositionZ())
+			t.Enable(False)
+			Testers.AddRef(t)
+			t.EvaluatePackage(False)
+			made += 1
+		EndIf
+		k += 1
+	EndWhile
+	Debug.Notification("Idle Life: " + made + " test settlers - watch the fires near you.")
+	Debug.Trace("Idle Life: " + made + " test settlers placed around the player (collection " + Testers.GetCount() + ")", 0)
+EndFunction
+
+String Function StatusText()
+	Int warming = 0
+	Int used = 0
+	Int i = 0
+	While i < _spots.Length
+		ObjectReference spot = _spots[i]
+		If spot && spot.GetBaseObject() != Smoke
+			warming += 1
+			If spot.IsFurnitureInUse(False)
+				used += 1
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	Return "Idle Life\n\n" + _anchors.Length + " fires near you have spots, " + _spots.Length + " spots in all.\n" + used + " of " + warming + " hand-warming spots are in use right now.\n" + Testers.GetCount() + " test settlers."
 EndFunction
 
 ; How many of our spots someone is using right now (furniture spots only: the engine does not say who

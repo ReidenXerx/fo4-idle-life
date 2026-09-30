@@ -42,6 +42,12 @@ SMOKE = 0x0E210E           # IDLM NPCSmokeIdleMarker (FurnitureClassRelaxation),
 
 SETTINGS = [('On', 1.0)]
 
+# The MCM Testing page (owner 2026-10-01: "spawn idiotic npcs ... to test it without wasting time"):
+# harmless settlers placed around the player, held in a reference collection whose package makes them
+# sandbox right there, so they wander and pick up the spots.
+TEST_NPC = 0x113341         # LVLN LCharWorkshopNPC: settlers, male and female, no scripts (research)
+SANDBOX_PACKAGE = 0x089605  # PACK DefaultSandboxCurrentLocation: near self, 512, every activity on, no conditions
+
 
 def field(sig, data):
     if len(data) > 0xFFFF:
@@ -117,6 +123,8 @@ def build():
         fl += field('LNAM', struct.pack('<I', base))
     flst += record('FLST', lights_id, fl)
 
+    test_quest_id = new_id('TestQuest')
+
     q = field('EDID', zstring('IL_Spawner'))
     q += field('VMAD', vmad('IdleLife:Spawner', [
         ('FireAnchors', 1, obj(fire_id)),
@@ -125,10 +133,30 @@ def build():
         ('WarmKneeling', 1, obj(WARM_KNEELING)),
         ('Smoke', 1, obj(SMOKE)),
         ('Enabled', 1, obj(ids['Setting_On'])),
+        ('TestQuest', 1, obj(test_quest_id)),
+        ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),
+        ('TestNpc', 1, obj(TEST_NPC)),
     ]))
     q += field('DNAM', bytes.fromhex('110064670000000000000000'))   # start game enabled
     q += field('NEXT', b'')
     quest = record('QUST', quest_id, q)
+
+    # The testers' quest: not start-game enabled -- the Testing page starts it, so its alias is fresh.
+    # Alias shape from fo4-an76-toilets (its Panicked collection, verified in game): one reference
+    # collection, empty until the script adds people, optional, its package on everyone in it.
+    t = field('EDID', zstring('IL_Testers'))
+    t += field('DNAM', bytes.fromhex('100064670000000000000000'))   # the spawner's flags minus start-game (0x01)
+    t += field('NEXT', b'')
+    t += field('ANAM', struct.pack('<I', 1))
+    t += field('ALCS', struct.pack('<I', 0))
+    t += field('ALMI', b'\x00')
+    t += field('ALST', struct.pack('<I', 0))
+    t += field('ALID', zstring('Testers'))
+    t += field('FNAM', struct.pack('<I', 0x202))
+    t += field('ALPC', struct.pack('<I', SANDBOX_PACKAGE))
+    t += field('VTCK', struct.pack('<I', 0))
+    t += field('ALED', b'')
+    quest += record('QUST', test_quest_id, t)
 
     for fid in ids.values():
         if not 0x800 <= (fid & 0xFFFFFF) <= 0xFFF:
