@@ -37,6 +37,7 @@ ObjectReference[] _anchors     ; fires that have their ring
 ObjectReference[] _spots       ; every spot placed
 ObjectReference[] _spotFire    ; the fire each spot belongs to (same index as _spots)
 Int _scans = 0
+Int _lastSeen = -1
 Bool _toldInUse = False
 
 Event OnQuestInit()
@@ -94,14 +95,22 @@ Event OnTimer(Int aiTimerID)
 	Prune(player, Enabled.GetValueInt() == 0)
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
 		ObjectReference[] fires = player.FindAllReferencesOfType(FireAnchors, Radius)
+		; Not Is3DLoaded: a fire baked into precombined meshes reads unloaded while it is right there (AN76
+		; Toilets' world toilets, 2026-09-29). Its cell being attached is what "near and real" means here.
+		Int dressed = 0
 		Int i = 0
 		While i < fires.Length && _anchors.Length < MaxAnchors
 			ObjectReference fire = fires[i]
-			If fire && fire.Is3DLoaded() && !fire.IsDisabled() && _anchors.Find(fire) < 0
+			If fire && !fire.IsDisabled() && _anchors.Find(fire) < 0 && fire.GetParentCell() && fire.GetParentCell().IsAttached()
 				Dress(fire)
+				dressed += 1
 			EndIf
 			i += 1
 		EndWhile
+		If fires.Length != _lastSeen
+			_lastSeen = fires.Length
+			Debug.Trace("Idle Life: " + fires.Length + " fires within " + (Radius as Int) + " units (" + dressed + " newly dressed, " + _anchors.Length + " dressed) in " + player.GetParentCell(), 0)
+		EndIf
 	EndIf
 	_scans += 1
 	If _scans % REPORT_EVERY == 0 && _spots.Length > 0
