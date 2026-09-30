@@ -7,6 +7,12 @@ Every 30 s the log says how many spots are taken: that is premise 0 (docs/DESIGN
 
 FormList Property FireAnchors Auto Const Mandatory
 {Lit fire barrels and the workshop cooking fire (Fallout4.esm); DLC braziers and barrels join at run time.}
+FormList Property FireLights Auto Const Mandatory
+{Fire lights: most fires in the game are a plain barrel or a burn pile lit by one of these.}
+Float Property LightDrop = 68.0 Auto Const
+{How far below a fire flame the floor is: vanilla's hand-warming spots, median (research/calib).}
+Float Property SameFire = 150.0 Auto Const
+{A flame this close to a fire that already has spots is that fire's flame, not another fire.}
 Form Property WarmStanding Auto Const Mandatory
 Form Property WarmKneeling Auto Const Mandatory
 Form Property Smoke Auto Const Mandatory
@@ -95,6 +101,7 @@ Event OnTimer(Int aiTimerID)
 	Prune(player, Enabled.GetValueInt() == 0)
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
 		ObjectReference[] fires = player.FindAllReferencesOfType(FireAnchors, Radius)
+		ObjectReference[] lights = player.FindAllReferencesOfType(FireLights, Radius)
 		; Not Is3DLoaded: a fire baked into precombined meshes reads unloaded while it is right there (AN76
 		; Toilets' world toilets, 2026-09-29). Its cell being attached is what "near and real" means here.
 		Int dressed = 0
@@ -107,9 +114,19 @@ Event OnTimer(Int aiTimerID)
 			EndIf
 			i += 1
 		EndWhile
-		If fires.Length != _lastSeen
-			_lastSeen = fires.Length
-			Debug.Trace("Idle Life: " + fires.Length + " fires within " + (Radius as Int) + " units (" + dressed + " newly dressed, " + _anchors.Length + " dressed) in " + player.GetParentCell(), 0)
+		i = 0
+		While i < lights.Length && _anchors.Length < MaxAnchors
+			ObjectReference flame = lights[i]
+			If flame && !flame.IsDisabled() && _anchors.Find(flame) < 0 && flame.GetParentCell() && flame.GetParentCell().IsAttached() && !NearDressed(flame)
+				Dress(flame)
+				dressed += 1
+			EndIf
+			i += 1
+		EndWhile
+		Int seen = fires.Length + lights.Length
+		If seen != _lastSeen
+			_lastSeen = seen
+			Debug.Trace("Idle Life: " + fires.Length + " fire models and " + lights.Length + " fire lights within " + (Radius as Int) + " units (" + dressed + " newly dressed, " + _anchors.Length + " dressed) in " + player.GetParentCell(), 0)
 		EndIf
 	EndIf
 	_scans += 1
@@ -151,10 +168,26 @@ Function Dress(ObjectReference akFire)
 	Debug.Trace("Idle Life: " + akFire + " (" + akFire.GetBaseObject() + ") gets " + count + " spots", 0)
 EndFunction
 
+; Already a dressed fire within SameFire: this flame is its flame.
+Bool Function NearDressed(ObjectReference akLight)
+	Int i = 0
+	While i < _anchors.Length
+		If _anchors[i] && _anchors[i].GetDistance(akLight) < SameFire
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
+EndFunction
+
 Function Place(ObjectReference akFire, Form akKind, Float afAngle, Float afDistance, Float afFacing)
 	ObjectReference spot = akFire.PlaceAtMe(akKind, 1, False, True, True)
 	If spot
-		spot.SetPosition(akFire.GetPositionX() + afDistance * Math.Sin(afAngle), akFire.GetPositionY() + afDistance * Math.Cos(afAngle), akFire.GetPositionZ())
+		Float z = akFire.GetPositionZ()
+		If FireLights.HasForm(akFire.GetBaseObject())
+			z -= LightDrop
+		EndIf
+		spot.SetPosition(akFire.GetPositionX() + afDistance * Math.Sin(afAngle), akFire.GetPositionY() + afDistance * Math.Cos(afAngle), z)
 		spot.SetAngle(0.0, 0.0, afFacing)
 		spot.Enable(False)
 		_spots.Add(spot)

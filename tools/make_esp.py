@@ -25,6 +25,16 @@ FIRE_ANCHORS = [
     0x048283,   # MetalBarrel01FireGrating_Static 352 placed
     0x2476B7,   # WorkbenchCookingFireWorkshop    33 placed, buildable
 ]
+# Most fires in the game are not a fire model at all: a plain barrel or a burn pile lit by a fire LIGHT
+# (Diamond City: 0 fire barrels, 17 fire lights). Vanilla's hand-warming spots stand a median 68 units
+# below the light (research/calib). The script places spots at the light's height minus that.
+FIRE_LIGHTS = [
+    0x101183,   # defaultLightFire01NSNonSpec   2472 placed
+    0x08ADFA,   # defaultLightFire01NSFlicker    1935 placed
+    0x0C581B,   # defaultLightFire01NS           1384 placed
+    0x12B52C,   # defaultLightFire01FlickerGoboWireBarrel 303 placed (the wire-barrel flame)
+    0x08ADF9,   # defaultLightFire01Flicker       122 placed
+]
 # The spots: vanilla markers, placed as they are.
 WARM_STANDING = 0x1B40BD   # FURN NPCHandWarmingStanding (AnimFurnNPCHandWarming), 68 placed
 WARM_KNEELING = 0x1B40BE   # FURN NPCHandWarmingKneeling, 6 placed
@@ -101,9 +111,16 @@ def build():
         flst += field('LNAM', struct.pack('<I', base))
     flst = record('FLST', fire_id, flst)
 
+    lights_id = new_id('FireLights')
+    fl = field('EDID', zstring('IL_FireLights'))
+    for base in FIRE_LIGHTS:
+        fl += field('LNAM', struct.pack('<I', base))
+    flst += record('FLST', lights_id, fl)
+
     q = field('EDID', zstring('IL_Spawner'))
     q += field('VMAD', vmad('IdleLife:Spawner', [
         ('FireAnchors', 1, obj(fire_id)),
+        ('FireLights', 1, obj(lights_id)),
         ('WarmStanding', 1, obj(WARM_STANDING)),
         ('WarmKneeling', 1, obj(WARM_KNEELING)),
         ('Smoke', 1, obj(SMOKE)),
