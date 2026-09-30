@@ -14,6 +14,16 @@ The engine does not care who placed a marker or when. Bethesda hand-placed a few
 itself is general. So markers placed by a script at run time should be taken up exactly like the ones in
 the plugin, the way settlers use furniture the moment the player builds it.
 
+**Measured 2026-09-30 (research/idlm_catalog.md): most of these spots are not IDLM records.** The 7
+masters hold only 51 IDLMs, and they are mostly patrol spots (PatrolIdleMarker, 12,763 placed) plus smoke
+(NPCSmokeIdleMarker 0E210E, 418). The poses this mod is about are **invisible furniture markers** (FURN
+with AnimFurn* keywords): NPCHandWarmingStanding 1B40BD / Kneeling 1B40BE, NPCInvWallLean01 024572 (578
+placed), NPCInvGroundSit 0299C2, NPCStandDrinkCoffee 1A6AFC, NPCEatingNoodlesStanding 1411CB,
+NpcBenchChurchSit01 089505 (pray), NPCStandHammerVertical 0D96C9 (chores). Sandbox takes up both kinds;
+the mod places both. There is **no dance and no chat marker** in the game: those need our own marker
+(a FURN or IDLM pointing at vanilla dance idles) -- a phase 3 question. No workshop recipe builds any of
+the pose markers, which is part of why settlements feel static.
+
 **Premise 0 (proved first, before anything else is built):** an idle marker placed at run time near
 sandboxing NPCs is walked to and used.
 

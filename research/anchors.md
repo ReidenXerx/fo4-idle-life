@@ -1,0 +1,326 @@
+## music: 130 bases, 1113 refs
+- ACTI Fallout4.esm:143AD1 `RadioDiamondCityReceiverOff` refs=183 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw= COBJ
+- STAT Fallout4.esm:0F9CF9 `Speaker` refs=75 obnd=(-28, -34, -30, 28, 0, 30) modl=Props\Speaker.nif kw=
+- STAT Fallout4.esm:065C72 `Loudspeaker01` refs=67 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- STAT Fallout4.esm:073270 `PlayerHouse_Ruin_Stereo02` refs=64 obnd=(-77, -43, 0, 74, 24, 49) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_Stereo02.nif kw=
+- ACTI Fallout4.esm:082447 `RadioDiamondCityReceiver` refs=57 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- STAT Fallout4.esm:183D03 `DriveInSpeaker` refs=50 obnd=(-7, -20, 0, 8, 20, 92) modl=SetDressing\DriveIn\DriveInSpeaker.nif kw=
+- ACTI Fallout4.esm:0E6F69 `SubwayAnnouncementsRadio` refs=37 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- STAT Fallout4.esm:07326F `PlayerHouse_Ruin_Stereo01` refs=36 obnd=(-75, -22, 0, 75, 25, 55) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_Stereo01.nif kw=
+- STAT Fallout4.esm:09192D `PlayerHouse_Ruin_BathroomRadio01` refs=31 obnd=(-20, -16, -17, 19, 0, 18) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_BathroomRadio01.nif kw=
+- ACTI DLCNukaWorld.esm:02F881 `DLC04Gauntlet_Speaker` refs=31 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- MSTT Fallout4.esm:106F6E `RadioMicrophoneFreestanding01` refs=24 obnd=(-9, -9, 0, 9, 10, 111) modl=SetDressing\AudioEquipment\RadioMicrophoneFreestanding01.nif kw=
+- SCOL Fallout4.esm:19B5A7 `PlayerHouse_Ruin_Stereo02Debris01` refs=23 obnd=(-87, -43, 0, 74, 30, 50) modl=SCOL\Fallout4.esm\CM0019B5A7.NIF kw=
+- STAT Fallout4.esm:15F751 `RadioStaticNoRadio` refs=20 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:0B9807 `RadioStatic` refs=19 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- STAT Fallout4.esm:093E2B `HamRadio01static` refs=19 obnd=(-14, -15, 0, 29, 12, 19) modl=SetDressing\HamRadio\HamRadio.nif kw=
+- STAT Fallout4.esm:17A632 `RadioMicrophoneTable01Static` refs=19 obnd=(-7, -7, 0, 7, 7, 34) modl=SetDressing\AudioEquipment\RadioMicrophoneTable01Static.nif kw=
+- STAT Fallout4.esm:050AA8 `PlayerHouse_BathroomRadio01` refs=19 obnd=(-20, -16, -17, 19, 0, 18) modl=SetDressing\PlayerHouse\PlayerHouse_BathroomRadio01.nif kw=
+- ACTI Fallout4.esm:1D5539 `RadioInstitutePAReceiver` refs=17 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:0CA89D `RadioInstituteReceiver` refs=17 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- MSTT Fallout4.esm:106F6D `RadioMicrophoneTable01` refs=16 obnd=(-7, -7, 0, 7, 7, 34) modl=SetDressing\AudioEquipment\RadioMicrophoneTable01.nif kw=
+- ACTI Fallout4.esm:07484B `RadioPreWar` refs=15 obnd=(-16, -11, 0, 16, 9, 21) modl=SetDressing\Radio\RadioPrewar.nif kw=
+- ACTI Fallout4.esm:074841 `RadioStaticOff` refs=15 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:1209F9 `DN035_EasyCityDownsRadio` refs=14 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- ACTI Fallout4.esm:1BA3A0 `HamRadioOFF` refs=13 obnd=(-14, -15, 0, 29, 12, 19) modl=SetDressing\HamRadio\HamRadio.nif kw=
+- SCOL Fallout4.esm:19B5A9 `PlayerHouse_Ruin_Stereo01Debris01` refs=12 obnd=(-84, -27, 0, 85, 33, 56) modl=SCOL\Fallout4.esm\CM0019B5A9.NIF kw=
+- ACTI Fallout4.esm:1651F6 `DN067_RadioSpeaker` refs=11 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- STAT Fallout4.esm:0625DE `Jukebox01Static` refs=11 obnd=(-53, -45, 0, 53, 44, 145) modl=SetDressing\Jukebox\Jukebox01.nif kw=
+- ACTI DLCNukaWorld.esm:04BF29 `DLC04ParkAnnouncementsRadio` refs=11 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- ACTI Fallout4.esm:1C5E6F `Jukebox01` refs=9 obnd=(-53, -45, 0, 53, 44, 145) modl=SetDressing\Jukebox\Jukebox01.nif kw=
+- ACTI DLCNukaWorld.esm:025B40 `DLC04RaiderRadioReceiver` refs=9 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:0450F1 `RelayTowerPublic` refs=8 obnd=(-132, -132, 320, 132, 132, 1617) modl=Architecture\Bunkers\Animated\RadioTower01\BunExtMidTower01.nif kw=
+- STAT Fallout4.esm:1909DF `BunExtMidTowerUp01` refs=8 obnd=(-99, -99, 0, 99, 99, 0) modl=Architecture\Bunkers\Animated\RadioTower01\BunExtMidTowerUp01.nif kw=
+- STAT Fallout4.esm:0FFC51 `DN011Loudspeaker` refs=7 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- ACTI Fallout4.esm:18E38D `DN028_PAAnnouncementsRadio` refs=6 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- ACTI Fallout4.esm:096EAD `MS11RadioReceiver` refs=6 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:1B2370 `RadioDiamondCityReceiverNew` refs=5 obnd=(-16, -11, 0, 16, 9, 21) modl=SetDressing\Radio\RadioPrewar.nif kw=
+- ACTI Fallout4.esm:19D6C4 `DN054RadioAtomCatsReceiver` refs=5 obnd=(-16, -11, 0, 16, 11, 36) modl=SetDressing\Radio\Radio1.nif kw=
+- ACTI Fallout4.esm:18E8FC `HamRadio` refs=5 obnd=(-14, -15, 0, 29, 12, 19) modl=SetDressing\HamRadio\HamRadio.nif kw=
+- ACTI Fallout4.esm:182DE1 `DN060_RadioSpeaker` refs=4 obnd=(-9, 0, -8, 9, 12, 8) modl=SetDressing\Building\Loudspeaker01.nif kw=
+- STAT Fallout4.esm:001087 `DiamondRadioTower07` refs=4 obnd=(-563, -9, -61, 563, 0, 710) modl=Architecture\DiamondCity\ShackRV_Ext\DiamondRadioTower07.nif kw=
+## other: 58 bases, 999 refs
+- STAT Fallout4.esm:075F38 `PlayerHouse_Ruin_Television01` refs=188 obnd=(-28, -23, 0, 28, 37, 105) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_Television01.nif kw=
+- MISC Fallout4.esm:0A8AB1 `PlasticPumpkin` refs=130 obnd=(-13, -13, 0, 13, 22, 18) modl=Props\Halloween\PlasticPumpkin.nif kw=NotJunkJetAmmo
+- STAT Fallout4.esm:075F3A `PlayerHouse_Ruin_Television02` refs=119 obnd=(-27, -22, 0, 26, 37, 62) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_Television02.nif kw=
+- CONT Fallout4.esm:08622A `SanctuaryMailboxEmpty` refs=70 obnd=(-12, -21, -6, 13, 27, 100) modl=SetDressing\Mailbox\mailbox02.nif kw=
+- CONT Fallout4.esm:1846B5 `RRDeadDrop` refs=67 obnd=(-24, -42, 0, 24, 22, 94) modl=SetDressing\Mailbox\mailbox01.nif kw=
+- CONT Fallout4.esm:0222CF `Prewar_Mailbox` refs=44 obnd=(-24, -42, 0, 24, 22, 94) modl=SetDressing\Mailbox\mailbox01.nif kw=
+- SCOL Fallout4.esm:0AC007 `Halloween_Banner_Pumpkins` refs=40 obnd=(-30, -4, -16, 31, 1, 7) modl=SCOL\Fallout4.esm\CM000AC007.NIF kw=
+- CONT Fallout4.esm:0AEBB6 `SanctuaryMailbox` refs=32 obnd=(-12, -21, -6, 13, 27, 100) modl=SetDressing\Mailbox\mailbox02.nif kw=
+- STAT Fallout4.esm:10907A `PoolTable01` refs=28 obnd=(-72, -128, 0, 72, 128, 75) modl=SetDressing\PoolTable\PoolTable01.nif kw= COBJ
+- STAT Fallout4.esm:08CAA9 `SanctuaryMailboxStatic_UseSparingly` refs=26 obnd=(-12, -21, -6, 13, 27, 100) modl=SetDressing\Mailbox\mailbox03.nif kw=
+- STAT Fallout4.esm:086229 `SanctuaryMailboxStand` refs=25 obnd=(-12, -19, -6, 13, 23, 68) modl=SetDressing\Mailbox\mailboxStand02.nif kw=
+- SCOL Fallout4.esm:0ABFF7 `Halloween_PumpkinPoster03` refs=24 obnd=(-38, 0, -14, 77, 0, 67) modl=SCOL\Fallout4.esm\CM000ABFF7.NIF kw=
+- FURN Fallout4.esm:0DB83B `WaterPump01Furn` refs=23 obnd=(-37, -37, -30, 37, 37, 106) modl=SetDressing\WaterPump\WaterPump01.nif kw=AnimFurnWaterPump,FurnitureClassWork,FurnitureScaleActorToOne,FurnitureCantWait,AO_Type_WorkshopResourceObject,FurnitureForce3rdPerson COBJ
+- MISC Fallout4.esm:059AFF `PoolTriangle` refs=22 obnd=(-15, -17, 0, 15, 11, 2) modl=SetDressing\PoolTable\PoolTableRack01.nif kw=
+- STAT Fallout4.esm:0ABFEA `Halloween_Banner_Pumpkin` refs=22 obnd=(-10, 0, -8, 10, 0, 8) modl=Props\Halloween\Halloween_Banner_Pumpkin.nif kw=
+- STAT Fallout4.esm:086314 `Prewar_mailbox02` refs=16 obnd=(-12, -21, -6, 13, 27, 100) modl=SetDressing\Mailbox\Prewar_mailbox02.nif kw=
+- STAT Fallout4.esm:0ABFD7 `Halloween_Pumpkin_Head` refs=13 obnd=(-25, 0, -24, 25, 0, 24) modl=Props\Halloween\Halloween_Pumpkin_Head.nif kw=
+- SCOL Fallout4.esm:0ABFF5 `Halloween_PumpkinPoster01` refs=13 obnd=(-78, 0, -12, 19, 0, 86) modl=SCOL\Fallout4.esm\CM000ABFF5.NIF kw=
+- STAT Fallout4.esm:0FFB8B `RedR_SmBldg01_PumpMeterFREE02` refs=12 obnd=(-37, -28, 0, 37, 22, 110) modl=Interiors\RedRocket\RedR_SmBldg01_PumpMeterFREE02.nif kw=
+- ACTI Fallout4.esm:22C66B `WorkshopTelevision01` refs=9 obnd=(-28, -23, 0, 28, 37, 105) modl=SetDressing\Workshop\TelevisionWorkshopVariant02.nif kw=WorkshopCanBePowered,WorkshopSwitchActivatorKeyword COBJ
+- SCOL Fallout4.esm:0AC00B `Halloween_PumpkinPoster02` refs=9 obnd=(-7, -46, -57, 50, 6, 34) modl=SCOL\Fallout4.esm\CM000AC00B.NIF kw=
+- STAT Fallout4.esm:0FFB8A `RedR_SmBldg01_PumpMeterFREE01` refs=8 obnd=(-37, -22, 0, 37, 22, 110) modl=Interiors\RedRocket\RedR_SmBldg01_PumpMeterFREE01.nif kw=
+- STAT Fallout4.esm:22DC2C `LS_WaterPumpStatic` refs=7 obnd=(-37, -37, -30, 37, 37, 106) modl=LoadScreenArt\LS_WaterPumpStatic.nif kw=
+- STAT Fallout4.esm:0FF21A `RedR_SmBldg01_Pumps01` refs=6 obnd=(-150, -529, 29, 150, -320, 312) modl=Interiors\RedRocket\RedR_SmBldg01_Pumps01.nif kw=
+- ACTI Fallout4.esm:119BBA `WorkshopWaterPurifierLarge` refs=4 obnd=(-284, -165, -91, 284, 165, 513) modl=SetDressing\WaterPumps\WaterPumpLarge01.nif kw=WorkshopCanBePowered,AO_Type_WorkshopResourceObject,WorkshopPowerConnection COBJ
+- STAT Fallout4.esm:0FFB8E `RedR_SmBldg01_PumpPartStatic02` refs=3 obnd=(-13, -83, -8, 10, 49, 11) modl=Interiors\RedRocket\RedR_SmBldg01_PumpPartStatic02.nif kw=
+- STAT Fallout4.esm:0FFB8D `RedR_SmBldg01_PumpPartStatic01` refs=3 obnd=(-20, -49, -11, 20, 49, 11) modl=Interiors\RedRocket\RedR_SmBldg01_PumpPartStatic01.nif kw=
+- STAT Fallout4.esm:0FFB8C `RedR_SmBldg01_Pumps02` refs=3 obnd=(-150, -522, 109, 150, -320, 312) modl=Interiors\RedRocket\RedR_SmBldg01_Pumps02.nif kw=
+- SCOL DLCCoast.esm:009168 `DLC03_RedRocketGasPumpsStaticCollection` refs=3 obnd=(-303, -80, -16, 175, 80, 110) modl=SCOL\DLCCoast.esm\CM00009168.NIF kw=
+- ACTI Fallout4.esm:22C66F `WorkshopTelevision01Table` refs=2 obnd=(-27, -23, 0, 27, 35, 62) modl=SetDressing\Workshop\TelevisionWorkshopVariant01.nif kw=WorkshopCanBePowered,WorkshopSwitchActivatorKeyword COBJ
+- ACTI Fallout4.esm:0BA640 `MQ101TVPrewar` refs=2 obnd=(-28, -206, 0, 28, 37, 105) modl=SetDressing\PlayerHouse\PlayerHouse_Television01.nif kw=
+- STAT Fallout4.esm:1C2226 `MS11_Turbopump_Shell` refs=2 obnd=(-1, -1, -22, 34, 10, 22) modl=Architecture\USSConstitution\FuseBox_Shell_USSConstQuest.nif kw=
+- STAT Fallout4.esm:130D91 `DmndWaterPurifier` refs=2 obnd=(-284, -165, -91, 284, 165, 513) modl=SetDressing\WaterPumps\WaterPumpLarge01.nif kw=
+- MSTT Fallout4.esm:1ADC41 `HalloweenDecor_PumpkinHead_Dest` refs=2 obnd=(-40, -2, -66, 36, 2, 24) modl=Props\Halloween\HalloweenDecor_PumpkinHead.nif kw=
+- ACTI Fallout4.esm:245974 `WorkshopHighTechTelevision01` refs=1 obnd=(-41, -26, 0, 41, 34, 106) modl=SetDressing\Workshop\HighTechTV_01WorkshopWorkshopVariant.nif kw=WorkshopCanBePowered,WorkshopSwitchActivatorKeyword COBJ
+- ACTI Fallout4.esm:21749B `MS11TurbopumpActivatorInvis` refs=1 obnd=(0, 0, 0, 0, 0, 0) modl= kw=
+- ACTI Fallout4.esm:05925E `DN054PumpWidgetTrigger` refs=1 obnd=(0, 0, 0, 0, 0, 0) modl= kw=
+- ACTI Fallout4.esm:1019DE `MQ203MemoryExit` refs=1 obnd=(-27, -195, -41, 27, 48, 20) modl=SetDressing\Quest\MQ203\MQ203Television01.nif kw=
+- ACTI Fallout4.esm:0A8C27 `RRM02DeadDrop` refs=1 obnd=(-24, -42, 0, 24, 22, 94) modl=SetDressing\Mailbox\mailbox01.nif kw=
+- ACTI Fallout4.esm:02058C `WorkshopWaterPurifier` refs=1 obnd=(-64, -112, -64, 232, 61, 321) modl=SetDressing\WaterPumps\WaterPumpMedium01.nif kw=WorkshopCanBePowered,AO_Type_WorkshopResourceObject,WorkshopPowerConnection COBJ
+## fire: 72 bases, 8083 refs
+- LIGH Fallout4.esm:101183 `defaultLightFire01NSNonSpec` refs=2472 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:08ADFA `defaultLightFire01NSFlicker` refs=1935 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:0C581B `defaultLightFire01NS` refs=1384 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- STAT Fallout4.esm:048281 `MetalBarrel01Fire02_Static` refs=379 obnd=(-33, -33, 0, 33, 34, 117) modl=SetDressing\MetalBarrel\MetalBarrel01Fire02.nif kw=
+- STAT Fallout4.esm:048283 `MetalBarrel01FireGrating_Static` refs=352 obnd=(-42, -40, 0, 43, 45, 102) modl=SetDressing\MetalBarrel\MetalBarrel01StaticFireGrating.nif kw=
+- LIGH Fallout4.esm:12B52C `defaultLightFire01FlickerGoboWireBarrel` refs=303 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:08ADF9 `defaultLightFire01Flicker` refs=122 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- FURN Fallout4.esm:10C3B6 `WorkbenchCookingFire` refs=119 obnd=(-46, -46, -4, 0, 136, 153) modl=SetDressing\Woodfire\Woodfire_Doused.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General
+- MSTT Fallout4.esm:1DA027 `FXFireSmall01` refs=96 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFireSmall01.nif kw=
+- LIGH Fallout4.esm:1FA277 `defaultLightFire01NSGoboBounce01` refs=92 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:1FA279 `defaultLightFire01NSGoboBounce03` refs=75 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- MSTT Fallout4.esm:1DA026 `FXFireMedSmokey01` refs=58 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFireMedSmokey01.nif kw=
+- STAT Fallout4.esm:065582 `CampFireMed01_Off_Blocks_NoSkirt` refs=41 obnd=(-61, -63, 3, 68, 62, 36) modl=Landscape\CampFireMed01_Off_Blocks_NoSkirt.nif kw=
+- STAT Fallout4.esm:07C620 `FireEscapeKit_CapR02` refs=39 obnd=(-6, -117, 0, 0, -32, 64) modl=SetDressing\Firescapes\FireEscapeKit_CapR02.nif kw=
+- STAT Fallout4.esm:065584 `CampFireMed01_Off_NoRock_NoSkirt` refs=39 obnd=(-36, -37, 3, 35, 41, 36) modl=Landscape\CampFireMed01_Off_NoRock_NoSkirt.nif kw= COBJ
+- MSTT Fallout4.esm:246746 `FXFirePrydwenSmokey` refs=39 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFirePrydwenSmokey.nif kw=
+- STAT Fallout4.esm:06356D `CampFireMed01_Off_NoSkirt` refs=35 obnd=(-46, -49, 3, 49, 51, 36) modl=Landscape\CampFireMed01_Off_NoSkirt.nif kw=
+- FURN Fallout4.esm:2476B7 `WorkbenchCookingFireWorkshop` refs=33 obnd=(-46, -46, -7, 12, 136, 153) modl=SetDressing\Woodfire\WorkstationWoodCookingFireWorkshop.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General COBJ
+- STAT Fallout4.esm:07C621 `FireEscapeKit_CapL02` refs=31 obnd=(0, -118, 0, 6, -32, 64) modl=SetDressing\Firescapes\FireEscapeKit_CapL02.nif kw=
+- MSTT Fallout4.esm:1DA025 `FXFireMed01` refs=31 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFireMed01.nif kw=
+- FURN Fallout4.esm:1796AE `SupermutantCookingCauldron` refs=30 obnd=(-57, -39, 0, 57, 51, 106) modl=SetDressing\Woodfire\Woodfire_Supermutant.nif kw=AnimFurnCookingCauldron
+- STAT Fallout4.esm:0DF251 `PlayerHouse_Ruin_Fireplace01` refs=27 obnd=(-49, -45, 0, 0, 47, 208) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_Fireplace01.nif kw=
+- STAT Fallout4.esm:001B8D `FirePanel01` refs=27 obnd=(-34, -34, -54, 34, 0, 54) modl=SetDressing\FirePanel\FirePanel01.nif kw=
+- MSTT Fallout4.esm:1DA028 `FXFireBigWallFlames` refs=26 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFireBigWallFlames.nif kw=
+- STAT Fallout4.esm:10BE85 `ClotheslinePole` refs=21 obnd=(-45, -2, 0, 45, 7, 152) modl=SetDressing\Woodfire\Woodfire_ClotheslinePoleOnly.nif kw=
+- STAT Fallout4.esm:048280 `MetalBarrel01Fire01_Static` refs=19 obnd=(-33, -33, 0, 33, 33, 117) modl=SetDressing\MetalBarrel\MetalBarrel01Fire.nif kw=
+- STAT Fallout4.esm:065585 `CampFireMed01_Off_Blocks` refs=19 obnd=(-120, -120, -2, 120, 120, 36) modl=Landscape\CampFireMed01_Off_Blocks.nif kw=
+- STAT Fallout4.esm:060D53 `CampFireMed01_Off` refs=19 obnd=(-120, -120, -2, 120, 120, 36) modl=Landscape\CampFireMed01_Off.nif kw=
+- ACTI Fallout4.esm:0ABCAC `DN009_FireWeapMarker` refs=18 obnd=(0, 0, 0, 0, 0, 0) modl=markers\dummymarkers\projectiledummy01.nif kw=
+- LIGH Fallout4.esm:1FA278 `defaultLightFire01NSGoboBounce02` refs=14 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- STAT Fallout4.esm:048282 `MetalBarrel01Fire03_Static` refs=13 obnd=(-26, -26, 0, 27, 26, 78) modl=SetDressing\MetalBarrel\MetalBarrel01Fire03.nif kw=
+- LIGH DLCCoast.esm:002641 `TestDLC03FireLight` refs=13 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- ACTI Fallout4.esm:2377BC `TrapFlamethrower` refs=12 obnd=(-24, -48, 0, 24, 109, 204) modl=SetDressing\Workshop\WorkshopFlamethrowerTrap01.nif kw=WorkshopCanBePowered,WorkshopPowerConnection
+- STAT DLCRobot.esm:00A5DF `DLC01RaiderBrazier03` refs=12 obnd=(-22, -33, -1, 22, 35, 166) modl=DLC01\SetDressing\RobotClutter\DLC01RaiderBrazier03.nif kw=
+- STAT Fallout4.esm:03A9FB `Bld04AddFirescape01` refs=11 obnd=(-477, -115, -171, 442, 212, 525) modl=Architecture\Buildings\SmallTown\Bld04AddFirescape01.nif kw=
+- MSTT Fallout4.esm:246744 `FXFirePrydwenSmall` refs=9 obnd=(0, 0, 0, 0, 0, 0) modl=Effects\FXFirePrydwenSmall.nif kw=
+- LIGH Fallout4.esm:02B555 `defaultLightFire02NS` refs=8 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:0C954A `FXGenericFireGlowLight` refs=7 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- LIGH Fallout4.esm:02B557 `defaultLightFire02NSNonSpec` refs=6 obnd=(-9, -10, -18, 9, 10, 12) modl= kw=
+- STAT Fallout4.esm:0F0D40 `SignFactorySafetyTriFire01` refs=6 obnd=(-14, 0, -13, 14, 0, 13) modl=SetDressing\Signage\SignFactorySafetyTriFire01.nif kw=
+## table: 212 bases, 8577 refs
+- ACTI Fallout4.esm:1715CD `MirelurkEgg_Harvestable` refs=650 obnd=(-13, -13, -18, 13, 13, 18) modl=props\mirelurkeggs\mirelurkegg_single01.nif kw=AO_Type_Min02Eggs
+- STAT Fallout4.esm:0BA4AD `FederalistTableLong01` refs=337 obnd=(-32, -64, 0, 32, 64, 56) modl=SetDressing\FederalistFurniture\FederalistTableSquareLong01.nif kw= COBJ
+- STAT Fallout4.esm:07CE89 `TablePatio01` refs=330 obnd=(-81, -83, -2, 81, 83, 179) modl=SetDressing\PatioFurniture\TablePatio01.nif kw= COBJ
+- STAT Fallout4.esm:075F3F `PlayerHouse_Ruin_EndTable01` refs=330 obnd=(-20, -20, 0, 20, 20, 32) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_EndTable01.nif kw= COBJ
+- STAT Fallout4.esm:01820C `MetalTable01` refs=303 obnd=(-52, -24, 0, 52, 24, 56) modl=SetDressing\MetalFurniture\MetalTable01.nif kw= COBJ
+- STAT Fallout4.esm:0E37D5 `IndustrialMetalTableLarge01` refs=253 obnd=(-65, -50, 0, 65, 49, 56) modl=SetDressing\Industrial\IndustrialMetalTableLarge01.nif kw=
+- STAT Fallout4.esm:0EA1B8 `ModernDomesticTableSmall01` refs=234 obnd=(-28, -20, 0, 27, 20, 55) modl=SetDressing\ModernDomestic\ModernDomesticTableSmall01.nif kw= COBJ
+- STAT Fallout4.esm:01F440 `FederalistTableCircle01` refs=231 obnd=(-32, -32, 0, 32, 32, 56) modl=SetDressing\FederalistFurniture\FederalistTableCircle01.nif kw= COBJ
+- CONT Fallout4.esm:01F453 `FederalistDesk01_Prewar` refs=202 obnd=(-32, -66, 0, 34, 66, 56) modl=SetDressing\FederalistFurniture\FederalistTableOffice01.nif kw=CA_ObjType_JunkContainer
+- STAT Fallout4.esm:19449D `ClutterGenTableA` refs=202 obnd=(-78, -43, -1, 75, 32, 8) modl=SetDressing\ClutterGeneric\ClutterGenTableA.nif kw=
+- STAT Fallout4.esm:01820A `PicnicTable01Static` refs=173 obnd=(-119, -79, 0, 119, 79, 57) modl=SetDressing\Park\PicnicTable03.nif kw=
+- STAT Fallout4.esm:0EF2EE `GreenHsTable01` refs=170 obnd=(-33, -64, 0, 33, 64, 54) modl=Architecture\Warehouse\Greenhouse\GreenHsTable01.nif kw=
+- STAT Fallout4.esm:075F4A `PlayerHouse_Ruin_EndTable02` refs=168 obnd=(-22, -22, 0, 22, 22, 48) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_EndTable02.nif kw= COBJ
+- STAT Fallout4.esm:01820B `PicnicTable02Static` refs=159 obnd=(-125, -78, 0, 117, 79, 57) modl=SetDressing\Park\PicnicTable02.nif kw=
+- STAT Fallout4.esm:075F3E `PlayerHouse_Ruin_CoffeeTable01` refs=153 obnd=(-59, -24, 0, 59, 23, 23) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_CoffeeTable01.nif kw= COBJ
+- STAT Fallout4.esm:01820E `MetalTable02` refs=151 obnd=(-36, -24, 0, 20, 24, 56) modl=SetDressing\MetalFurniture\MetalTable02.nif kw= COBJ
+- STAT Fallout4.esm:0EA1AD `IndustrialMetalTableSmall01A` refs=134 obnd=(-33, -15, 0, 33, 15, 55) modl=SetDressing\Industrial\IndustrialMetalTableSmall01A.nif kw=
+- FURN Fallout4.esm:0A0F53 `AmbushFeralGhoulUnderTable` refs=129 obnd=(0, 0, 0, 0, 0, 0) modl=Markers\InvisibleGeneric01.nif kw=IsSleepFurniture,AnimFurnFeralGhoulAmbushUnderTable,DetectWhileSleepingKeyword,FurnitureAllowEnterThroughGeometry,FurnitureAllowExitThroughGeometry
+- STAT Fallout4.esm:06F9DB `PlayerHouse_Ruin_TableKitchen03` refs=125 obnd=(-64, -32, 0, 97, 32, 56) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_TableKitchen03.nif kw= COBJ
+- STAT Fallout4.esm:08C177 `Vault_Table_01` refs=110 obnd=(-74, -37, 0, 74, 39, 57) modl=SetDressing\Vault\Vault_Table_01.nif kw=
+- FURN Fallout4.esm:07D625 `NpcBenchDinerIntBoothSit01WithTable` refs=105 obnd=(-57, -64, 0, 57, 64, 78) modl=SetDressing\Diner\DinerIntBooth01.nif kw=AnimFurnChairWithTable,AnimFurnAllowEating,FurnitureClassRelaxation
+- STAT Fallout4.esm:0978C6 `FancyTableCircle01` refs=103 obnd=(-32, -32, 0, 32, 32, 56) modl=SetDressing\WoodFurnitureFancy\FancyTableCircle01.nif kw= COBJ
+- STAT Fallout4.esm:1A6E7D `HighTechDesk02_RoundedEnd_Dirty` refs=98 obnd=(-27, -26, 0, 26, 26, 55) modl=SetDressing\HighTech\HighTechTable02_RoundedEnd.nif kw=
+- STAT Fallout4.esm:04CD67 `HighTechRoundTable01_Dirty` refs=92 obnd=(-33, -32, 0, 33, 32, 56) modl=SetDressing\HighTech\HighTechRoundTable01.nif kw= COBJ
+- STAT Fallout4.esm:0978C2 `FancyTableConsole01` refs=91 obnd=(-27, -65, 0, 23, 65, 70) modl=SetDressing\WoodFurnitureFancy\FancyTableConsole01.nif kw= COBJ
+- STAT Fallout4.esm:06F9D9 `PlayerHouse_Ruin_TableKitchen01` refs=91 obnd=(-64, -32, 0, 32, 32, 56) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_TableKitchen01.nif kw= COBJ
+- STAT Fallout4.esm:0978C4 `FancyTableConsole02` refs=89 obnd=(-23, -65, 0, 23, 65, 56) modl=SetDressing\WoodFurnitureFancy\FancyTableConsole02.nif kw=
+- STAT Fallout4.esm:0978CA `FancyTableRectangle01` refs=84 obnd=(-16, -33, 0, 16, 33, 56) modl=SetDressing\WoodFurnitureFancy\FancyTableRectangle01.nif kw= COBJ
+- STAT Fallout4.esm:06F9DA `PlayerHouse_Ruin_TableKitchen02` refs=84 obnd=(-64, -32, 0, 64, 32, 56) modl=SetDressing\PlayerHouse_Ruin\PlayerHouse_Ruin_TableKitchen02.nif kw= COBJ
+- STAT Fallout4.esm:0E6964 `InstituteTable02` refs=83 obnd=(-22, -26, 0, 22, 36, 56) modl=SetDressing\Institute\InstituteTable02.nif kw=
+- STAT Fallout4.esm:0BA4AC `FederalistTableSquare01` refs=82 obnd=(-32, -32, 0, 32, 32, 56) modl=SetDressing\FederalistFurniture\FederalistTableSquare01.nif kw= COBJ
+- CONT Fallout4.esm:1A6E48 `HighTechDesk01_Dirty` refs=81 obnd=(-54, -26, 0, 55, 26, 56) modl=SetDressing\HighTech\HighTechTable01_Main.nif kw=WorkshopContainerKeyword COBJ
+- STAT Fallout4.esm:1793E8 `IndustrialMetalTableSmall01B` refs=81 obnd=(-21, -15, 0, 33, 15, 55) modl=SetDressing\Industrial\IndustrialMetalTableSmall01B.nif kw=
+- STAT Fallout4.esm:1A6E7C `HighTechDesk02_CurvedEnd_Dirty` refs=79 obnd=(-26, -26, 0, 26, 26, 55) modl=SetDressing\HighTech\HighTechTable02_CurvedEnd.nif kw=
+- STAT Fallout4.esm:058A01 `GreenHsTable02` refs=77 obnd=(-33, -64, 0, 33, 64, 54) modl=Architecture\Warehouse\Greenhouse\GreenHsTable02.nif kw=
+- STAT Fallout4.esm:18A9FE `ModernDomesticTableLrg01` refs=77 obnd=(-70, -41, 0, 70, 41, 56) modl=SetDressing\ModernDomestic\ModernDomesticTableLrg01.nif kw= COBJ
+- STAT Fallout4.esm:01F448 `FederalistCoffeeTableSmall01` refs=77 obnd=(-32, -32, 0, 32, 32, 32) modl=SetDressing\FederalistFurniture\FederalistCoffeeTableSmall01.nif kw= COBJ
+- SCOL Fallout4.esm:19B605 `MetalTable01Debris01` refs=77 obnd=(-56, -28, 0, 52, 25, 62) modl=SCOL\Fallout4.esm\CM0019B605.NIF kw=
+- STAT Fallout4.esm:01820D `MetalTableRound01` refs=75 obnd=(-32, -31, 0, 32, 31, 56) modl=SetDressing\MetalFurniture\MetalTableRound01.nif kw= COBJ
+- STAT Fallout4.esm:1793E9 `IndustrialMetalTableSmall01C` refs=65 obnd=(-21, -15, 0, 21, 15, 55) modl=SetDressing\Industrial\IndustrialMetalTableSmall01C.nif kw=
+## bar: 137 bases, 4365 refs
+- STAT Fallout4.esm:145DA7 `HighTechCounter_Panel01` refs=340 obnd=(0, 0, -31, 60, 0, 31) modl=SetDressing\HighTechCounters\HighTechCounter_Panel01.nif kw=
+- STAT Fallout4.esm:076A50 `DinerIntCounter01` refs=285 obnd=(-36, -64, 0, 32, 64, 78) modl=SetDressing\Diner\DinerIntCounter01.nif kw=
+- STAT Fallout4.esm:176E2C `CounterMid01` refs=280 obnd=(-24, -64, 0, 24, 64, 56) modl=SetDressing\Counter\CounterMid01.nif kw=
+- STAT Fallout4.esm:0CFC65 `HighTechCounter_Cap01` refs=167 obnd=(-64, -33, 0, 3, 33, 78) modl=SetDressing\HighTechCounters\HighTechCounter_Cap01.nif kw=
+- STAT Fallout4.esm:176E6C `CounterMidHalf01` refs=156 obnd=(-24, -32, 0, 24, 32, 56) modl=SetDressing\Counter\CounterMidHalf01.nif kw=
+- STAT Fallout4.esm:1655B7 `CafeCounter02` refs=145 obnd=(-44, -36, 0, 44, 35, 55) modl=SetDressing\Kitchen\KitchenCounterMetal02.nif kw=
+- STAT Fallout4.esm:077C7F `DinerIntCounterHalfDoor01` refs=124 obnd=(-36, 0, 8, -31, 64, 66) modl=SetDressing\Diner\DinerIntCounterHalfDoor01.nif kw=
+- STAT Fallout4.esm:176E2D `CounterOuterMid01` refs=120 obnd=(18, -64, 0, 42, 64, 78) modl=SetDressing\Counter\CounterOuterMid01.nif kw=
+- STAT Fallout4.esm:02F432 `DinerIntCounterThin01` refs=113 obnd=(-36, -64, 0, 0, 64, 78) modl=SetDressing\Diner\DinerIntCounterThin01.nif kw=
+- STAT Fallout4.esm:1655BA `CafeCounterBar01` refs=111 obnd=(-57, -36, 0, 57, 35, 78) modl=SetDressing\Kitchen\KitchenCounterBarMetal01.nif kw=
+- STAT Fallout4.esm:176E41 `CounterOuterMid02` refs=98 obnd=(18, -64, 0, 42, 64, 78) modl=SetDressing\Counter\CounterOuterMid02.nif kw=
+- STAT Fallout4.esm:0232E1 `BldCounter01` refs=97 obnd=(-272, -33, 0, 272, 33, 78) modl=Architecture\Buildings\SmallTown\BldCounter01.nif kw=
+- STAT Fallout4.esm:077C78 `DinerIntCounterDoor01` refs=94 obnd=(-38, -64, 8, -31, 64, 66) modl=SetDressing\Diner\DinerIntCounterDoor01.nif kw=
+- STAT Fallout4.esm:077C81 `DinerIntCounterHalfDoor02` refs=92 obnd=(-36, -64, 8, -31, 0, 66) modl=SetDressing\Diner\DinerIntCounterHalfDoor02.nif kw=
+- STAT Fallout4.esm:077C7A `DinerIntCounterDoor02` refs=87 obnd=(-38, -64, 8, -31, 64, 66) modl=SetDressing\Diner\DinerIntCounterDoor02.nif kw=
+- STAT Fallout4.esm:176E42 `CounterCornerIn01` refs=79 obnd=(0, 0, 0, 88, 87, 56) modl=SetDressing\Counter\CounterCornerIn01.nif kw=
+- STAT Fallout4.esm:03030D `DinerIntCounterHalf01` refs=79 obnd=(-36, 0, 0, 32, 64, 78) modl=SetDressing\Diner\DinerIntCounterHalf01.nif kw=
+- SCOL Fallout4.esm:19B5C1 `DinerIntCounter01Debris01` refs=78 obnd=(-36, -64, 0, 32, 64, 84) modl=SCOL\Fallout4.esm\CM0019B5C1.NIF kw=
+- STAT Fallout4.esm:176E7B `CounterCornerSharp01` refs=70 obnd=(0, -47, 0, 47, 0, 56) modl=SetDressing\Counter\CounterCornerSharp01.nif kw=
+- STAT Fallout4.esm:0232DF `BldCounterDoor01` refs=70 obnd=(-3, -55, -31, 2, 55, 31) modl=Architecture\Buildings\SmallTown\BldCounterDoor01.nif kw=
+- STAT Fallout4.esm:077C98 `DinerIntCounterThinCornerRound01` refs=68 obnd=(0, -112, 0, 112, 0, 78) modl=SetDressing\Diner\DinerIntCounterThinCornerRound01.nif kw=
+- STAT Fallout4.esm:19D3E1 `HighTechCounter_Long01_Closed` refs=65 obnd=(-64, -33, 0, 64, 33, 78) modl=SetDressing\HighTechCounters\HighTechCounter_Long01_Closed.nif kw=
+- STAT Fallout4.esm:176E6F `CounterOuterMidHalf02` refs=63 obnd=(18, -32, 0, 42, 32, 78) modl=SetDressing\Counter\CounterOuterMidHalf02.nif kw=
+- STAT Fallout4.esm:176E65 `CounterDivider01` refs=63 obnd=(-23, -2, 56, 24, 2, 75) modl=SetDressing\Counter\CounterDivider01.nif kw=
+- STAT Fallout4.esm:176E5A `CounterEndR02` refs=63 obnd=(-32, -8, 0, 32, 0, 78) modl=SetDressing\Counter\CounterEndR02.nif kw=
+- STAT Fallout4.esm:076A42 `DinerIntCounterThin02` refs=56 obnd=(-36, -64, 0, 0, 64, 78) modl=SetDressing\Diner\DinerIntCounterThin02.nif kw=
+- STAT Fallout4.esm:176E6E `CounterOuterMidHalf01` refs=55 obnd=(18, -32, 0, 42, 32, 78) modl=SetDressing\Counter\CounterOuterMidHalf01.nif kw=
+- STAT Fallout4.esm:176E50 `CounterEndL02` refs=52 obnd=(-32, 0, 0, 32, 8, 78) modl=SetDressing\Counter\CounterEndL02.nif kw=
+- STAT Fallout4.esm:1655B6 `CafeCounter01` refs=52 obnd=(-44, -36, 0, 44, 35, 56) modl=SetDressing\Kitchen\KitchenCounterMetal01.nif kw=
+- STAT Fallout4.esm:176E84 `CounterOuterCornerSharp01` refs=41 obnd=(0, -65, 0, 66, 0, 78) modl=SetDressing\Counter\CounterOuterCornerSharp01.nif kw=
+- STAT Fallout4.esm:176E51 `CounterEndShortL01` refs=41 obnd=(-24, 0, 0, 24, 3, 56) modl=SetDressing\Counter\CounterEndShortL01.nif kw=
+- STAT Fallout4.esm:176E46 `CounterOuterCrnIn01` refs=41 obnd=(0, 0, 0, 106, 106, 78) modl=SetDressing\Counter\CounterOuterCrnIn01.nif kw=
+- STAT Fallout4.esm:076A4C `DinerIntCounterThinHalf01` refs=41 obnd=(-36, 0, 0, 0, 64, 78) modl=SetDressing\Diner\DinerIntCounterThinHalf01.nif kw=
+- STAT Fallout4.esm:077C9C `DinerIntCounterCornerDoor01` refs=40 obnd=(0, -81, 8, 81, 0, 66) modl=SetDressing\Diner\DinerIntCounterCornerDoor01.nif kw=
+- STAT Fallout4.esm:176E47 `CounterOuterCrnIn02` refs=39 obnd=(0, 0, 0, 106, 106, 78) modl=SetDressing\Counter\CounterOuterCrnIn02.nif kw=
+- STAT Fallout4.esm:077C83 `DinerIntCounterCornerTranThinLeft` refs=37 obnd=(-128, -64, 0, 0, 64, 78) modl=SetDressing\Diner\DinerIntCounterCornerTranThinLeft.nif kw=
+- STAT Fallout4.esm:176E52 `CounterEndShortR01` refs=34 obnd=(-24, -3, 0, 24, 0, 56) modl=SetDressing\Counter\CounterEndShortR01.nif kw=
+- STAT Fallout4.esm:0F3BC9 `HitCounterTop01` refs=34 obnd=(-144, -80, 0, 144, 0, 85) modl=Interiors\HighTech\SetDressing\HitCounterTop01.nif kw=
+- STAT Fallout4.esm:077C8B `DinerIntCounterCornerTranThinRight` refs=34 obnd=(0, -64, 0, 128, 64, 78) modl=SetDressing\Diner\DinerIntCounterCornerTranThinRight.nif kw=
+- STAT Fallout4.esm:176E8B `CounterOuterCornerSharp02` refs=33 obnd=(0, -65, 0, 66, 0, 78) modl=SetDressing\Counter\CounterOuterCornerSharp02.nif kw=
+## lean: 663 bases, 27840 refs
+- STAT Fallout4.esm:001E1B `FenceChainlink01` refs=1548 obnd=(-3, -5, -64, 259, 4, 166) modl=SetDressing\FencesGrates\FenceChainlink01.nif kw=
+- SCOL Fallout4.esm:05094C `RWResRailing1Way01Post` refs=784 obnd=(-8, -6, 0, 128, 6, 59) modl=SCOL\Fallout4.esm\CM0005094C.NIF kw=
+- STAT Fallout4.esm:0AB058 `FenceWIRailingStr01` refs=470 obnd=(-241, -5, 2, -14, 5, 128) modl=SetDressing\FencesGrates\WroughtIron\FenceWIRailingStr01.nif kw=
+- STAT Fallout4.esm:05257D `PicketFenceB_Post01` refs=465 obnd=(-6, -6, -24, 6, 6, 111) modl=SetDressing\FencesGrates\PicketFence\PicketFenceB_Post01.nif kw=
+- STAT Fallout4.esm:001E1A `FenceChainlinkPost01` refs=425 obnd=(-3, -3, -192, 3, 3, 166) modl=SetDressing\FencesGrates\FenceChainlinkPost01.nif kw=
+- STAT Fallout4.esm:05E0DC `DeerFence_Post01` refs=404 obnd=(-5, -5, -5, 4, 4, 106) modl=SetDressing\FencesGrates\DeerFence_Post01.nif kw=
+- STAT Fallout4.esm:001E16 `FenceChainlink03` refs=396 obnd=(-3, -31, -64, 259, 4, 166) modl=SetDressing\FencesGrates\FenceChainlink03.nif kw=
+- STAT Fallout4.esm:043341 `ShackBalconyRailing03` refs=377 obnd=(-64, -73, -18, 64, -60, 82) modl=Architecture\Shacks\ShackBalconyRailing03.nif kw=
+- STAT Fallout4.esm:001E1C `FenceChainlink02` refs=368 obnd=(-3, -58, -64, 259, 4, 166) modl=SetDressing\FencesGrates\FenceChainlink02.nif kw=
+- STAT Fallout4.esm:0AB053 `FenceWIPost01` refs=366 obnd=(-21, -21, -128, 21, 21, 158) modl=SetDressing\FencesGrates\WroughtIron\FenceWIPost01.nif kw=
+- STAT Fallout4.esm:043346 `ShackBalconyRailingDbl01` refs=335 obnd=(-126, -98, -18, 126, -58, 82) modl=Architecture\Shacks\ShackBalconyRailingDbl01.nif kw=
+- STAT Fallout4.esm:043340 `ShackBalconyRailing02` refs=334 obnd=(-65, -72, -16, 63, -60, 74) modl=Architecture\Shacks\ShackBalconyRailing02.nif kw=
+- STAT Fallout4.esm:02C17D `FenceChainlinkEndLeft02RR` refs=313 obnd=(-13, -72, -66, 101, 4, 163) modl=SetDressing\FencesGrates\FenceChainlinkEndLeft02RR.nif kw=
+- STAT Fallout4.esm:001E19 `FenceChainlink01RR` refs=267 obnd=(-13, -72, -64, 259, 4, 163) modl=SetDressing\FencesGrates\FenceChainlink01RR.nif kw=
+- STAT Fallout4.esm:18C302 `StationWagon01A_Static` refs=255 obnd=(-207, -90, -2, 226, 93, 119) modl=Vehicles\Automotive\StationWagon01_Postwar_Static.nif kw=
+- STAT Fallout4.esm:001E18 `FenceChainlink01R` refs=252 obnd=(-14, -86, -64, 259, 4, 166) modl=SetDressing\FencesGrates\FenceChainlink01R.nif kw=
+- STAT Fallout4.esm:05BAA8 `ShackBalconyRailing04` refs=242 obnd=(-63, -69, -16, 63, -64, 70) modl=Architecture\Shacks\ShackBalconyRailing04.nif kw=
+- STAT Fallout4.esm:1D7283 `FenceWIPost03` refs=234 obnd=(-18, -18, 0, 18, 18, 145) modl=SetDressing\FencesGrates\WroughtIron\FenceWIPost03.nif kw=
+- STAT Fallout4.esm:19B427 `Sedan03_Static` refs=229 obnd=(-221, -98, -6, 318, 98, 112) modl=Vehicles\Automotive\Sedan01_Postwar_Static.nif kw=
+- STAT Fallout4.esm:05E572 `FenceChainlinkDown32` refs=225 obnd=(-3, -24, -32, 259, 4, 166) modl=SetDressing\FencesGrates\FenceChainlinkDown32.nif kw=
+- STAT Fallout4.esm:0361E3 `PicketFencePost01` refs=225 obnd=(-7, -7, -25, 7, 7, 106) modl=SetDressing\FencesGrates\PicketFence\PicketFencePost01.nif kw=
+- STAT Fallout4.esm:04E9A4 `RWResRailingPost01` refs=212 obnd=(-6, -8, 0, 6, 8, 59) modl=Landscape\RetainingWall\Residential\RWResRailingPost01.nif kw=
+- STAT Fallout4.esm:034701 `ShackBalconyRailing01` refs=205 obnd=(-63, -70, -16, 63, -60, 68) modl=Architecture\Shacks\ShackBalconyRailing01.nif kw=
+- STAT Fallout4.esm:090EE5 `HouseKGrndAddonDeckKRailingStr01` refs=199 obnd=(-96, -5, 0, 96, 5, 63) modl=Architecture\Buildings\HouseKit\HouseKGrndAddonDeckKRailingStr01.nif kw=
+- STAT Fallout4.esm:1B496D `CarCoupe01_Static` refs=198 obnd=(-228, -103, -4, 281, 103, 109) modl=Vehicles\Automotive\Coupe01_Postwar_Static.nif kw=
+- STAT Fallout4.esm:001E02 `JerseyBarricade01` refs=195 obnd=(-64, -24, 0, 64, 24, 64) modl=SetDressing\BricksBlocks\JerseyBarricade01.nif kw=
+- STAT Fallout4.esm:02C178 `FenceChainlinkEndRight02RR` refs=194 obnd=(-50, -38, -64, 3, 4, 166) modl=SetDressing\FencesGrates\FenceChainlinkEndRight02RR.nif kw=
+- STAT Fallout4.esm:1241EA `TruckHulkStatic` refs=191 obnd=(-303, -151, -8, 341, 160, 240) modl=Vehicles\Automotive\Truck01HulkStatic.nif kw=
+- STAT Fallout4.esm:19B425 `Sedan01_Static` refs=188 obnd=(-221, -98, -6, 318, 98, 112) modl=Vehicles\Automotive\Sedan01_Postwar_Static.nif kw=
+- STAT Fallout4.esm:0B241F `BeachFence_Broken03` refs=184 obnd=(-111, -56, -10, 147, 8, 85) modl=SetDressing\FencesGrates\BeachFence_Broken03.nif kw=
+- STAT Fallout4.esm:0B23FD `BeachFence_BrokenEnd_Right01` refs=182 obnd=(-4, -4, -6, 54, 33, 86) modl=SetDressing\FencesGrates\BeachFence_BrokenEnd_Right01.nif kw=
+- STAT Fallout4.esm:04E9A3 `RWResRailing1Way01` refs=180 obnd=(-2, -64, 0, 2, 64, 50) modl=Landscape\RetainingWall\Residential\RWResRailing1Way01.nif kw=
+- STAT Fallout4.esm:0B2415 `BeachFence_Broken02` refs=174 obnd=(-152, -50, -4, 153, 11, 87) modl=SetDressing\FencesGrates\BeachFence_Broken02.nif kw=
+- STAT Fallout4.esm:02C17B `FenceChainlinkEndLeft01R` refs=165 obnd=(-3, -70, -64, 246, 28, 166) modl=SetDressing\FencesGrates\FenceChainlinkEndLeft01R.nif kw=
+- STAT Fallout4.esm:05E571 `FenceChainlinkUp32` refs=159 obnd=(-3, -9, -32, 259, 6, 188) modl=SetDressing\FencesGrates\FenceChainlinkUp32.nif kw=
+- STAT Fallout4.esm:0E7C44 `TruckTrailerFlatbed01` refs=157 obnd=(-107, -128, 0, 794, 125, 126) modl=SetDressing\Vehicles\TruckTrailerFlatbed01.nif kw=
+- STAT Fallout4.esm:0B2413 `BeachFence_Post01` refs=157 obnd=(-4, -4, -4, 3, 3, 85) modl=SetDressing\FencesGrates\BeachFence_Post01.nif kw=
+- STAT Fallout4.esm:217A16 `CarFrame_GlowingSea` refs=153 obnd=(-256, -73, -46, 137, 73, 1) modl=Vehicles\Automotive\CarFrame_GlowingSea.nif kw=
+- STAT Fallout4.esm:063878 `VaultTecVan01HulkStatic` refs=151 obnd=(-231, -111, 0, 208, 97, 207) modl=Vehicles\Automotive\VaultTecVan01HulkStatic.nif kw=
+- STAT Fallout4.esm:0B240F `BeachFence_Broken01` refs=150 obnd=(-152, -4, -4, 153, 45, 87) modl=SetDressing\FencesGrates\BeachFence_Broken01.nif kw=
+## bench: 80 bases, 4119 refs
+- FURN Fallout4.esm:051C9D `NpcBenchHighTechMetalBenchDirtySit01` refs=488 obnd=(-29, -56, 0, 29, 56, 71) modl=SetDressing\HighTech\HighTechMetalBench_Clean.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:0DF45A `NPCBenchParkSit01` refs=487 obnd=(-82, -43, 0, 82, 12, 62) modl=Furniture\ParkBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation COBJ
+- FURN Fallout4.esm:01F484 `NpcBenchFederalistSit01` refs=363 obnd=(-80, -15, 0, 80, 15, 32) modl=SetDressing\FederalistFurniture\FederalistMuseumBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation COBJ
+- STAT Fallout4.esm:082236 `NpcBenchChurchSit01Static` refs=183 obnd=(-123, -20, 0, 124, 23, 67) modl=SetDressing\Church\ChurchPew01.nif kw=
+- STAT Fallout4.esm:08B8D0 `NpcBenchFederalistSit01Static` refs=129 obnd=(-80, -15, 0, 80, 15, 32) modl=SetDressing\FederalistFurniture\FederalistMuseumBench01.nif kw=
+- FURN Fallout4.esm:12EA9B `WorkbenchArmorA` refs=126 obnd=(-71, -53, -7, 98, 64, 87) modl=Furniture\Workstations\WorkbenchArmor\WorkstationArmorB01.nif kw=workbencharmor,FurnitureForce3rdPerson,AnimFurnWorkbenchArmorA,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:10C3B6 `WorkbenchCookingFire` refs=119 obnd=(-46, -46, -4, 0, 136, 153) modl=SetDressing\Woodfire\Woodfire_Doused.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General
+- STAT Fallout4.esm:051EA4 `NpcBenchHighTechMetalBenchDirtySit01Static` refs=113 obnd=(-29, -56, 0, 29, 56, 71) modl=SetDressing\HighTech\HighTechMetalBench_Clean.nif kw=
+- FURN Fallout4.esm:0B30BC `NpcBenchVaultSit01` refs=111 obnd=(-80, -16, 0, 80, 16, 32) modl=SetDressing\Vault\Vault_Bench_01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:17E787 `workbenchWeaponsB` refs=108 obnd=(-42, -13, 0, 137, 102, 140) modl=Furniture\Workstations\WorkbenchWeapons\WorkbenchWeaponsB.nif kw=FurnitureForce3rdPerson,AnimFurnWorkbenchWeapons,FurnitureScaleActorToOne,Workbench_General COBJ
+- STAT Fallout4.esm:097798 `ECDBenchLng01` refs=106 obnd=(2, -18, 0, 382, 19, 62) modl=Architecture\ECDowns\ECDBenchLng01.nif kw=
+- STAT Fallout4.esm:0D8F8C `NPCBenchParkSit01Static` refs=106 obnd=(-82, -43, 0, 82, 12, 62) modl=Furniture\ParkBench01.nif kw=
+- FURN Fallout4.esm:07D625 `NpcBenchDinerIntBoothSit01WithTable` refs=105 obnd=(-57, -64, 0, 57, 64, 78) modl=SetDressing\Diner\DinerIntBooth01.nif kw=AnimFurnChairWithTable,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:089505 `NpcBenchChurchSit01` refs=92 obnd=(-123, -20, 0, 124, 23, 67) modl=SetDressing\Church\ChurchPew01.nif kw=AnimFurnPraying,FurnitureClassRelaxation
+- FURN Fallout4.esm:1487C1 `WorkbenchChemistryB` refs=85 obnd=(-43, 2, 0, 124, 77, 160) modl=Furniture\Workstations\WorkstationChemistryB01.nif kw=WorkbenchChemlab,FurnitureForce3rdPerson,AnimFurnWorkbenchChemistryA,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:12F2F5 `WorkbenchChemistryA` refs=83 obnd=(-92, -40, 0, 93, 72, 134) modl=Furniture\Workstations\WorkstationChemistryA01.nif kw=WorkbenchChemlab,FurnitureForce3rdPerson,AnimFurnWorkbenchChemistryA,FurnitureScaleActorToOne,Workbench_General COBJ
+- STAT Fallout4.esm:0B819B `NpcBenchShortVaultSit01Static` refs=78 obnd=(-20, -16, 0, 21, 16, 32) modl=SetDressing\Vault\Vault_BenchShort_01.nif kw=
+- FURN Fallout4.esm:157FEB `WorkbenchPowerArmor` refs=76 obnd=(-59, -147, 0, 59, 32, 187) modl=SetDressing\PARig\PArig02.nif kw=FurnitureForce3rdPerson,PowerArmorWorkbenchKeyword,Workbench_General COBJ
+- FURN Fallout4.esm:17B3A4 `workbenchWeaponsA` refs=67 obnd=(-53, 13, 0, 95, 124, 150) modl=Furniture\Workstations\WorkbenchWeapons\WorkbenchWeaponsA.nif kw=FurnitureForce3rdPerson,AnimFurnWorkbenchWeapons,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:0DB85C `NpcBenchStoneSit01` refs=66 obnd=(-42, -16, 0, 42, 16, 32) modl=Furniture\StoneBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- STAT Fallout4.esm:0D8F8D `NPCBenchStoneSit01Static` refs=64 obnd=(-42, -16, 0, 42, 16, 32) modl=Furniture\StoneBench01.nif kw=
+- STAT Fallout4.esm:09781D `ECDBenchShrt01` refs=58 obnd=(2, -18, 0, 254, 19, 62) modl=Architecture\ECDowns\ECDBenchShrt01.nif kw=
+- FURN Fallout4.esm:07D61B `NpcBenchDinerIntBoothSingleSit01` refs=56 obnd=(-56, -35, 0, 56, 0, 78) modl=SetDressing\Diner\DinerIntBoothSingle01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- STAT Fallout4.esm:051C96 `HighTechMetalBench_Dirty_Static` refs=53 obnd=(-29, -56, 0, 29, 56, 71) modl=SetDressing\HighTech\HighTechMetalBench_Clean.nif kw=
+- STAT Fallout4.esm:07BDD6 `NpcBenchDinerIntBoothSingleSit01Static` refs=52 obnd=(-56, -35, 0, 56, 0, 78) modl=SetDressing\Diner\DinerIntBoothSingle01.nif kw=
+- FURN Fallout4.esm:1203DE `NpcBenchInstituteSit01` refs=52 obnd=(-61, -29, 0, 61, 28, 31) modl=SetDressing\Institute\InstituteBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:017D83 `NpcBenchStadiumSit01` refs=52 obnd=(-67, -18, 1, 67, 19, 57) modl=SetDressing\DmndClutter\StadiumBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- STAT Fallout4.esm:02FCE5 `NpcBenchDinerIntBoothSit01Static` refs=48 obnd=(-57, -64, 0, 57, 64, 78) modl=SetDressing\Diner\DinerIntBooth01.nif kw=
+- FURN Fallout4.esm:1865B9 `WorkbenchCookingStove` refs=48 obnd=(-13, 20, 0, 73, 93, 147) modl=Furniture\Workstations\WorkbenchCookingStove\WorkbenchCookingStove.nif kw=WorkbenchCooking,FurnitureForce3rdPerson,AnimFurnWorkbenchCookingStove,FurnitureScaleActorToOne,Workbench_General COBJ
+- STAT Fallout4.esm:0B819C `NpcBenchVaultSit01Static` refs=44 obnd=(-80, -16, 0, 80, 16, 32) modl=SetDressing\Vault\Vault_Bench_01.nif kw=
+- FURN Fallout4.esm:01F483 `NpcBenchShortFederalistSit01` refs=42 obnd=(-24, -15, 0, 24, 15, 32) modl=SetDressing\FederalistFurniture\FederalistMuseumBenchShort01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:11807C `NpcBenchFederalistSit01OneSlot` refs=34 obnd=(-80, -15, 0, 80, 15, 32) modl=SetDressing\FederalistFurniture\FederalistMuseumBench01.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:2476B7 `WorkbenchCookingFireWorkshop` refs=33 obnd=(-46, -46, -7, 12, 136, 153) modl=SetDressing\Woodfire\WorkstationWoodCookingFireWorkshop.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:0C79B4 `WorkbenchCookingGroundPot` refs=33 obnd=(-15, 20, -11, 45, 80, 35) modl=Furniture\Workstations\WorkbenchCookingB\WorkbenchCookingB.nif kw=AnimFurnCookingGroundPot,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General
+- STAT Fallout4.esm:08BB1A `NpcBenchShortFederalistSit01Static` refs=31 obnd=(-24, -15, 0, 24, 15, 32) modl=SetDressing\FederalistFurniture\FederalistMuseumBenchShort01.nif kw=
+- STAT Fallout4.esm:07BED9 `NpcBenchDinerIntBoothSingleSit02Static` refs=31 obnd=(-56, -35, 0, 56, 0, 78) modl=SetDressing\Diner\DinerIntBoothSingle02.nif kw=
+- CONT Fallout4.esm:0C1AEB `WorkshopWorkbench` refs=30 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement
+- STAT Fallout4.esm:09786E `ECDBenchBrkn01` refs=26 obnd=(4, -23, 0, 97, 23, 58) modl=Architecture\ECDowns\ECDBenchBrkn01.nif kw=
+- FURN Fallout4.esm:07D623 `NpcBenchDinerIntBoothSingleSit02` refs=26 obnd=(-56, -35, 0, 56, 0, 78) modl=SetDressing\Diner\DinerIntBoothSingle02.nif kw=AnimFurnChairSitAnims,AnimFurnAllowEating,FurnitureClassRelaxation
+- FURN Fallout4.esm:14FBCD `WorkbenchCookingSpit` refs=24 obnd=(-286, -17, -1, 28, 95, 131) modl=Furniture\Workstations\WorkbenchCookingC\WorkbenchCookingC.nif kw=WorkbenchCooking,FurnitureForce3rdPerson,AnimFurnWorkbenchCookingSpit,FurnitureScaleActorToOne,Workbench_General COBJ
+## work: 38 bases, 1025 refs
+- FURN Fallout4.esm:12EA9B `WorkbenchArmorA` refs=126 obnd=(-71, -53, -7, 98, 64, 87) modl=Furniture\Workstations\WorkbenchArmor\WorkstationArmorB01.nif kw=workbencharmor,FurnitureForce3rdPerson,AnimFurnWorkbenchArmorA,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:10C3B6 `WorkbenchCookingFire` refs=119 obnd=(-46, -46, -4, 0, 136, 153) modl=SetDressing\Woodfire\Woodfire_Doused.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General
+- MISC Fallout4.esm:059ABA `CookingPot01` refs=114 obnd=(-12, -13, 0, 12, 14, 20) modl=Props\KitchenPot.nif kw=
+- FURN Fallout4.esm:17E787 `workbenchWeaponsB` refs=108 obnd=(-42, -13, 0, 137, 102, 140) modl=Furniture\Workstations\WorkbenchWeapons\WorkbenchWeaponsB.nif kw=FurnitureForce3rdPerson,AnimFurnWorkbenchWeapons,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:1487C1 `WorkbenchChemistryB` refs=85 obnd=(-43, 2, 0, 124, 77, 160) modl=Furniture\Workstations\WorkstationChemistryB01.nif kw=WorkbenchChemlab,FurnitureForce3rdPerson,AnimFurnWorkbenchChemistryA,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:12F2F5 `WorkbenchChemistryA` refs=83 obnd=(-92, -40, 0, 93, 72, 134) modl=Furniture\Workstations\WorkstationChemistryA01.nif kw=WorkbenchChemlab,FurnitureForce3rdPerson,AnimFurnWorkbenchChemistryA,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:157FEB `WorkbenchPowerArmor` refs=76 obnd=(-59, -147, 0, 59, 32, 187) modl=SetDressing\PARig\PArig02.nif kw=FurnitureForce3rdPerson,PowerArmorWorkbenchKeyword,Workbench_General COBJ
+- FURN Fallout4.esm:17B3A4 `workbenchWeaponsA` refs=67 obnd=(-53, 13, 0, 95, 124, 150) modl=Furniture\Workstations\WorkbenchWeapons\WorkbenchWeaponsA.nif kw=FurnitureForce3rdPerson,AnimFurnWorkbenchWeapons,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:1865B9 `WorkbenchCookingStove` refs=48 obnd=(-13, 20, 0, 73, 93, 147) modl=Furniture\Workstations\WorkbenchCookingStove\WorkbenchCookingStove.nif kw=WorkbenchCooking,FurnitureForce3rdPerson,AnimFurnWorkbenchCookingStove,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:2476B7 `WorkbenchCookingFireWorkshop` refs=33 obnd=(-46, -46, -7, 12, 136, 153) modl=SetDressing\Woodfire\WorkstationWoodCookingFireWorkshop.nif kw=AnimFurnWoodCookingFire,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:0C79B4 `WorkbenchCookingGroundPot` refs=33 obnd=(-15, 20, -11, 45, 80, 35) modl=Furniture\Workstations\WorkbenchCookingB\WorkbenchCookingB.nif kw=AnimFurnCookingGroundPot,FurnitureForce3rdPerson,WorkbenchCooking,FurnitureScaleActorToOne,Workbench_General
+- CONT Fallout4.esm:0C1AEB `WorkshopWorkbench` refs=30 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement
+- FURN Fallout4.esm:14FBCD `WorkbenchCookingSpit` refs=24 obnd=(-286, -17, -1, 28, 95, 131) modl=Furniture\Workstations\WorkbenchCookingC\WorkbenchCookingC.nif kw=WorkbenchCooking,FurnitureForce3rdPerson,AnimFurnWorkbenchCookingSpit,FurnitureScaleActorToOne,Workbench_General COBJ
+- FURN Fallout4.esm:13BD08 `WorkbenchPowerArmorSmall` refs=19 obnd=(-74, -46, 0, 74, 29, 178) modl=SetDressing\PARig\PARig01.nif kw=FurnitureForce3rdPerson,PowerArmorWorkbenchKeyword,Workbench_General
+- FURN DLCRobot.esm:001F16 `WorkbenchRobot` refs=5 obnd=(-179, -159, -6, 161, 202, 224) modl=DLC01\Furniture\Workstations\workbenchRobot\workbenchRobot.nif kw=FurnitureScaleActorToOne,FurnitureForce3rdPerson,Workbench_General,AnimsFurnWorkbenchRobot,DLC01WorkbenchRobotKeyword COBJ
+- CONT DLCCoast.esm:003390 `DLC03VRWorkshopWorkbench` refs=5 obnd=(-10, -10, 15, 10, 10, 25) modl=Markers\EditorMarkers\ContainerMarker.nif kw=WorkshopKeyword,DLC03VRWorkshopKeyword,Workbench_General
+- FURN DLCNukaWorld.esm:04D8E6 `DLC04_WorkbenchSodaMachine_Freestanding_Quantum` refs=5 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda COBJ
+- FURN DLCNukaWorld.esm:04D8E4 `DLC04_WorkbenchSodaMachine_Quantum` refs=5 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- CONT DLCCoast.esm:023A96 `DLC03WorkshopWorkbench` refs=4 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement
+- FURN DLCNukaWorld.esm:017D26 `DLC04_WorkbenchSodaMachine_Freestanding_Orange` refs=4 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda COBJ
+- ACTI DLCworkshop03.esm:003B0F `DLC06VaultWorkshopActivator` refs=3 obnd=(-76, -50, 0, 76, 50, 132) modl=DLC06\SetDressing\VaultWorkbench\DLC06VaultWorkbench01.nif kw=
+- FURN DLCNukaWorld.esm:0510B1 `DLC04_WorkbenchSodaMachine_Freestanding_Grape` refs=3 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- FURN DLCNukaWorld.esm:04D8ED `DLC04_WorkbenchSodaMachine_Freestanding_Quartz` refs=3 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda COBJ
+- FURN DLCNukaWorld.esm:04D8E9 `DLC04_WorkbenchSodaMachine_Freestanding_Victory` refs=3 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda COBJ
+- FURN DLCNukaWorld.esm:04D8D7 `DLC04_WorkbenchSodaMachine_Grape` refs=3 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- FURN DLCNukaWorld.esm:04D8D5 `DLC04_WorkbenchSodaMachine_Dark` refs=3 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- FURN DLCNukaWorld.esm:0510AF `DLC04_WorkbenchSodaMachine_Freestanding_Dark` refs=2 obnd=(-58, -40, 0, 58, 37, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_B.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- FURN DLCNukaWorld.esm:0510A9 `DLC04_WorkbenchSodaMachine_Orange` refs=2 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- CONT Fallout4.esm:246F86 `WorkshopWorkbenchNonSettlement` refs=1 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations
+- CONT Fallout4.esm:12E2C4 `WorkshopWorkbenchInterior` refs=1 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypePower,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeInteriorOnly
+- FURN Fallout4.esm:203A36 `NPCWorkbenchChemistryMarker` refs=1 obnd=(0, 0, 0, 0, 0, 0) modl=Markers\InvisibleGeneric01.nif kw=FurnitureScaleActorToOne,FurnitureForce3rdPerson,AnimFurnWorkbenchChemistryA
+- FURN Fallout4.esm:091FD5 `MS11Workbench` refs=1 obnd=(-27, -26, 0, 27, 26, 66) modl=SetDressing\ConcMuseum\WoodBarrel01.nif kw=GeneralWorkBench,Workbench_General COBJ
+- CONT DLCRobot.esm:010222 `DLC01WorkshopWorkbench` refs=1 obnd=(-93, -41, 0, 90, 29, 126) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypePower,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeInteriorOnly,WorkshopWorkbenchTypeExterior
+- CONT DLCworkshop03.esm:000819 `DLC06WorkshopWorkbench` refs=1 obnd=(-76, -50, 0, 76, 50, 132) modl=DLC06\SetDressing\VaultWorkbench\DLC06VaultWorkbench01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement,DLC06WorkshopWorkbenchTypeVault
+- CONT DLCNukaWorld.esm:047DFA `DLC04WorkshopWorkbench` refs=1 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement,WorkshopType02
+- CONT DLCNukaWorld.esm:00BE55 `DLC04WorkshopWorkbenchNukaWorld` refs=1 obnd=(-93, -41, 0, 90, 29, 151) modl=SetDressing\Garage\WorkbenchGarage01.nif kw=WorkshopKeyword,WorkshopWorkbenchTypeExterior,WorkshopWorkbenchTypeWire,WorkshopWorkbenchTypePower,MustPersist,WorkshopWorkbenchTypeFurniture,WorkshopWorkbenchTypeCrafting,Workbench_General,WorkshopWorkbenchTypeDecorations,WorkshopWorkbenchTypeSettlement,WorkshopType02
+- FURN DLCNukaWorld.esm:0510AD `DLC04_WorkbenchSodaMachine_Wild` refs=1 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
+- FURN DLCNukaWorld.esm:0510AB `DLC04_WorkbenchSodaMachine_Quartz` refs=1 obnd=(-53, -40, 83, 53, 33, 203) modl=DLC04\Furniture\WorkbenchSodaMixingMachine\SodaMixingMachine_A.nif kw=AnimFurnSodaMixingMachine,FurnitureForce3rdPerson,Workbench_General,FurnitureScaleActorToOne,DLC04_WorkbenchSoda
