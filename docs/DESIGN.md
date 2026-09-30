@@ -25,7 +25,9 @@ the mod places both. There is **no dance and no chat marker** in the game: those
 the pose markers, which is part of why settlements feel static.
 
 **Premise 0 (proved first, before anything else is built):** an idle marker placed at run time near
-sandboxing NPCs is walked to and used.
+sandboxing NPCs is walked to and used. **PROVED 2026-10-01 00:46:23** in Diamond City (DiamondCityOrigin):
+"5 fires dressed, 13 spots, 1 of 11 hand-warming spots in use" -- a local, no test settlers spawned,
+at a spot placed around a fire light about a minute earlier.
 
 ## What the mod does
 
