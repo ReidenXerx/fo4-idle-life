@@ -72,6 +72,9 @@ def build():
         ('Gate', 'Gates', 'Someone on guard by a gate.'),
         ('Robots', 'Robots', 'Mr Handys gardening crops and trimming hedges.'),
         ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
+        ('Wall', 'Along walls', 'Leaning back on walls, reading a paper. Needs the Idle Life plugin '
+                 '(F4SE) that reads the navmesh.'),
+        ('Open', 'In the open', 'A sitting circle on flat open ground. Needs the Idle Life plugin.'),
         ('People', 'Next to people', 'Where nothing else is: a smoke, a newspaper, a sit, a coffee by the people themselves.'),
     )]
     testing = [

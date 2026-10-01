@@ -44,7 +44,7 @@ SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyRe
 # One switch per kind (MCM). Script kind order: fire, counter, rail, work, bench, radio, people, table,
 # campfire, crop, hedge, pool, TV, gate, dog -- crops+hedges share "Robots", pool tables+TVs share one.
 KIND_SWITCHES = ['Fire', 'Counter', 'Rail', 'Work', 'Bench', 'Radio', 'People', 'Table', 'Camp',
-                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs']
+                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs', 'Wall', 'Open']
 for _k in dict.fromkeys(KIND_SWITCHES):
     SETTINGS.append(('Kind' + _k, 1.0))
 
@@ -120,6 +120,9 @@ WAVE2_SPOTS = {
     'HandyGarden': 0x1B19B8, # IDLM MrHandyGardening: robots only
     'HandyTrim': 0x068041,   # IDLM MrHandyTrimHedgesIdleMarker: robots only
     'DogSniff': 0x19FCCA,    # IDLM DogmeatIdleMarkerSniffScratch: dogs only
+    # Phase 4, along walls the navmesh DLL finds: newspaper leans (vanilla's newspaper is the anim's prop).
+    'NewsLeanRight': 0x1338FA,  # FURN NPCNewspaperLeanRight
+    'NewsLeanLeft': 0x1338F9,   # FURN NPCNewspaperLeanLeft
 }
 
 # The MCM Testing page (owner 2026-10-01: "spawn idiotic npcs ... to test it without wasting time"):

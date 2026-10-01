@@ -1,0 +1,14 @@
+{
+  "name": "idle-life",
+  "version-string": "0.1.0",
+  "description": "Fallout 4: Idle Life's navmesh reader (walls and open ground for run-time spots)",
+  "supports": "windows & x64",
+  "dependencies": [
+    "boost-stl-interfaces",
+    "fmt",
+    "rsm-mmio",
+    "spdlog",
+    "zydis"
+  ],
+  "builtin-baseline": "386d7c478221b7ee0c97bfe6ea61dcf65121d564"
+}

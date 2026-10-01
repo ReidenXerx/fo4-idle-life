@@ -61,6 +61,8 @@ Form Property SadSit Auto Const Mandatory
 Form Property PAExamine Auto Const Mandatory
 Form Property HandyGarden Auto Const Mandatory
 Form Property HandyTrim Auto Const Mandatory
+Form Property NewsLeanRight Auto Const Mandatory
+Form Property NewsLeanLeft Auto Const Mandatory
 Form Property DogSniff Auto Const Mandatory
 {Wave 2 (research/vet_*): any human unless noted -- PAExamine power armor only, the two Handy spots robots
 only, DogSniff dogs only.}
@@ -124,6 +126,8 @@ Int Property K_POOL = 11 AutoReadOnly
 Int Property K_TV = 12 AutoReadOnly
 Int Property K_GATE = 13 AutoReadOnly
 Int Property K_DOG = 14 AutoReadOnly
+Int Property K_WALL = 15 AutoReadOnly      ; from the navmesh DLL
+Int Property K_OPEN = 16 AutoReadOnly      ; from the navmesh DLL
 Int Property KW_ROBOT = 0x02CB73 AutoReadOnly          ; ActorTypeRobot
 Int Property KW_DOG = 0x021AD0 AutoReadOnly            ; ActorTypeDog
 Int Property KW_CHILD = 0x1157E8 AutoReadOnly          ; ActorTypeChild
@@ -168,6 +172,7 @@ Cell _drawCell = None
 Float _drawX = 0.0
 Float _drawY = 0.0
 Int _budget = 0
+Bool _native = False         ; IdleLife.dll is loaded: walls and open ground
 Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
 Actor[] _dwUser
@@ -226,6 +231,8 @@ Function Begin()
 	AddAnchor(RadioAnchors, DLC04_RAIDER_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(RadioAnchors, DLC04_CAFE_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(CampfireAnchors, DLC05_CAMPFIRE, "DLCworkshop01.esm")
+	_native = F4SE.GetPluginVersion("IdleLife") > 0
+	Debug.Trace("Idle Life: navmesh plugin " + _native, 0)
 	Debug.Trace("Idle Life: started - " + FireAnchors.GetSize() + " fires, " + CounterAnchors.GetSize() + " counters, " + RailAnchors.GetSize() + " rails, " + WorkAnchors.GetSize() + " workbenches, " + BenchAnchors.GetSize() + " benches, " + RadioAnchors.GetSize() + " radios known; " + _anchors.Length + " places dressed, " + _spots.Length + " spots", 0)
 	StartTimer(ScanSeconds, SCAN_TIMER)
 EndFunction
@@ -325,6 +332,9 @@ Function Draw(Actor akPlayer)
 	Int before = _spots.Length
 	If _spots.Length < _budget
 		FillFromPool(akPlayer, people)
+	EndIf
+	If _spots.Length < _budget
+		WallAndOpen(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
 		PeopleSpots(akPlayer, people)
@@ -455,7 +465,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	EndIf
 
 	Float[] weight = KindWeights(akPlayer)
-	Int[] drawn = new Int[15]
+	Int[] drawn = new Int[17]
 	Float[] crowd = new Float[0]
 	Int i = 0
 	While i < cand.Length
@@ -570,7 +580,7 @@ EndFunction
 
 ; Base shares (fire 3, counter 2, bench 2, work 1.5, rail 1, radio 1), times the hour and the place.
 Float[] Function KindWeights(Actor akPlayer)
-	Float[] w = new Float[15]
+	Float[] w = new Float[17]
 	w[K_FIRE] = 3.0
 	w[K_COUNTER] = 2.0
 	w[K_RAIL] = 1.0
@@ -726,7 +736,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs; " + _spots.Length + " of " + _budget + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs, " + CountKind(K_WALL) + " by walls, " + CountKind(K_OPEN) + " in the open; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -907,6 +917,10 @@ String Function KindName(Int aiKind)
 		Return "TV"
 	ElseIf aiKind == K_GATE
 		Return "gate"
+	ElseIf aiKind == K_WALL
+		Return "wall"
+	ElseIf aiKind == K_OPEN
+		Return "open ground"
 	ElseIf aiKind == K_RAIL
 		Return "rail"
 	ElseIf aiKind == K_WORK
@@ -1386,4 +1400,92 @@ EndFunction
 Function DebugRedraw()
 	_drawCell = None
 	Debug.Notification("Idle Life: spots drawn again when you close the menu.")
+EndFunction
+
+; ---- phase 4: walls and open ground (IdleLife.dll) ----------------------------------------------------------
+
+; Along real walls near the people: someone leaning back on it, now and then reading a paper; on flat
+; open ground away from every edge: a sitting circle. Only with the plugin loaded.
+Function WallAndOpen(Actor akPlayer, Actor[] akPeople)
+	If !_native || akPeople.Length == 0
+		Return
+	EndIf
+	ObjectReference[] near = new ObjectReference[0]
+	Int i = 0
+	While i < akPeople.Length && i < 20
+		near.Add(akPeople[i])
+		i += 1
+	EndWhile
+	Int made = 0
+	Int room = KindCap() - CountKind(K_WALL)
+	If KindIsOn(K_WALL) && room > 0
+		Float[] w = IdleLife:Navmesh.WallSpots(akPlayer, near, Radius, 250.0, room)
+		i = 0
+		While i + 3 < w.Length && _spots.Length < _budget
+			If !NearPoint(w[i], w[i + 1], w[i + 2], 150.0)
+				Int roll = Math.Floor(Math.Abs(w[i] + w[i + 1])) % 5
+				Form kind = Lean
+				If roll == 1
+					kind = NewsLeanRight
+				ElseIf roll == 2
+					kind = NewsLeanLeft
+				EndIf
+				PlaceSelf(akPlayer, kind, w[i], w[i + 1], w[i + 2], w[i + 3], K_WALL)
+				made += 1
+			EndIf
+			i += 4
+		EndWhile
+	EndIf
+	If KindIsOn(K_OPEN) && CountKind(K_OPEN) < 3 && _spots.Length < _budget - 2
+		Float[] o = IdleLife:Navmesh.OpenSpots(akPlayer, near, Radius, 250.0, 1)
+		If o.Length >= 4 && !NearPoint(o[0], o[1], o[2], 300.0)
+			Int seed = Math.Floor(Math.Abs(o[0] * 3.0 + o[1])) as Int
+			Float start = (seed % 360) as Float
+			Int k = 0
+			While k < 3
+				Float a = start + 120.0 * k
+				Form sit = GroundSit
+				If (seed / (k + 3)) % 4 == 0
+					sit = KneelSit
+				EndIf
+				PlaceSelf(akPlayer, sit, o[0] + 90.0 * Math.Sin(a), o[1] + 90.0 * Math.Cos(a), o[2], a + 180.0, K_OPEN)
+				k += 1
+				made += 1
+			EndWhile
+		EndIf
+	EndIf
+	If made > 0
+		Debug.Trace("Idle Life: " + made + " spots by walls and in the open (navmesh)", 0)
+	EndIf
+EndFunction
+
+; A spot at a point, its own place (kept while the player is near it).
+Function PlaceSelf(ObjectReference akNear, Form akKind, Float afX, Float afY, Float afZ, Float afFacing, Int aiKind)
+	ObjectReference spot = akNear.PlaceAtMe(akKind, 1, False, True, True)
+	If spot
+		spot.SetPosition(afX, afY, afZ)
+		spot.SetAngle(0.0, 0.0, afFacing)
+		spot.Enable(False)
+		_spots.Add(spot)
+		_spotFire.Add(spot)
+		AddAnchorRef(spot, aiKind)
+	EndIf
+EndFunction
+
+; Any place already dressed within afDistance of this point (a redraw must not double the wall spots).
+Bool Function NearPoint(Float afX, Float afY, Float afZ, Float afDistance)
+	Int i = 0
+	While i < _anchors.Length
+		ObjectReference a = _anchors[i]
+		If a
+			Float dx = a.GetPositionX() - afX
+			Float dy = a.GetPositionY() - afY
+			Float dz = a.GetPositionZ() - afZ
+			If dx * dx + dy * dy + dz * dz < afDistance * afDistance
+				Return True
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	Return False
 EndFunction
