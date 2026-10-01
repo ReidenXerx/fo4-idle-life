@@ -955,6 +955,7 @@ Function SpawnTesters()
 		EndIf
 		k += 1
 	EndWhile
+	_drawCell = None   ; more people here now: draw again on the next scan, so they get their spots
 	Debug.Notification("Idle Life: " + made + " test settlers - watch the spots near you.")
 	Debug.Trace("Idle Life: " + made + " test settlers placed around the player (collection " + Testers.GetCount() + ")", 0)
 EndFunction
