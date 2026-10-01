@@ -331,10 +331,10 @@ Function Draw(Actor akPlayer)
 	Trim(akPlayer)
 	Int before = _spots.Length
 	If _spots.Length < _budget
-		FillFromPool(akPlayer, people)
+		WallAndOpen(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
-		WallAndOpen(akPlayer, people)
+		FillFromPool(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
 		PeopleSpots(akPlayer, people)
@@ -1418,6 +1418,10 @@ Function WallAndOpen(Actor akPlayer, Actor[] akPeople)
 	EndWhile
 	Int made = 0
 	Int room = KindCap() - CountKind(K_WALL)
+	Int share = _budget / 4
+	If room > share
+		room = share
+	EndIf
 	If KindIsOn(K_WALL) && room > 0
 		Float[] w = IdleLife:Navmesh.WallSpots(akPlayer, near, Radius, 250.0, room)
 		i = 0
