@@ -104,6 +104,7 @@ Int Property LOC_BAR = 0x022632 AutoReadOnly           ; LocTypeBar
 Int Property SCAN_TIMER = 1 AutoReadOnly
 Int Property DEBUG_SPAWN_TIMER = 10 AutoReadOnly
 Int Property DEBUG_STATUS_TIMER = 11 AutoReadOnly
+Int Property RECOUNT_EVERY = 6 AutoReadOnly    ; scans between two people recounts (30 s)
 Int Property REPORT_EVERY = 3 AutoReadOnly     ; scans between two reports (15 s: who is on which spot)
 Int Property SPAWNER_QUEST = 0x000800 AutoReadOnly
 ; DLC fires and radios, by form id.
@@ -208,8 +209,19 @@ Event OnTimer(Int aiTimerID)
 	EndIf
 	Actor player = Game.GetPlayer()
 	Prune(player, Enabled.GetValueInt() == 0)
-	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && Arrived(player)
-		Draw(player)
+	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
+		If Arrived(player)
+			Draw(player)
+		ElseIf _scans % RECOUNT_EVERY == 0
+			; Every 30 s, cheaply: does the budget still fit the people here? Only a change of 2 or more
+			; draws again (people arriving get spots, people leaving free them) -- no flapping as one
+			; wanders in and out of range (owner 2026-10-01).
+			Int b = BudgetFor(People(player).Length)
+			If b - _budget >= 2 || _budget - b >= 2
+				Debug.Trace("Idle Life: the people here changed - budget " + _budget + " -> " + b, 0)
+				Draw(player)
+			EndIf
+		EndIf
 	EndIf
 	_scans += 1
 	If _scans % REPORT_EVERY == 0 && _spots.Length > 0
@@ -262,19 +274,7 @@ Function Draw(Actor akPlayer)
 	_drawX = akPlayer.GetPositionX()
 	_drawY = akPlayer.GetPositionY()
 	Actor[] people = People(akPlayer)
-	; Nobody here: nothing to dress. Somebody: at least MinBudget, SpotsPerPerson each, never over MaxBudget.
-	_budget = 0
-	If people.Length > 0
-		_budget = Math.Ceiling(people.Length * SpotsPerPerson)
-		If _budget < MinBudget
-			_budget = MinBudget
-		ElseIf _budget > MaxBudget
-			_budget = MaxBudget
-		EndIf
-	EndIf
-	If _budget > MaxSpots - 4
-		_budget = MaxSpots - 4
-	EndIf
+	_budget = BudgetFor(people.Length)
 	Trim(akPlayer)
 	Int before = _spots.Length
 	If _spots.Length < _budget
@@ -284,6 +284,23 @@ Function Draw(Actor akPlayer)
 		PeopleSpots(akPlayer, people)
 	EndIf
 	Debug.Trace("Idle Life: draw - " + people.Length + " people, budget " + _budget + " spots, " + (_spots.Length - before) + " new; " + KindCounts() + " in " + _drawCell, 0)
+EndFunction
+
+; Nobody here: nothing to dress. Somebody: at least MinBudget, SpotsPerPerson each, never over MaxBudget.
+Int Function BudgetFor(Int aiPeople)
+	If aiPeople <= 0
+		Return 0
+	EndIf
+	Int b = Math.Ceiling(aiPeople * SpotsPerPerson)
+	If b < MinBudget
+		b = MinBudget
+	ElseIf b > MaxBudget
+		b = MaxBudget
+	EndIf
+	If b > MaxSpots - 4
+		b = MaxSpots - 4
+	EndIf
+	Return b
 EndFunction
 
 ; Over budget (fewer people now): the places farthest from the player go first.
