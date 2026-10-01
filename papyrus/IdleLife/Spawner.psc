@@ -23,6 +23,7 @@ FormList Property CounterAnchors Auto Const Mandatory
 FormList Property RailAnchors Auto Const Mandatory
 FormList Property WorkAnchors Auto Const Mandatory
 FormList Property BenchAnchors Auto Const Mandatory
+FormList Property TableAnchors Auto Const Mandatory
 FormList Property RadioAnchors Auto Const Mandatory
 Form[] Property GeoBases Auto Const Mandatory
 {Every counter, rail, workbench and bench base, with its bounds in the four arrays below (OBND, local).}
@@ -90,6 +91,7 @@ Int Property K_WORK = 3 AutoReadOnly
 Int Property K_BENCH = 4 AutoReadOnly
 Int Property K_RADIO = 5 AutoReadOnly
 Int Property K_PEOPLE = 6 AutoReadOnly
+Int Property K_TABLE = 7 AutoReadOnly
 ; Fallout4.esm
 Int Property KW_HUMAN = 0x02CB72 AutoReadOnly
 Int Property KW_GHOUL = 0x0EAFB7 AutoReadOnly
@@ -329,7 +331,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	ObjectReference[] cand = new ObjectReference[0]
 	Int[] kind = new Int[0]
 	Float[] near = new Float[0]
-	FormList[] lists = new FormList[7]
+	FormList[] lists = new FormList[8]
 	lists[0] = FireAnchors
 	lists[1] = FireLights
 	lists[2] = CounterAnchors
@@ -337,7 +339,8 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	lists[4] = WorkAnchors
 	lists[5] = BenchAnchors
 	lists[6] = RadioAnchors
-	Int[] kinds = new Int[7]
+	lists[7] = TableAnchors
+	Int[] kinds = new Int[8]
 	kinds[0] = K_FIRE
 	kinds[1] = K_FIRE
 	kinds[2] = K_COUNTER
@@ -345,6 +348,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	kinds[4] = K_WORK
 	kinds[5] = K_BENCH
 	kinds[6] = K_RADIO
+	kinds[7] = K_TABLE
 	Int p = 0
 	While p < akPeople.Length && p < 20
 		Int l = 0
@@ -374,7 +378,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	EndIf
 
 	Float[] weight = KindWeights(akPlayer)
-	Int[] drawn = new Int[7]
+	Int[] drawn = new Int[8]
 	Float[] crowd = new Float[0]
 	Int i = 0
 	While i < cand.Length
@@ -387,6 +391,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 		If _anchors[i]
 			drawn[_anchorKind[i]] = drawn[_anchorKind[i]] + 1
 			Crowd(cand, crowd, _anchors[i])
+			SpaceOut(cand, kind, crowd, _anchors[i], _anchorKind[i])
 		EndIf
 		i += 1
 	EndWhile
@@ -398,7 +403,14 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 		While i < cand.Length
 			If cand[i]
 				Int k = kind[i]
-				Float sc = weight[k] * near[i] * Math.Pow(KindDecay, drawn[k] as Float) * crowd[i]
+				Float people = Math.Sqrt(near[i])
+				If people > 2.0
+					people = 2.0
+				EndIf
+				Float sc = weight[k] * people * Math.Pow(KindDecay, drawn[k] as Float) * crowd[i]
+				If drawn[k] >= KindCap()
+					sc = 0.0
+				EndIf
 				If sc > bestScore
 					bestScore = sc
 					best = i
@@ -425,7 +437,38 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 			EndIf
 			drawn[pk] = drawn[pk] + 1
 			Crowd(cand, crowd, pick)
+			SpaceOut(cand, kind, crowd, pick, pk)
 		EndIf
+	EndWhile
+EndFunction
+
+; No kind takes more than about a sixth of the budget's places (at least 2): 12 rails in one draw was the
+; first measured overspam (log 2026-10-01).
+Int Function KindCap()
+	Int cap = _budget / 6
+	If cap < 2
+		cap = 2
+	EndIf
+	Return cap
+EndFunction
+
+; Same kind, too close: out of the draw (the per-kind spacing the pool lost; modular counters, long fences).
+Function SpaceOut(ObjectReference[] akCand, Int[] akKind, Float[] akCrowd, ObjectReference akPlace, Int aiKind)
+	Float spacing = 0.0
+	If aiKind == K_RAIL
+		spacing = 600.0
+	ElseIf aiKind == K_COUNTER || aiKind == K_BENCH || aiKind == K_TABLE
+		spacing = 300.0
+	EndIf
+	If spacing <= 0.0
+		Return
+	EndIf
+	Int j = 0
+	While j < akCand.Length
+		If akCand[j] && akKind[j] == aiKind && akCand[j].GetDistance(akPlace) < spacing
+			akCrowd[j] = 0.0
+		EndIf
+		j += 1
 	EndWhile
 EndFunction
 
@@ -450,13 +493,14 @@ EndFunction
 
 ; Base shares (fire 3, counter 2, bench 2, work 1.5, rail 1, radio 1), times the hour and the place.
 Float[] Function KindWeights(Actor akPlayer)
-	Float[] w = new Float[7]
+	Float[] w = new Float[8]
 	w[K_FIRE] = 3.0
 	w[K_COUNTER] = 2.0
 	w[K_RAIL] = 1.0
 	w[K_WORK] = 1.5
 	w[K_BENCH] = 2.0
 	w[K_RADIO] = 1.0
+	w[K_TABLE] = 2.0
 	GlobalVariable gameHour = Game.GetFormFromFile(GAME_HOUR, "Fallout4.esm") as GlobalVariable
 	Float hour = 12.0
 	If gameHour
@@ -481,6 +525,7 @@ Float[] Function KindWeights(Actor akPlayer)
 		If here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
 			w[K_COUNTER] = w[K_COUNTER] * 1.5
 			w[K_BENCH] = w[K_BENCH] * 1.5
+			w[K_TABLE] = w[K_TABLE] * 1.5
 		EndIf
 		If here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
 			w[K_FIRE] = w[K_FIRE] * 2.0
@@ -571,7 +616,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_PEOPLE) + " by people; " + _spots.Length + " of " + _budget + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_PEOPLE) + " by people; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -651,6 +696,23 @@ Function Dress(ObjectReference akRef, Int aiKind)
 			k += 1
 			count += 1
 		EndWhile
+	ElseIf aiKind == K_TABLE
+		; Standing at a table with a coffee or a bowl: the market stalls.
+		Int tn = 1 + (seed / 3) % 2
+		Int tk = 0
+		While tk < tn
+			Float tt = 0.5
+			If tn == 2
+				tt = 0.3 + 0.4 * tk
+			EndIf
+			Form tkind = Noodles
+			If (seed / (tk + 5)) % 2 == 0
+				tkind = Coffee
+			EndIf
+			AlongSide(akRef, tkind, x1, y1, x2, y2, alongX, plus, tt, CounterOut, True)
+			tk += 1
+			count += 1
+		EndWhile
 	ElseIf aiKind == K_RAIL
 		; Someone leaning back against it, somewhere along it.
 		Float t = 0.2 + ((seed / 7) % 61) / 100.0
@@ -695,6 +757,8 @@ EndFunction
 String Function KindName(Int aiKind)
 	If aiKind == K_COUNTER
 		Return "counter"
+	ElseIf aiKind == K_TABLE
+		Return "table"
 	ElseIf aiKind == K_RAIL
 		Return "rail"
 	ElseIf aiKind == K_WORK

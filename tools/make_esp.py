@@ -71,6 +71,9 @@ KINDS = {
     'Rail': pick('lean', r'Railing|Fence', r'Post|Gate|Pole|Wire|Destroyed|Dest', 100, 40),
     'Work': pick('work', r'^[Ww]orkbench|^WorkshopWorkbench', r'Cooking', 40, 25),
     'Bench': pick('bench', r'Bench', r'[Ww]orkbench', 100, 20),
+    # Diamond City's market has no counters at all: its stalls are fences, stools, metal and picnic
+    # tables (log 2026-10-01). People standing at a table with a coffee or noodles cover it.
+    'Table': pick('table', r'Table', r'End|Night|Side|Lamp|Dress|Egg|Pool|Work|Small|Coffee|Desk', 80, 25),
 }
 RADIOS = [0x082447, 0x1B2370, 0x143AD1, 0x0CA89D, 0x14507B]   # DC radio (on, new, workshop off), Institute on/off
 
@@ -219,6 +222,7 @@ def build():
         ('RailAnchors', 1, obj(kind_lists['Rail'])),
         ('WorkAnchors', 1, obj(kind_lists['Work'])),
         ('BenchAnchors', 1, obj(kind_lists['Bench'])),
+        ('TableAnchors', 1, obj(kind_lists['Table'])),
         ('RadioAnchors', 1, obj(radio_id)),
         ('GeoBases', 11, objs([b for b, _ in geo])),
         ('GeoX1', 14, floats([box[0] for _, box in geo])),
