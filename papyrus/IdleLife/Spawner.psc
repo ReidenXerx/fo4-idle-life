@@ -1358,7 +1358,8 @@ Function DogSpots(Actor akPlayer)
 	ObjectReference[] refs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
 	Int made = 0
 	Int i = 0
-	While i < refs.Length && made < 2 && _spots.Length < MaxSpots - 4
+	; At most 2 dog spots in all, not per draw (they piled up as a dog followed the player, 2026-10-01).
+	While i < refs.Length && CountKind(K_DOG) < 2 && _spots.Length < MaxSpots - 4
 		Actor d = refs[i] as Actor
 		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !NearKind(d, K_DOG, 400.0)
 			Int seed = Seed(d) % 9973
