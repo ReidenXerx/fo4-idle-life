@@ -3,3 +3,4 @@ research/*.py
 research/__pycache__/
 plugin/build-rd/
 plugin/*.log
+build/dist/

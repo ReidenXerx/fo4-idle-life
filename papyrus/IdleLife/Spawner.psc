@@ -231,8 +231,7 @@ Function Begin()
 	AddAnchor(RadioAnchors, DLC04_RAIDER_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(RadioAnchors, DLC04_CAFE_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(CampfireAnchors, DLC05_CAMPFIRE, "DLCworkshop01.esm")
-	_native = F4SE.GetPluginVersion("IdleLife") > 0
-	Debug.Trace("Idle Life: navmesh plugin " + _native, 0)
+	CheckSetup()
 	Debug.Trace("Idle Life: started - " + FireAnchors.GetSize() + " fires, " + CounterAnchors.GetSize() + " counters, " + RailAnchors.GetSize() + " rails, " + WorkAnchors.GetSize() + " workbenches, " + BenchAnchors.GetSize() + " benches, " + RadioAnchors.GetSize() + " radios known; " + _anchors.Length + " places dressed, " + _spots.Length + " spots", 0)
 	StartTimer(ScanSeconds, SCAN_TIMER)
 EndFunction
@@ -1493,4 +1492,40 @@ Bool Function NearPoint(Float afX, Float afY, Float afZ, Float afDistance)
 		i += 1
 	EndWhile
 	Return False
+EndFunction
+
+; ---- what the installer cannot see (nexus-tools FOMOD-STANDARD rule 3), said once per save ----------------
+
+Bool _toldF4SE = False
+Bool _toldNavmesh = False
+Bool _toldMCM = False
+
+Function CheckSetup()
+	_native = False
+	If F4SE.GetVersionRelease() <= 0
+		Debug.Trace("Idle Life: F4SE is not running - spots by walls and in the open are off", 0)
+		If !_toldF4SE
+			_toldF4SE = True
+			Debug.MessageBox("Idle Life needs F4SE (f4se.silverlock.org) for its spots along walls and in the open. Every other kind of spot works.")
+		EndIf
+		Return
+	EndIf
+	If F4SE.GetPluginVersion("IdleLife") > 0
+		_native = IdleLife:Navmesh.Ready()
+		If !_native
+			Debug.Trace("Idle Life: the navmesh plugin is loaded but cannot read the navmesh (Runtime Database?) - walls and the open are off", 0)
+			If !_toldNavmesh
+				_toldNavmesh = True
+				Debug.MessageBox("Idle Life cannot read the navmesh on this game version: Runtime Database (Nexus 108394) is missing or does not know it. Spots along walls and in the open are off; every other kind works.")
+			EndIf
+		EndIf
+	Else
+		Debug.Trace("Idle Life: the navmesh plugin (IdleLife.dll) is not loaded - walls and the open are off", 0)
+	EndIf
+	If F4SE.GetPluginVersion("F4MCM") <= 0 && !_toldMCM
+		_toldMCM = True
+		Debug.Trace("Idle Life: MCM is not installed - the settings keep their defaults", 0)
+		Debug.MessageBox("Idle Life: Mod Configuration Menu (MCM, Nexus 21497) is not installed, so its settings keep their defaults. Everything works.")
+	EndIf
+	Debug.Trace("Idle Life: navmesh plugin " + _native, 0)
 EndFunction

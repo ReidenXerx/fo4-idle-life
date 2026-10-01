@@ -11,3 +11,6 @@ Float[] Function WallSpots(ObjectReference akCentre, ObjectReference[] akNear, F
 Float[] Function OpenSpots(ObjectReference akCentre, ObjectReference[] akNear, Float afRadius, Float afClearance, Int aiMax) Global Native
 
 Int Function Version() Global Native
+
+; The navmesh can be read on this runtime: Runtime Database is present and knows it.
+Bool Function Ready() Global Native

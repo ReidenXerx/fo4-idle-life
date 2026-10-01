@@ -35,6 +35,11 @@ namespace
 		return {};
 	}
 
+	bool Papyrus_Ready(std::monostate)
+	{
+		return IL::Spots::Ready();
+	}
+
 	std::int32_t Papyrus_Version(std::monostate)
 	{
 		return IL_VERSION_MAJOR * 10000 + IL_VERSION_MINOR * 100 + IL_VERSION_PATCH;
@@ -48,6 +53,7 @@ namespace
 		a_vm->BindNativeMethod(kScript, "WallSpots"sv, Papyrus_WallSpots, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "OpenSpots"sv, Papyrus_OpenSpots, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Version"sv, Papyrus_Version, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "Ready"sv, Papyrus_Ready, std::nullopt, false);
 		logger::info("papyrus functions registered on {}", kScript);
 		return true;
 	}

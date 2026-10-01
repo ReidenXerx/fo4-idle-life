@@ -16,8 +16,34 @@
 
 namespace IL::Spots
 {
+	bool Ready()
+	{
+		static const auto resolved = REL::IDDatabase::get().resolve(RE::VTABLE::NavMesh[0]);
+		return static_cast<bool>(resolved);
+	}
+
 	namespace
 	{
+		// Dev only: with Data/F4SE/Plugins/IdleLife_dump.txt present (never shipped), every wall query is written
+		// as JSON beside the log -- the navmesh card is rendered from it (Publisher-bud, 2026-10-02).
+		[[nodiscard]] bool DumpWanted()
+		{
+			std::error_code ec;
+			return std::filesystem::exists("Data/F4SE/Plugins/IdleLife_dump.txt", ec);
+		}
+
+		void Dump(const char* a_what, const std::string& a_json)
+		{
+			auto dir = logger::log_directory();
+			if (!dir) {
+				return;
+			}
+			static int n = 0;
+			*dir /= std::format("IdleLife-navmesh-{}-{}.json", a_what, ++n);
+			std::ofstream(*dir, std::ios::binary) << a_json;
+			logger::info("dumped {}", dir->filename().string());
+		}
+
 		constexpr std::uint16_t kNoNeighbour = 0xFFFF;
 		constexpr std::uint32_t kWater = 0x200;
 		constexpr std::uint32_t kDoor = 0x400;
@@ -256,6 +282,7 @@ namespace IL::Spots
 		const auto edges = Borders(tris, centre, a_radius, kMinWall);
 		std::vector<Candidate> cands;
 		std::size_t            ledges = 0;
+		std::vector<RE::NiPoint3> dropAt;
 		for (const auto& e : edges) {
 			// Along a long wall, a spot every ~200 units; a short one gets its middle.
 			const int n = std::max(1, static_cast<int>(e.length / 200.0f));
@@ -268,6 +295,7 @@ namespace IL::Spots
 				// (40 to 1000 units down: a step is not a drop; a floor further down than that is another storey.)
 				if (FloorAt(tris, px, py, on.z - 520.0f, 480.0f)) {
 					++ledges;
+					dropAt.push_back(on);
 					continue;
 				}
 				RE::NiPoint3 at{ on.x + e.in.x * kLeanOut, on.y + e.in.y * kLeanOut, on.z };
@@ -282,6 +310,29 @@ namespace IL::Spots
 			}
 		}
 		auto out = Pick(cands, a_spacing, a_max);
+		if (DumpWanted()) {
+			std::string j = "{\"centre\":[" + std::format("{:.1f},{:.1f},{:.1f}", centre.x, centre.y, centre.z) + "],\"triangles\":[";
+			for (std::size_t i = 0; i < tris.size(); ++i) {
+				const auto& t = tris[i];
+				j += std::format("{}[{:.1f},{:.1f},{:.1f},{:.1f},{:.1f},{:.1f},{:.1f},{:.1f},{:.1f}]", i ? "," : "", t.a.x, t.a.y,
+					t.a.z, t.b.x, t.b.y, t.b.z, t.c.x, t.c.y, t.c.z);
+			}
+			j += "],\"borders\":[";
+			for (std::size_t i = 0; i < edges.size(); ++i) {
+				const auto& e = edges[i];
+				j += std::format("{}[{:.1f},{:.1f},{:.1f},{:.1f},{:.1f},{:.1f}]", i ? "," : "", e.a.x, e.a.y, e.a.z, e.b.x, e.b.y, e.b.z);
+			}
+			j += "],\"drops\":[";
+			for (std::size_t i = 0; i < dropAt.size(); ++i) {
+				j += std::format("{}[{:.1f},{:.1f},{:.1f}]", i ? "," : "", dropAt[i].x, dropAt[i].y, dropAt[i].z);
+			}
+			j += "],\"spots\":[";
+			for (std::size_t i = 0; i + 3 < out.size(); i += 4) {
+				j += std::format("{}[{:.1f},{:.1f},{:.1f},{:.1f}]", i ? "," : "", out[i], out[i + 1], out[i + 2], out[i + 3]);
+			}
+			j += "]}";
+			Dump("walls", j);
+		}
 		logger::info("wall spots: {} triangles, {} border edges, {} drops left out, {} candidates, {} chosen", tris.size(),
 			edges.size(), ledges, cands.size(), out.size() / 4);
 		return out;

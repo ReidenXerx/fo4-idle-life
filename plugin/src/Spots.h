@@ -2,6 +2,9 @@
 
 namespace IL::Spots
 {
+	// The navmesh can be read on this runtime (Runtime Database present and knows the NavMesh type).
+	[[nodiscard]] bool Ready();
+
 	// Spots along walls: on walkable navmesh right beside a wall, facing away from it -- for wall-lean
 	// markers. Packed {x, y, z, heading degrees} per spot, the ones nearest the given people first, at
 	// least a_spacing apart, at most a_max. Empty when the navmesh cannot be read (the log says why).
