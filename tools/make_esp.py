@@ -79,6 +79,7 @@ COFFEE = 0x1A6AFC      # NPCStandDrinkCoffee
 NOODLES = 0x1411CB     # NPCEatingNoodlesStanding
 LEAN = 0x024572        # NPCInvWallLean01 (578 placed)
 NEWSPAPER = 0x1338FC   # NPCNewspaperStanding
+GROUND_SIT = 0x0299C2  # NPCInvGroundSit (153 placed): for spots next to people where nothing else is
 TOOLS = [0x0D96C9, 0x0D96C7, 0x0D96CD, 0x0D96C5, 0x0D96C3, 0x0D96C1, 0x0D96BF]   # stand/kneel hammer/wrench
 # Our dance spot: no dance marker exists in the game. An IDLM cloned from vanilla's shape (IDLF 08, a timer,
 # an idle list) listing the two dance loops nothing in vanilla uses, the drunk sway and the clap.
@@ -230,6 +231,7 @@ def build():
         ('Newspaper', 1, obj(NEWSPAPER)),
         ('Tools', 11, objs(TOOLS)),
         ('Dance', 1, obj(dance_id)),
+        ('GroundSit', 1, obj(GROUND_SIT)),
     ]))
     q += field('DNAM', bytes.fromhex('110064670000000000000000'))   # start game enabled
     q += field('NEXT', b'')

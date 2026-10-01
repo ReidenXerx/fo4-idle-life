@@ -5,7 +5,15 @@ noodles; railings and fences, people leaning on them; workbenches, someone tinke
 standing about and a smoker; a playing radio, dancers. Anyone sandboxing nearby walks over and uses them
 (premise 0, proved 2026-10-01). The spots exist only around the player: placed when a place comes in range,
 deleted when the player leaves; the same place always gets the same spots (seeded from the object itself).
-Every 30 s the log says how many spots are taken.}
+Every 30 s the log says how many spots are taken.
+
+How many and where (owner 2026-10-01: "even in poor places something, in rich places no overspam"): a
+BUDGET of spots follows the people nearby (1.5 per person, at least 3, at most 40); every candidate place
+of every kind near those people goes into one pool and is drawn greedily by score -- kind weight (times
+the time of day and the kind of place) x how many people are near it x a decay per kind already drawn x
+a penalty for any place already dressed close by. Spots left over with nothing to anchor them go next to
+the people themselves (a smoke, a newspaper, a sit on the ground). The draw runs when the player arrives
+somewhere (a new cell, or 1000 units moved), not on every scan; ties break by the place and the day.}
 
 FormList Property FireAnchors Auto Const Mandatory
 {Lit fire barrels and the workshop cooking fire (Fallout4.esm); DLC braziers and barrels join at run time.}
@@ -59,6 +67,19 @@ Float Property WorkOut = 50.0 Auto Const
 Float Property BenchOut = 110.0 Auto Const
 {Vanilla's standing spots near benches: ~110 out (research/cal2_work).}
 Float Property PairGap = 110.0 Auto Const
+Form Property GroundSit Auto Const Mandatory
+{NPCInvGroundSit: for the spots that go next to the people where nothing else is.}
+Float Property SpotsPerPerson = 1.5 Auto Const
+Int Property MinBudget = 3 Auto Const
+Int Property MaxBudget = 40 Auto Const
+Float Property PeopleReach = 800.0 Auto Const
+{A place counts as near a person within this.}
+Float Property Crowding = 250.0 Auto Const
+{Any place drawn makes every candidate of any kind this close worth less (x0.3).}
+Float Property KindDecay = 0.6 Auto Const
+{Each place of a kind drawn makes the next of that kind worth this much less.}
+Float Property RedrawMove = 1000.0 Auto Const
+Int Property MaxPeopleSpots = 6 Auto Const
 Int Property MaxSpots = 120 Auto Const
 {Inside Papyrus' 128-element arrays.}
 
@@ -68,11 +89,20 @@ Int Property K_RAIL = 2 AutoReadOnly
 Int Property K_WORK = 3 AutoReadOnly
 Int Property K_BENCH = 4 AutoReadOnly
 Int Property K_RADIO = 5 AutoReadOnly
+Int Property K_PEOPLE = 6 AutoReadOnly
+; Fallout4.esm
+Int Property KW_HUMAN = 0x02CB72 AutoReadOnly
+Int Property KW_GHOUL = 0x0EAFB7 AutoReadOnly
+Int Property GAME_HOUR = 0x000038 AutoReadOnly
+Int Property LOC_TOWN = 0x022611 AutoReadOnly          ; LocTypeSettlement (Diamond City, Goodneighbor...)
+Int Property LOC_WORKSHOP = 0x083C9A AutoReadOnly      ; LocTypeWorkshopSettlement
+Int Property LOC_RAIDERS = 0x030855 AutoReadOnly       ; LocEncRaiders
+Int Property LOC_BAR = 0x022632 AutoReadOnly           ; LocTypeBar
 
 Int Property SCAN_TIMER = 1 AutoReadOnly
 Int Property DEBUG_SPAWN_TIMER = 10 AutoReadOnly
 Int Property DEBUG_STATUS_TIMER = 11 AutoReadOnly
-Int Property REPORT_EVERY = 6 AutoReadOnly     ; scans between two "spots in use" lines
+Int Property REPORT_EVERY = 3 AutoReadOnly     ; scans between two reports (15 s: who is on which spot)
 Int Property SPAWNER_QUEST = 0x000800 AutoReadOnly
 ; DLC fires and radios, by form id.
 Int Property DLC01_BRAZIER01 = 0x00A5DD AutoReadOnly
@@ -88,6 +118,13 @@ Int[] _anchorKind              ; K_* of each (same index)
 ObjectReference[] _spots       ; every spot placed
 ObjectReference[] _spotFire    ; the place each spot belongs to (same index as _spots)
 Int _scans = 0
+Cell _drawCell = None
+Float _drawX = 0.0
+Float _drawY = 0.0
+Int _budget = 0
+ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
+Actor[] _dwUser
+Float[] _dwSince
 Int _lastSeen = -1
 Bool _toldInUse = False
 
@@ -129,6 +166,11 @@ Function Begin()
 			i += 1
 		EndWhile
 	EndIf
+	; Real time starts over with the game: who-sat-since-when from before a load means nothing.
+	_dwSpot = new ObjectReference[0]
+	_dwUser = new Actor[0]
+	_dwSince = new Float[0]
+	_drawCell = None   ; draw again on the first scan after a load
 	AddAnchor(FireAnchors, DLC01_BRAZIER01, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER02, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER03, "DLCRobot.esm")
@@ -164,17 +206,8 @@ Event OnTimer(Int aiTimerID)
 	EndIf
 	Actor player = Game.GetPlayer()
 	Prune(player, Enabled.GetValueInt() == 0)
-	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
-		Int dressed = ScanFires(player)
-		dressed += ScanKind(player, CounterAnchors, K_COUNTER, 5, 300.0)
-		dressed += ScanKind(player, RailAnchors, K_RAIL, 5, 400.0)
-		dressed += ScanKind(player, WorkAnchors, K_WORK, 6, 0.0)
-		dressed += ScanKind(player, BenchAnchors, K_BENCH, 5, 300.0)
-		dressed += ScanKind(player, RadioAnchors, K_RADIO, 3, 0.0)
-		If dressed > 0 || _anchors.Length != _lastSeen
-			_lastSeen = _anchors.Length
-			Debug.Trace("Idle Life: " + dressed + " places newly dressed; " + KindCounts() + " in " + player.GetParentCell(), 0)
-		EndIf
+	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && Arrived(player)
+		Draw(player)
 	EndIf
 	_scans += 1
 	If _scans % REPORT_EVERY == 0 && _spots.Length > 0
@@ -191,46 +224,327 @@ Bool Function Usable(ObjectReference akRef)
 	Return akRef && !akRef.IsDisabled() && _anchors.Find(akRef) < 0 && akRef.GetParentCell() && akRef.GetParentCell().IsAttached()
 EndFunction
 
-Int Function ScanFires(Actor akPlayer)
-	Int dressed = 0
-	ObjectReference[] fires = akPlayer.FindAllReferencesOfType(FireAnchors, Radius)
-	Int i = 0
-	While i < fires.Length && CountKind(K_FIRE) < 12 && _spots.Length < MaxSpots - 4
-		If Usable(fires[i])
-			DressFire(fires[i], False)
-			dressed += 1
-		EndIf
-		i += 1
-	EndWhile
-	ObjectReference[] lights = akPlayer.FindAllReferencesOfType(FireLights, Radius)
-	i = 0
-	While i < lights.Length && CountKind(K_FIRE) < 12 && _spots.Length < MaxSpots - 4
-		If Usable(lights[i]) && !NearKind(lights[i], K_FIRE, SameFire)
-			DressFire(lights[i], True)
-			dressed += 1
-		EndIf
-		i += 1
-	EndWhile
-	Return dressed
+; ---- the draw ------------------------------------------------------------------------------------
+
+; Somewhere new: a new cell, or far enough from where the last draw was.
+Bool Function Arrived(Actor akPlayer)
+	If akPlayer.GetParentCell() != _drawCell
+		Return True
+	EndIf
+	Float dx = akPlayer.GetPositionX() - _drawX
+	Float dy = akPlayer.GetPositionY() - _drawY
+	Return dx * dx + dy * dy > RedrawMove * RedrawMove
 EndFunction
 
-; Up to aiMax places of one kind, none within afSpacing of another of its kind (modular counters and long
-; fences would otherwise get spots on every piece).
-Int Function ScanKind(Actor akPlayer, FormList akList, Int aiKind, Int aiMax, Float afSpacing)
-	Int dressed = 0
-	ObjectReference[] found = akPlayer.FindAllReferencesOfType(akList, Radius)
+; Who could use a spot: people near the player, alive, calm, not hostile.
+Actor[] Function People(Actor akPlayer)
+	Actor[] out = new Actor[0]
+	AddPeople(out, akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_HUMAN, "Fallout4.esm"), Radius), akPlayer)
+	AddPeople(out, akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_GHOUL, "Fallout4.esm"), Radius), akPlayer)
+	Return out
+EndFunction
+
+Function AddPeople(Actor[] akOut, ObjectReference[] akRefs, Actor akPlayer)
 	Int i = 0
-	While i < found.Length && CountKind(aiKind) < aiMax && _spots.Length < MaxSpots - 4
-		ObjectReference a = found[i]
-		If Usable(a) && (afSpacing <= 0.0 || !NearKind(a, aiKind, afSpacing))
-			If aiKind != K_RADIO || a.IsRadioOn()
-				Dress(a, aiKind)
-				dressed += 1
+	While i < akRefs.Length && akOut.Length < 30
+		Actor a = akRefs[i] as Actor
+		If a && a != akPlayer && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsHostileToActor(akPlayer) && akOut.Find(a) < 0
+			akOut.Add(a)
+		EndIf
+		i += 1
+	EndWhile
+EndFunction
+
+Function Draw(Actor akPlayer)
+	_drawCell = akPlayer.GetParentCell()
+	_drawX = akPlayer.GetPositionX()
+	_drawY = akPlayer.GetPositionY()
+	Actor[] people = People(akPlayer)
+	; Nobody here: nothing to dress. Somebody: at least MinBudget, SpotsPerPerson each, never over MaxBudget.
+	_budget = 0
+	If people.Length > 0
+		_budget = Math.Ceiling(people.Length * SpotsPerPerson)
+		If _budget < MinBudget
+			_budget = MinBudget
+		ElseIf _budget > MaxBudget
+			_budget = MaxBudget
+		EndIf
+	EndIf
+	If _budget > MaxSpots - 4
+		_budget = MaxSpots - 4
+	EndIf
+	Trim(akPlayer)
+	Int before = _spots.Length
+	If _spots.Length < _budget
+		FillFromPool(akPlayer, people)
+	EndIf
+	If _spots.Length < _budget
+		PeopleSpots(akPlayer, people)
+	EndIf
+	Debug.Trace("Idle Life: draw - " + people.Length + " people, budget " + _budget + " spots, " + (_spots.Length - before) + " new; " + KindCounts() + " in " + _drawCell, 0)
+EndFunction
+
+; Over budget (fewer people now): the places farthest from the player go first.
+Function Trim(Actor akPlayer)
+	While _spots.Length > _budget && _anchors.Length > 0
+		Int far = 0
+		Float farD = -1.0
+		Int i = 0
+		While i < _anchors.Length
+			Float d = 999999.0
+			If _anchors[i]
+				d = _anchors[i].GetDistance(akPlayer)
+			EndIf
+			If d > farD
+				farD = d
+				far = i
+			EndIf
+			i += 1
+		EndWhile
+		RemovePlace(_anchors[far], far)
+	EndWhile
+EndFunction
+
+Function RemovePlace(ObjectReference akPlace, Int aiIndex)
+	Int i = _spots.Length - 1
+	While i >= 0
+		If _spotFire[i] == akPlace
+			If _spots[i]
+				_spots[i].Disable(False)
+				_spots[i].Delete()
+			EndIf
+			_spots.Remove(i, 1)
+			_spotFire.Remove(i, 1)
+		EndIf
+		i -= 1
+	EndWhile
+	_anchors.Remove(aiIndex, 1)
+	_anchorKind.Remove(aiIndex, 1)
+EndFunction
+
+; Every candidate of every kind near the people, scored by how many people are near it, then drawn one by
+; one: kind weight x people near x KindDecay per place of that kind already drawn x crowding x a little
+; jitter from the place and the day.
+Function FillFromPool(Actor akPlayer, Actor[] akPeople)
+	ObjectReference[] cand = new ObjectReference[0]
+	Int[] kind = new Int[0]
+	Float[] near = new Float[0]
+	FormList[] lists = new FormList[7]
+	lists[0] = FireAnchors
+	lists[1] = FireLights
+	lists[2] = CounterAnchors
+	lists[3] = RailAnchors
+	lists[4] = WorkAnchors
+	lists[5] = BenchAnchors
+	lists[6] = RadioAnchors
+	Int[] kinds = new Int[7]
+	kinds[0] = K_FIRE
+	kinds[1] = K_FIRE
+	kinds[2] = K_COUNTER
+	kinds[3] = K_RAIL
+	kinds[4] = K_WORK
+	kinds[5] = K_BENCH
+	kinds[6] = K_RADIO
+	Int p = 0
+	While p < akPeople.Length && p < 20
+		Int l = 0
+		While l < lists.Length
+			ObjectReference[] found = akPeople[p].FindAllReferencesOfType(lists[l], PeopleReach)
+			Int f = 0
+			While f < found.Length
+				ObjectReference r = found[f]
+				If Usable(r)
+					Int at = cand.Find(r)
+					If at >= 0
+						near[at] = near[at] + 1.0
+					ElseIf cand.Length < 120
+						cand.Add(r)
+						kind.Add(kinds[l])
+						near.Add(1.0)
+					EndIf
+				EndIf
+				f += 1
+			EndWhile
+			l += 1
+		EndWhile
+		p += 1
+	EndWhile
+	If cand.Length == 0
+		Return
+	EndIf
+
+	Float[] weight = KindWeights(akPlayer)
+	Int[] drawn = new Int[7]
+	Float[] crowd = new Float[0]
+	Int i = 0
+	While i < cand.Length
+		crowd.Add(Jitter(cand[i]))
+		i += 1
+	EndWhile
+	; What is already dressed crowds its surroundings and counts towards its kind.
+	i = 0
+	While i < _anchors.Length
+		If _anchors[i]
+			drawn[_anchorKind[i]] = drawn[_anchorKind[i]] + 1
+			Crowd(cand, crowd, _anchors[i])
+		EndIf
+		i += 1
+	EndWhile
+
+	While _spots.Length < _budget && _spots.Length < MaxSpots - 4
+		Int best = -1
+		Float bestScore = 0.0
+		i = 0
+		While i < cand.Length
+			If cand[i]
+				Int k = kind[i]
+				Float sc = weight[k] * near[i] * Math.Pow(KindDecay, drawn[k] as Float) * crowd[i]
+				If sc > bestScore
+					bestScore = sc
+					best = i
+				EndIf
+			EndIf
+			i += 1
+		EndWhile
+		If best < 0
+			Return
+		EndIf
+		ObjectReference pick = cand[best]
+		Int pk = kind[best]
+		cand[best] = None
+		Bool isLight = FireLights.HasForm(pick.GetBaseObject())
+		If pk == K_FIRE && isLight && NearKind(pick, K_FIRE, SameFire)
+			; the flame of a fire already dressed
+		ElseIf pk == K_RADIO && !pick.IsRadioOn()
+			; a radio that is off
+		Else
+			If pk == K_FIRE
+				DressFire(pick, isLight)
+			Else
+				Dress(pick, pk)
+			EndIf
+			drawn[pk] = drawn[pk] + 1
+			Crowd(cand, crowd, pick)
+		EndIf
+	EndWhile
+EndFunction
+
+Function Crowd(ObjectReference[] akCand, Float[] akCrowd, ObjectReference akPlace)
+	Int j = 0
+	While j < akCand.Length
+		If akCand[j] && akCand[j].GetDistance(akPlace) < Crowding
+			akCrowd[j] = akCrowd[j] * 0.3
+		EndIf
+		j += 1
+	EndWhile
+EndFunction
+
+; 0.85-1.15 from the place and the in-game day: the same all day, different next week.
+Float Function Jitter(ObjectReference akRef)
+	Int v = Seed(akRef) % 9973 + (Utility.GetCurrentGameTime() as Int) * 7919
+	If v < 0
+		v = -v
+	EndIf
+	Return 0.85 + (v % 31) / 100.0
+EndFunction
+
+; Base shares (fire 3, counter 2, bench 2, work 1.5, rail 1, radio 1), times the hour and the place.
+Float[] Function KindWeights(Actor akPlayer)
+	Float[] w = new Float[7]
+	w[K_FIRE] = 3.0
+	w[K_COUNTER] = 2.0
+	w[K_RAIL] = 1.0
+	w[K_WORK] = 1.5
+	w[K_BENCH] = 2.0
+	w[K_RADIO] = 1.0
+	GlobalVariable gameHour = Game.GetFormFromFile(GAME_HOUR, "Fallout4.esm") as GlobalVariable
+	Float hour = 12.0
+	If gameHour
+		hour = gameHour.GetValue()
+	EndIf
+	If hour >= 20.0 || hour < 5.0          ; night: around fires and radios, fewer at counters
+		w[K_FIRE] = w[K_FIRE] * 2.0
+		w[K_RADIO] = w[K_RADIO] * 2.0
+		w[K_COUNTER] = w[K_COUNTER] * 0.7
+	ElseIf hour < 11.0                     ; morning: coffee and work
+		w[K_COUNTER] = w[K_COUNTER] * 1.5
+		w[K_WORK] = w[K_WORK] * 1.5
+	Else                                   ; day: work
+		w[K_WORK] = w[K_WORK] * 1.5
+	EndIf
+	Location here = akPlayer.GetCurrentLocation()
+	If here
+		If here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword)
+			w[K_WORK] = w[K_WORK] * 2.0
+			w[K_FIRE] = w[K_FIRE] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
+			w[K_COUNTER] = w[K_COUNTER] * 1.5
+			w[K_BENCH] = w[K_BENCH] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
+			w[K_FIRE] = w[K_FIRE] * 2.0
+			w[K_RADIO] = w[K_RADIO] * 2.0
+			w[K_WORK] = 0.0
+			w[K_COUNTER] = w[K_COUNTER] * 0.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_BAR, "Fallout4.esm") as Keyword)
+			w[K_COUNTER] = w[K_COUNTER] * 1.5
+			w[K_RADIO] = w[K_RADIO] * 1.5
+		EndIf
+	EndIf
+	Return w
+EndFunction
+
+; Budget left and nothing to anchor it: spots next to the people themselves, 150-300 out, one per
+; person who has no dressed place near -- a smoke, a newspaper, a sit on the ground, a coffee.
+Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
+	Int made = 0
+	Int day = Utility.GetCurrentGameTime() as Int
+	Int i = 0
+	While i < akPeople.Length && made < MaxPeopleSpots && _spots.Length < _budget
+		Actor person = akPeople[i]
+		If !NearAnyPlace(person, 400.0)
+			Int seed = (Seed(person) % 9973) + day * 31
+			Float angle = (seed % 360) as Float
+			Float r = 150.0 + ((seed / 7) % 151) as Float
+			Form kind = Smoke
+			Int roll = (seed / 3) % 4
+			If roll == 1
+				kind = Newspaper
+			ElseIf roll == 2
+				kind = GroundSit
+			ElseIf roll == 3
+				kind = Coffee
+			EndIf
+			ObjectReference spot = person.PlaceAtMe(kind, 1, False, True, True)
+			If spot
+				spot.SetPosition(person.GetPositionX() + r * Math.Sin(angle), person.GetPositionY() + r * Math.Cos(angle), person.GetPositionZ())
+				spot.SetAngle(0.0, 0.0, (seed % 360) as Float)
+				spot.Enable(False)
+				spot.MoveToNearestNavmeshLocation()
+				_spots.Add(spot)
+				_spotFire.Add(spot)      ; its own place: kept while the player is near it
+				AddAnchorRef(spot, K_PEOPLE)
+				made += 1
 			EndIf
 		EndIf
 		i += 1
 	EndWhile
-	Return dressed
+	If made > 0
+		Debug.Trace("Idle Life: " + made + " spots next to people where nothing else was", 0)
+	EndIf
+EndFunction
+
+Bool Function NearAnyPlace(ObjectReference akRef, Float afDistance)
+	Int i = 0
+	While i < _anchors.Length
+		If _anchors[i] && _anchors[i].GetDistance(akRef) < afDistance
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
 EndFunction
 
 Bool Function NearKind(ObjectReference akRef, Int aiKind, Float afDistance)
@@ -257,7 +571,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios dressed, " + _spots.Length + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_PEOPLE) + " by people; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -615,8 +929,51 @@ EndFunction
 Function Report()
 	Int used = InUse()
 	Debug.Trace("Idle Life: " + KindCounts() + ", " + used + " of " + FurnitureSpots() + " furniture spots in use", 0)
+	TrackUsers()
 	If used > 0 && !_toldInUse
 		_toldInUse = True
 		Debug.Notification("Idle Life: someone is using one of the new spots.")
 	EndIf
+EndFunction
+
+; Who is on each furniture spot now, and how long the same one has been on it: the log answers "do they
+; swap, or does someone camp on one spot?" (owner 2026-10-01). Nothing is changed here -- only measured.
+Function TrackUsers()
+	Actor[] people = People(Game.GetPlayer())
+	ObjectReference[] nowSpot = new ObjectReference[0]
+	Actor[] nowUser = new Actor[0]
+	Float[] nowSince = new Float[0]
+	Float now = Utility.GetCurrentRealTime()
+	Int i = 0
+	While i < people.Length
+		ObjectReference f = people[i].GetFurnitureReference()
+		If f && _spots.Find(f) >= 0 && nowSpot.Find(f) < 0
+			Int prev = _dwSpot.Find(f)
+			Float since = now
+			If prev >= 0 && _dwUser[prev] == people[i]
+				since = _dwSince[prev]
+			ElseIf prev >= 0
+				Debug.Trace("Idle Life: spot " + f + " changed hands: " + _dwUser[prev] + " -> " + people[i], 0)
+			Else
+				Debug.Trace("Idle Life: " + people[i] + " took spot " + f + " (" + f.GetBaseObject() + ")", 0)
+			EndIf
+			If now - since >= 300.0
+				Debug.Trace("Idle Life: " + people[i] + " has been on spot " + f + " for " + ((now - since) as Int) + " s", 0)
+			EndIf
+			nowSpot.Add(f)
+			nowUser.Add(people[i])
+			nowSince.Add(since)
+		EndIf
+		i += 1
+	EndWhile
+	i = 0
+	While i < _dwSpot.Length
+		If nowSpot.Find(_dwSpot[i]) < 0
+			Debug.Trace("Idle Life: " + _dwUser[i] + " left spot " + _dwSpot[i] + " after about " + ((now - _dwSince[i]) as Int) + " s", 0)
+		EndIf
+		i += 1
+	EndWhile
+	_dwSpot = nowSpot
+	_dwUser = nowUser
+	_dwSince = nowSince
 EndFunction
