@@ -23,6 +23,15 @@ def form(ids, key):
 def build():
     _, ids = make_esp.build()
 
+    def switcher(text, key, help_text):
+        return {'text': text, 'type': 'switcher', 'help': help_text,
+                'valueOptions': {'sourceType': 'GlobalValue', 'sourceForm': form(ids, key)}}
+
+    def slider(text, key, lo, hi, step, help_text):
+        return {'text': text, 'type': 'slider', 'help': help_text,
+                'valueOptions': {'min': lo, 'max': hi, 'step': step,
+                                 'sourceType': 'GlobalValue', 'sourceForm': form(ids, key)}}
+
     def button(text, function, help_text):
         return {'text': text, 'type': 'button', 'help': help_text,
                 'action': {'type': 'CallFunction', 'form': form(ids, 'Spawner'), 'function': function}}
@@ -40,7 +49,31 @@ def build():
                  'at pool tables, on guard by gates, with clipboards, Jet among raiders, Mr Handys gardening '
                  'and trimming hedges, dogs sniffing about. Off takes every spot away again.',
          'valueOptions': {'sourceType': 'GlobalValue', 'sourceForm': form(ids, 'Setting_On')}},
-    ]
+        {'text': 'How many', 'type': 'section'},
+        slider('Spots per person', 'Setting_SpotsPerPerson', 0.5, 3.0, 0.1,
+               'Spots near you follow the people near you: this many for each of them (at least 3 when '
+               'anyone is there). More: more choice and livelier, more spots unused. Default 1.5.'),
+        slider('Most spots at once', 'Setting_MaxBudget', 10.0, 60.0, 1.0,
+               'However crowded the place, never more than this. Default 40.'),
+        switcher('Change a little every day', 'Setting_DailyReshuffle',
+                 'On: a place looks the same all day and a little different the next. Off: a place always '
+                 'gets the same spots.'),
+        {'text': 'What kinds', 'type': 'section'},
+    ] + [switcher(label, 'Setting_Kind' + key, help_text) for key, label, help_text in (
+        ('Fire', 'Fires', 'Warming hands at fire barrels and burning piles; a smoker.'),
+        ('Camp', 'Campfires', 'Sitting round campfires; among raiders, one on Jet.'),
+        ('Counter', 'Counters', 'Standing with a coffee or noodles at counters.'),
+        ('Table', 'Tables', 'Standing with a coffee or noodles at tables: market stalls.'),
+        ('Bench', 'Benches', 'Two standing about by benches, a smoker.'),
+        ('Rail', 'Railings and fences', 'Leaning back against them.'),
+        ('Work', 'Workbenches', 'Hammers and wrenches; power armor checks, chems, clipboards.'),
+        ('Radio', 'Radios', 'Dancing by a radio that is playing.'),
+        ('PoolTv', 'Pool tables and TVs', 'Standing at pool tables, watching TV from the floor.'),
+        ('Gate', 'Gates', 'Someone on guard by a gate.'),
+        ('Robots', 'Robots', 'Mr Handys gardening crops and trimming hedges.'),
+        ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
+        ('People', 'Next to people', 'Where nothing else is: a smoke, a newspaper, a sit, a coffee by the people themselves.'),
+    )]
     testing = [
         {'text': 'For testing: see the spots taken without waiting for the locals. Buttons that play out '
                  'in the world wait until you close the menu.', 'type': 'text'},
@@ -49,6 +82,7 @@ def build():
                'Four harmless settlers appear a few steps around you and sandbox right there: they wander, '
                'sit, and take the spots near you. Stand near a fire, counter, bench or radio first.'),
         button('Remove test settlers', 'DebugRemoveTesters', 'Deletes every test settler.'),
+        button('Draw spots again', 'DebugRedraw', 'Places the spots near you again, e.g. after changing the settings.'),
         {'text': 'Status', 'type': 'section'},
         button('Show status', 'DebugStatus',
                'Fires near you with spots, how many spots, how many are in use right now, and the testers.'),

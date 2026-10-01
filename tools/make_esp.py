@@ -40,7 +40,13 @@ WARM_STANDING = 0x1B40BD   # FURN NPCHandWarmingStanding (AnimFurnNPCHandWarming
 WARM_KNEELING = 0x1B40BE   # FURN NPCHandWarmingKneeling, 6 placed
 SMOKE = 0x0E210E           # IDLM NPCSmokeIdleMarker (FurnitureClassRelaxation), 418 placed
 
-SETTINGS = [('On', 1.0)]
+SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyReshuffle', 1.0)]
+# One switch per kind (MCM). Script kind order: fire, counter, rail, work, bench, radio, people, table,
+# campfire, crop, hedge, pool, TV, gate, dog -- crops+hedges share "Robots", pool tables+TVs share one.
+KIND_SWITCHES = ['Fire', 'Counter', 'Rail', 'Work', 'Bench', 'Radio', 'People', 'Table', 'Camp',
+                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs']
+for _k in dict.fromkeys(KIND_SWITCHES):
+    SETTINGS.append(('Kind' + _k, 1.0))
 
 # ---- phase 3: spots by object kind (research/cal2_*, 2026-10-01) -------------------------------------
 # Vanilla has no fixed rule for counters, workbenches or benches (its few spots near them sit at random);
@@ -252,6 +258,10 @@ def build():
         ('WarmKneeling', 1, obj(WARM_KNEELING)),
         ('Smoke', 1, obj(SMOKE)),
         ('Enabled', 1, obj(ids['Setting_On'])),
+        ('SpotsPerPersonSetting', 1, obj(ids['Setting_SpotsPerPerson'])),
+        ('MaxBudgetSetting', 1, obj(ids['Setting_MaxBudget'])),
+        ('DailyReshuffle', 1, obj(ids['Setting_DailyReshuffle'])),
+        ('KindOn', 11, objs([ids['Setting_Kind' + k] for k in KIND_SWITCHES])),
         ('TestQuest', 1, obj(test_quest_id)),
         ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),
         ('TestNpc', 1, obj(TEST_NPC)),

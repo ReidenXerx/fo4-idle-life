@@ -92,9 +92,12 @@ Float Property BenchOut = 110.0 Auto Const
 Float Property PairGap = 110.0 Auto Const
 Form Property GroundSit Auto Const Mandatory
 {NPCInvGroundSit: for the spots that go next to the people where nothing else is.}
-Float Property SpotsPerPerson = 1.5 Auto Const
+GlobalVariable Property SpotsPerPersonSetting Auto Const Mandatory
+GlobalVariable Property MaxBudgetSetting Auto Const Mandatory
+GlobalVariable Property DailyReshuffle Auto Const Mandatory
+GlobalVariable[] Property KindOn Auto Const Mandatory
+{MCM: one switch per kind, in kind order (crops+hedges share one, pool tables+TVs share one).}
 Int Property MinBudget = 3 Auto Const
-Int Property MaxBudget = 40 Auto Const
 Float Property PeopleReach = 800.0 Auto Const
 {A place counts as near a person within this.}
 Float Property Crowding = 250.0 Auto Const
@@ -335,11 +338,12 @@ Int Function BudgetFor(Int aiPeople)
 	If aiPeople <= 0
 		Return 0
 	EndIf
-	Int b = Math.Ceiling(aiPeople * SpotsPerPerson)
+	Int b = Math.Ceiling(aiPeople * SpotsPerPersonSetting.GetValue())
+	Int most = MaxBudgetSetting.GetValueInt()
 	If b < MinBudget
 		b = MinBudget
-	ElseIf b > MaxBudget
-		b = MaxBudget
+	ElseIf b > most
+		b = most
 	EndIf
 	If b > MaxSpots - 4
 		b = MaxSpots - 4
@@ -557,7 +561,7 @@ EndFunction
 
 ; 0.85-1.15 from the place and the in-game day: the same all day, different next week.
 Float Function Jitter(ObjectReference akRef)
-	Int v = Seed(akRef) % 9973 + (Utility.GetCurrentGameTime() as Int) * 7919
+	Int v = Seed(akRef) % 9973 + Day() * 7919
 	If v < 0
 		v = -v
 	EndIf
@@ -642,14 +646,24 @@ Float[] Function KindWeights(Actor akPlayer)
 			w[K_TV] = w[K_TV] * 1.5
 		EndIf
 	EndIf
+	Int k = 0
+	While k < w.Length && k < KindOn.Length
+		If KindOn[k] && KindOn[k].GetValueInt() == 0
+			w[k] = 0.0
+		EndIf
+		k += 1
+	EndWhile
 	Return w
 EndFunction
 
 ; Budget left and nothing to anchor it: spots next to the people themselves, 150-300 out, one per
 ; person who has no dressed place near -- a smoke, a newspaper, a sit on the ground, a coffee.
 Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
+	If !KindIsOn(K_PEOPLE)
+		Return
+	EndIf
 	Int made = 0
-	Int day = Utility.GetCurrentGameTime() as Int
+	Int day = Day()
 	Int i = 0
 	While i < akPeople.Length && made < MaxPeopleSpots && _spots.Length < _budget
 		Actor person = akPeople[i]
@@ -1020,6 +1034,12 @@ Function Prune(Actor akPlayer, Bool abAll)
 				keep = False
 			EndIf
 		EndIf
+		If keep
+			Int at = _anchors.Find(place)
+			If at >= 0 && !KindIsOn(_anchorKind[at])
+				keep = False
+			EndIf
+		EndIf
 		If keep && spot.GetBaseObject() == Dance && !place.IsRadioOn()
 			keep = False
 		EndIf
@@ -1318,6 +1338,9 @@ EndFunction
 
 ; Dogs near, calm: a spot to sniff and scratch at a little way off (dogs only), at most two.
 Function DogSpots(Actor akPlayer)
+	If !KindIsOn(K_DOG)
+		Return
+	EndIf
 	ObjectReference[] refs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
 	Int made = 0
 	Int i = 0
@@ -1343,4 +1366,24 @@ Function DogSpots(Actor akPlayer)
 	If made > 0
 		Debug.Trace("Idle Life: " + made + " sniffing spots for dogs", 0)
 	EndIf
+EndFunction
+
+; ---- settings ------------------------------------------------------------------------------------------
+
+Bool Function KindIsOn(Int aiKind)
+	Return aiKind < 0 || aiKind >= KindOn.Length || !KindOn[aiKind] || KindOn[aiKind].GetValueInt() != 0
+EndFunction
+
+; The in-game day, when the daily reshuffle is on; 0 when off (a place always looks the same).
+Int Function Day()
+	If DailyReshuffle.GetValueInt() == 1
+		Return Utility.GetCurrentGameTime() as Int
+	EndIf
+	Return 0
+EndFunction
+
+; MCM Testing page: draw again now (after changing settings).
+Function DebugRedraw()
+	_drawCell = None
+	Debug.Notification("Idle Life: spots drawn again when you close the menu.")
 EndFunction

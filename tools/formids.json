@@ -16,5 +16,21 @@
  "AnchorsHedge": "80E",
  "AnchorsPool": "80F",
  "AnchorsTv": "810",
- "AnchorsGate": "811"
+ "AnchorsGate": "811",
+ "Setting_SpotsPerPerson": "812",
+ "Setting_MaxBudget": "813",
+ "Setting_DailyReshuffle": "814",
+ "Setting_KindFire": "815",
+ "Setting_KindCounter": "816",
+ "Setting_KindRail": "817",
+ "Setting_KindWork": "818",
+ "Setting_KindBench": "819",
+ "Setting_KindRadio": "81A",
+ "Setting_KindPeople": "81B",
+ "Setting_KindTable": "81C",
+ "Setting_KindCamp": "81D",
+ "Setting_KindRobots": "81E",
+ "Setting_KindPoolTv": "81F",
+ "Setting_KindGate": "820",
+ "Setting_KindDogs": "821"
 }
