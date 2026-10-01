@@ -27,20 +27,20 @@ NAME = 'Idle Life'
 
 # (step name, card file, plain-text description). Facts as README.md has them.
 FEATURES = [
-    ('Spots where they belong', 'spots.png',
+    ('Spots where they belong', 'the-rule.png',
      'Near you, people get new places to spend their time, each kind where it belongs, placed by rules measured from '
      'Bethesda\'s own: hands warmed 69 units from a fire and facing it, sitters 131 out round a campfire, leaning '
      'with their back to a rail. NPCs who sandbox nearby walk over, stay a minute or so and move on, often to the next '
      'spot. Placed around you at run time, deleted as you leave.'),
-    ('Walls and open ground', 'walls.png',
+    ('Walls and open ground', 'navmesh.png',
      'A small F4SE plugin reads the walkable area around you: its border edges are walls (a drop beyond one is left '
      'out), so people lean on real walls and read a paper; flat ground far from every edge gets a sitting circle. '
      'Anywhere, other mods\' places included.'),
-    ('Busy where it is busy', 'budget.png',
+    ('Busy where it is busy', 'how-many.png',
      'The number of spots follows the people near you: 1.5 each, at least 3, at most 40, drawn from one pool across '
      'every kind with weights for the hour and the place. A crowded market gets a mix, never twelve of one kind; a '
      'lone settler still gets a smoke and a sit. Recounted every 30 s.'),
-    ('Seventeen kinds', 'dance.png',
+    ('Seventeen kinds', None,
      'Fires, campfires, counters, tables, benches, railings, walls, open ground, workbenches by type (power armor, '
      'chems, tools), playing radios with a dance spot made from two vanilla dance loops nothing used, pool tables, '
      'TVs, gates, Mr Handys gardening and trimming hedges, dogs, and spots next to people that suit the place.'),
@@ -88,7 +88,7 @@ def module_config(entries, images):
         kind = 'folder' if e.is_dir() else 'file'
         installs.append(f'    <{kind} source="{esc(e.name)}" destination="{esc(e.name)}" priority="0"/>')
     pages = [page('Checking your setup', 'Requirements', option(SETUP[0], SETUP[1], flag='setup'))]
-    pages += [page(n, n, option(n, d, img if images else None)) for n, img, d in FEATURES]
+    pages += [page(n, n, option(n, d, img if images and img else None)) for n, img, d in FEATURES]
     pages.append(page(EXTRAS[0], EXTRAS[0], option(EXTRAS[0], EXTRAS[1])))
     module_image = f'\n  <moduleImage path="fomod\\images\\{FEATURES[0][1]}"/>' if images else ''
     return f'''<?xml version="1.0" encoding="UTF-8"?>
@@ -122,6 +122,8 @@ def main():
     images = not draft
     if images:
         for _n, card, _d in FEATURES:
+            if card is None:
+                continue   # a text-only page
             src = CARDS / card
             if not src.exists():
                 sys.exit(f'no card {src} -- Publisher-bud renders them; --draft builds without')
