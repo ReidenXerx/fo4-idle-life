@@ -10,5 +10,11 @@
  "AnchorsBench": "808",
  "AnchorsRadio": "809",
  "DanceMarker": "80A",
- "AnchorsTable": "80B"
+ "AnchorsTable": "80B",
+ "AnchorsCampfire": "80C",
+ "AnchorsCrop": "80D",
+ "AnchorsHedge": "80E",
+ "AnchorsPool": "80F",
+ "AnchorsTv": "810",
+ "AnchorsGate": "811"
 }

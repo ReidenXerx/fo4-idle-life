@@ -36,7 +36,9 @@ def build():
         {'text': 'On', 'type': 'switcher',
          'help': 'Near you, people get new places to spend their time: warming their hands at fires, a coffee '
                  'or noodles at counters, leaning on railings and fences, tinkering at workbenches, standing '
-                 'about by benches, dancing by a playing radio. Off takes every spot away again.',
+                 'about by benches, dancing by a playing radio, sitting round campfires, watching TV, '
+                 'at pool tables, on guard by gates, with clipboards, Jet among raiders, Mr Handys gardening '
+                 'and trimming hedges, dogs sniffing about. Off takes every spot away again.',
          'valueOptions': {'sourceType': 'GlobalValue', 'sourceForm': form(ids, 'Setting_On')}},
     ]
     testing = [

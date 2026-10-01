@@ -42,6 +42,28 @@ Form Property Newspaper Auto Const Mandatory
 Form[] Property Tools Auto Const Mandatory
 Form Property Dance Auto Const Mandatory
 {Our own idle marker: vanilla's two unused dance loops, the drunk sway and the clap.}
+FormList Property CampfireAnchors Auto Const Mandatory
+FormList Property CropAnchors Auto Const Mandatory
+FormList Property HedgeAnchors Auto Const Mandatory
+FormList Property PoolAnchors Auto Const Mandatory
+FormList Property TvAnchors Auto Const Mandatory
+FormList Property GateAnchors Auto Const Mandatory
+Form Property Examine Auto Const Mandatory
+Form Property Shopping Auto Const Mandatory
+Form Property Military Auto Const Mandatory
+Form Property Clipboard Auto Const Mandatory
+Form Property NeedlePrep Auto Const Mandatory
+Form Property PipBoy Auto Const Mandatory
+Form Property UseJet Auto Const Mandatory
+Form Property Search Auto Const Mandatory
+Form Property KneelSit Auto Const Mandatory
+Form Property SadSit Auto Const Mandatory
+Form Property PAExamine Auto Const Mandatory
+Form Property HandyGarden Auto Const Mandatory
+Form Property HandyTrim Auto Const Mandatory
+Form Property DogSniff Auto Const Mandatory
+{Wave 2 (research/vet_*): any human unless noted -- PAExamine power armor only, the two Handy spots robots
+only, DogSniff dogs only.}
 
 Quest Property TestQuest Auto Const Mandatory
 RefCollectionAlias Property Testers Auto Const Mandatory
@@ -92,6 +114,24 @@ Int Property K_BENCH = 4 AutoReadOnly
 Int Property K_RADIO = 5 AutoReadOnly
 Int Property K_PEOPLE = 6 AutoReadOnly
 Int Property K_TABLE = 7 AutoReadOnly
+Int Property K_CAMP = 8 AutoReadOnly
+Int Property K_CROP = 9 AutoReadOnly
+Int Property K_HEDGE = 10 AutoReadOnly
+Int Property K_POOL = 11 AutoReadOnly
+Int Property K_TV = 12 AutoReadOnly
+Int Property K_GATE = 13 AutoReadOnly
+Int Property K_DOG = 14 AutoReadOnly
+Int Property KW_ROBOT = 0x02CB73 AutoReadOnly          ; ActorTypeRobot
+Int Property KW_DOG = 0x021AD0 AutoReadOnly            ; ActorTypeDog
+Int Property KW_CHILD = 0x1157E8 AutoReadOnly          ; ActorTypeChild
+Int Property CHEM_A = 0x12F2F5 AutoReadOnly            ; WorkbenchChemistryA
+Int Property CHEM_B = 0x1487C1 AutoReadOnly            ; WorkbenchChemistryB
+Int Property PA_STATION = 0x157FEB AutoReadOnly        ; WorkbenchPowerArmor
+Int Property PA_SMALL = 0x13BD08 AutoReadOnly          ; WorkbenchPowerArmorSmall
+Int Property DLC04_KNIFE_CLEAN = 0x024211 AutoReadOnly ; DLCNukaWorld DLC04NPCDiscipleCleaningKnifeIdleMarker
+Int Property DLC04_KNIFE_PLAY = 0x024212 AutoReadOnly  ; DLCNukaWorld DLC04NPCDisciplePlayingKnifeIdleMarker
+Int Property DLC04_BOTTLE = 0x053928 AutoReadOnly      ; DLCNukaWorld DLC04BottleChuggingIdleMarker
+Int Property DLC05_CAMPFIRE = 0x00091A AutoReadOnly    ; DLCworkshop01 WorkshopCampFire01 (buildable)
 ; Fallout4.esm
 Int Property KW_HUMAN = 0x02CB72 AutoReadOnly
 Int Property KW_GHOUL = 0x0EAFB7 AutoReadOnly
@@ -125,6 +165,7 @@ Cell _drawCell = None
 Float _drawX = 0.0
 Float _drawY = 0.0
 Int _budget = 0
+Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
 Actor[] _dwUser
 Float[] _dwSince
@@ -181,6 +222,7 @@ Function Begin()
 	AddAnchor(FireAnchors, DLC06_FIRE_BARREL, "DLCworkshop03.esm")
 	AddAnchor(RadioAnchors, DLC04_RAIDER_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(RadioAnchors, DLC04_CAFE_RADIO, "DLCNukaWorld.esm")
+	AddAnchor(CampfireAnchors, DLC05_CAMPFIRE, "DLCworkshop01.esm")
 	Debug.Trace("Idle Life: started - " + FireAnchors.GetSize() + " fires, " + CounterAnchors.GetSize() + " counters, " + RailAnchors.GetSize() + " rails, " + WorkAnchors.GetSize() + " workbenches, " + BenchAnchors.GetSize() + " benches, " + RadioAnchors.GetSize() + " radios known; " + _anchors.Length + " places dressed, " + _spots.Length + " spots", 0)
 	StartTimer(ScanSeconds, SCAN_TIMER)
 EndFunction
@@ -216,7 +258,7 @@ Event OnTimer(Int aiTimerID)
 			; Every 30 s, cheaply: does the budget still fit the people here? Only a change of 2 or more
 			; draws again (people arriving get spots, people leaving free them) -- no flapping as one
 			; wanders in and out of range (owner 2026-10-01).
-			Int b = BudgetFor(People(player).Length)
+			Int b = BudgetFor(People(player).Length + CountRobots(player))
 			If b - _budget >= 2 || _budget - b >= 2
 				Debug.Trace("Idle Life: the people here changed - budget " + _budget + " -> " + b, 0)
 				Draw(player)
@@ -274,7 +316,8 @@ Function Draw(Actor akPlayer)
 	_drawX = akPlayer.GetPositionX()
 	_drawY = akPlayer.GetPositionY()
 	Actor[] people = People(akPlayer)
-	_budget = BudgetFor(people.Length)
+	_robots = CountRobots(akPlayer)
+	_budget = BudgetFor(people.Length + _robots)
 	Trim(akPlayer)
 	Int before = _spots.Length
 	If _spots.Length < _budget
@@ -283,6 +326,7 @@ Function Draw(Actor akPlayer)
 	If _spots.Length < _budget
 		PeopleSpots(akPlayer, people)
 	EndIf
+	DogSpots(akPlayer)
 	Debug.Trace("Idle Life: draw - " + people.Length + " people, budget " + _budget + " spots, " + (_spots.Length - before) + " new; " + KindCounts() + " in " + _drawCell, 0)
 EndFunction
 
@@ -348,7 +392,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	ObjectReference[] cand = new ObjectReference[0]
 	Int[] kind = new Int[0]
 	Float[] near = new Float[0]
-	FormList[] lists = new FormList[8]
+	FormList[] lists = new FormList[14]
 	lists[0] = FireAnchors
 	lists[1] = FireLights
 	lists[2] = CounterAnchors
@@ -357,7 +401,13 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	lists[5] = BenchAnchors
 	lists[6] = RadioAnchors
 	lists[7] = TableAnchors
-	Int[] kinds = new Int[8]
+	lists[8] = CampfireAnchors
+	lists[9] = CropAnchors
+	lists[10] = HedgeAnchors
+	lists[11] = PoolAnchors
+	lists[12] = TvAnchors
+	lists[13] = GateAnchors
+	Int[] kinds = new Int[14]
 	kinds[0] = K_FIRE
 	kinds[1] = K_FIRE
 	kinds[2] = K_COUNTER
@@ -366,8 +416,14 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	kinds[5] = K_BENCH
 	kinds[6] = K_RADIO
 	kinds[7] = K_TABLE
+	kinds[8] = K_CAMP
+	kinds[9] = K_CROP
+	kinds[10] = K_HEDGE
+	kinds[11] = K_POOL
+	kinds[12] = K_TV
+	kinds[13] = K_GATE
 	Int p = 0
-	While p < akPeople.Length && p < 20
+	While p < akPeople.Length && p < 12
 		Int l = 0
 		While l < lists.Length
 			ObjectReference[] found = akPeople[p].FindAllReferencesOfType(lists[l], PeopleReach)
@@ -395,7 +451,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	EndIf
 
 	Float[] weight = KindWeights(akPlayer)
-	Int[] drawn = new Int[8]
+	Int[] drawn = new Int[15]
 	Float[] crowd = new Float[0]
 	Int i = 0
 	While i < cand.Length
@@ -510,7 +566,7 @@ EndFunction
 
 ; Base shares (fire 3, counter 2, bench 2, work 1.5, rail 1, radio 1), times the hour and the place.
 Float[] Function KindWeights(Actor akPlayer)
-	Float[] w = new Float[8]
+	Float[] w = new Float[15]
 	w[K_FIRE] = 3.0
 	w[K_COUNTER] = 2.0
 	w[K_RAIL] = 1.0
@@ -518,6 +574,16 @@ Float[] Function KindWeights(Actor akPlayer)
 	w[K_BENCH] = 2.0
 	w[K_RADIO] = 1.0
 	w[K_TABLE] = 2.0
+	w[K_CAMP] = 3.0
+	w[K_CROP] = 1.5
+	w[K_HEDGE] = 1.0
+	w[K_POOL] = 1.5
+	w[K_TV] = 1.0
+	w[K_GATE] = 1.0
+	If _robots == 0          ; the Handy spots are for robots only
+		w[K_CROP] = 0.0
+		w[K_HEDGE] = 0.0
+	EndIf
 	GlobalVariable gameHour = Game.GetFormFromFile(GAME_HOUR, "Fallout4.esm") as GlobalVariable
 	Float hour = 12.0
 	If gameHour
@@ -555,6 +621,27 @@ Float[] Function KindWeights(Actor akPlayer)
 			w[K_RADIO] = w[K_RADIO] * 1.5
 		EndIf
 	EndIf
+	; Wave 2 kinds by hour and place.
+	If hour >= 20.0 || hour < 5.0
+		w[K_CAMP] = w[K_CAMP] * 2.0
+	EndIf
+	If here
+		If here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
+			w[K_POOL] = w[K_POOL] * 1.5
+			w[K_GATE] = w[K_GATE] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword)
+			w[K_GATE] = w[K_GATE] * 1.5
+			w[K_CROP] = w[K_CROP] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
+			w[K_CAMP] = w[K_CAMP] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_BAR, "Fallout4.esm") as Keyword)
+			w[K_POOL] = w[K_POOL] * 2.0
+			w[K_TV] = w[K_TV] * 1.5
+		EndIf
+	EndIf
 	Return w
 EndFunction
 
@@ -566,19 +653,11 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	Int i = 0
 	While i < akPeople.Length && made < MaxPeopleSpots && _spots.Length < _budget
 		Actor person = akPeople[i]
-		If !NearAnyPlace(person, 400.0)
+		If !NearAnyPlace(person, 400.0) && !person.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
 			Int seed = (Seed(person) % 9973) + day * 31
 			Float angle = (seed % 360) as Float
 			Float r = 150.0 + ((seed / 7) % 151) as Float
-			Form kind = Smoke
-			Int roll = (seed / 3) % 4
-			If roll == 1
-				kind = Newspaper
-			ElseIf roll == 2
-				kind = GroundSit
-			ElseIf roll == 3
-				kind = Coffee
-			EndIf
+			Form kind = PersonSpot(seed)
 			ObjectReference spot = person.PlaceAtMe(kind, 1, False, True, True)
 			If spot
 				spot.SetPosition(person.GetPositionX() + r * Math.Sin(angle), person.GetPositionY() + r * Math.Cos(angle), person.GetPositionZ())
@@ -633,7 +712,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_PEOPLE) + " by people; " + _spots.Length + " of " + _budget + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -682,6 +761,10 @@ Function Dress(ObjectReference akRef, Int aiKind)
 	Int seed = Seed(akRef)
 	If aiKind == K_RADIO
 		DressRadio(akRef, seed)
+		Return
+	EndIf
+	If aiKind >= K_CAMP && aiKind <= K_GATE
+		DressRing(akRef, aiKind, seed)
 		Return
 	EndIf
 	Int g = GeoBases.Find(akRef.GetBaseObject())
@@ -737,9 +820,31 @@ Function Dress(ObjectReference akRef, Int aiKind)
 		count = 1
 	ElseIf aiKind == K_WORK
 		; Someone at one end, working with a hammer or a wrench, facing the bench.
+		Form base = akRef.GetBaseObject()
 		Form kind = Tools[(seed / 3) % Tools.Length]
-		AtEnd(akRef, kind, x1, y1, x2, y2, alongX, plus, WorkOut)
-		count = 1
+		If base == Game.GetFormFromFile(PA_STATION, "Fallout4.esm") || base == Game.GetFormFromFile(PA_SMALL, "Fallout4.esm")
+			; A power armor station: someone in armor looking it over (power armor only), and a clipboard.
+			AtEnd(akRef, PAExamine, x1, y1, x2, y2, alongX, plus, WorkOut)
+			AtEnd(akRef, Clipboard, x1, y1, x2, y2, alongX, !plus, WorkOut)
+			count = 2
+		Else
+			If base == Game.GetFormFromFile(CHEM_A, "Fallout4.esm") || base == Game.GetFormFromFile(CHEM_B, "Fallout4.esm")
+				; A chem station: Jet among raiders, a needle being prepped or a clipboard elsewhere.
+				If Raiders()
+					kind = UseJet
+				ElseIf (seed / 5) % 2 == 0
+					kind = NeedlePrep
+				Else
+					kind = Clipboard
+				EndIf
+			ElseIf (seed / 5) % 4 == 0
+				kind = Clipboard
+			ElseIf (seed / 5) % 4 == 1
+				kind = Search
+			EndIf
+			AtEnd(akRef, kind, x1, y1, x2, y2, alongX, plus, WorkOut)
+			count = 1
+		EndIf
 	ElseIf aiKind == K_BENCH
 		; Two standing about in front of it, facing each other; now and then a smoker at the far end.
 		Form a = Coffee
@@ -776,6 +881,18 @@ String Function KindName(Int aiKind)
 		Return "counter"
 	ElseIf aiKind == K_TABLE
 		Return "table"
+	ElseIf aiKind == K_CAMP
+		Return "campfire"
+	ElseIf aiKind == K_CROP
+		Return "crop"
+	ElseIf aiKind == K_HEDGE
+		Return "hedge"
+	ElseIf aiKind == K_POOL
+		Return "pool table"
+	ElseIf aiKind == K_TV
+		Return "TV"
+	ElseIf aiKind == K_GATE
+		Return "gate"
 	ElseIf aiKind == K_RAIL
 		Return "rail"
 	ElseIf aiKind == K_WORK
@@ -983,7 +1100,7 @@ Int Function InUse()
 	Int i = 0
 	While i < _spots.Length
 		ObjectReference spot = _spots[i]
-		If spot && spot.GetBaseObject() != Smoke && spot.GetBaseObject() != Dance && spot.IsFurnitureInUse(False)
+		If spot && (spot.GetBaseObject() as Furniture) && spot.IsFurnitureInUse(False)
 			used += 1
 		EndIf
 		i += 1
@@ -996,7 +1113,7 @@ Int Function FurnitureSpots()
 	Int i = 0
 	While i < _spots.Length
 		ObjectReference spot = _spots[i]
-		If spot && spot.GetBaseObject() != Smoke && spot.GetBaseObject() != Dance
+		If spot && (spot.GetBaseObject() as Furniture)
 			n += 1
 		EndIf
 		i += 1
@@ -1058,4 +1175,172 @@ Function TrackUsers()
 	_dwSpot = nowSpot
 	_dwUser = nowUser
 	_dwSince = nowSince
+EndFunction
+
+; ---- wave 2 ----------------------------------------------------------------------------------------------
+
+Bool Function Raiders()
+	Location here = Game.GetPlayer().GetCurrentLocation()
+	Return here && here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
+EndFunction
+
+Int Function CountRobots(Actor akPlayer)
+	ObjectReference[] refs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), Radius)
+	Int n = 0
+	Int i = 0
+	While i < refs.Length
+		Actor a = refs[i] as Actor
+		If a && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsHostileToActor(akPlayer)
+			n += 1
+		EndIf
+		i += 1
+	EndWhile
+	Return n
+EndFunction
+
+; What a spot next to a person is, by the kind of place: raiders smoke, use Jet, play with knives and
+; chug (Nuka-World); settlers work; townsfolk read, shop and check their Pip-Boys.
+Form Function PersonSpot(Int aiSeed)
+	Form[] pool = new Form[6]
+	Location here = Game.GetPlayer().GetCurrentLocation()
+	If here && here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
+		pool[0] = Smoke
+		pool[1] = UseJet
+		pool[2] = GroundSit
+		pool[3] = OrElse(Game.GetFormFromFile(DLC04_KNIFE_PLAY, "DLCNukaWorld.esm"), Smoke)
+		pool[4] = OrElse(Game.GetFormFromFile(DLC04_BOTTLE, "DLCNukaWorld.esm"), SadSit)
+		pool[5] = OrElse(Game.GetFormFromFile(DLC04_KNIFE_CLEAN, "DLCNukaWorld.esm"), KneelSit)
+	ElseIf here && here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword)
+		pool[0] = Coffee
+		pool[1] = Clipboard
+		pool[2] = Search
+		pool[3] = KneelSit
+		pool[4] = GroundSit
+		pool[5] = Smoke
+	ElseIf here && here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
+		pool[0] = Smoke
+		pool[1] = Newspaper
+		pool[2] = Coffee
+		pool[3] = Examine
+		pool[4] = PipBoy
+		pool[5] = Shopping
+	Else
+		pool[0] = Smoke
+		pool[1] = Newspaper
+		pool[2] = GroundSit
+		pool[3] = Coffee
+		pool[4] = Examine
+		pool[5] = SadSit
+	EndIf
+	Return pool[(aiSeed / 3) % 6]
+EndFunction
+
+Form Function OrElse(Form akForm, Form akFallback)
+	If akForm
+		Return akForm
+	EndIf
+	Return akFallback
+EndFunction
+
+; Ring and in-front kinds, no bounds needed.
+Function DressRing(ObjectReference akRef, Int aiKind, Int aiSeed)
+	Float x = akRef.GetPositionX()
+	Float y = akRef.GetPositionY()
+	Float z = akRef.GetPositionZ()
+	Float start = (aiSeed % 360) as Float
+	Int count = 0
+	If aiKind == K_CAMP
+		; Sitting round the campfire: vanilla's sitters are a median 131 out, 73% within 30 degrees of
+		; facing it (research/anc2); now and then one kneels or sits slumped; among raiders, one with Jet.
+		Int n = 2 + aiSeed % 3
+		Int k = 0
+		While k < n
+			Float ca = start + (360.0 / n) * k + ((aiSeed / (k + 3)) % 41 - 20) as Float
+			Float cr = 131.0 + ((aiSeed / (k + 5)) % 31 - 15) as Float
+			Form ck = GroundSit
+			Int roll = (aiSeed / (k + 7)) % 8
+			If roll == 0
+				ck = KneelSit
+			ElseIf roll == 1
+				ck = SadSit
+			EndIf
+			PlaceWorld(akRef, ck, x + cr * Math.Sin(ca), y + cr * Math.Cos(ca), z, ca + 180.0 + ((aiSeed / (k + 11)) % 31 - 15) as Float)
+			k += 1
+			count += 1
+		EndWhile
+		If Raiders()
+			Float ja = start + 180.0 / n
+			PlaceWorld(akRef, UseJet, x + 200.0 * Math.Sin(ja), y + 200.0 * Math.Cos(ja), z, ja + 180.0)
+			count += 1
+		EndIf
+	ElseIf aiKind == K_POOL
+		; Two standing at the table, either end, looking it over.
+		Int pk = 0
+		While pk < 2
+			Float pa = start + 180.0 * pk
+			Form pkind = Examine
+			If (aiSeed / (pk + 3)) % 2 == 0
+				pkind = Shopping
+			EndIf
+			PlaceWorld(akRef, pkind, x + 150.0 * Math.Sin(pa), y + 150.0 * Math.Cos(pa), z, pa + 180.0)
+			pk += 1
+			count += 1
+		EndWhile
+	ElseIf aiKind == K_TV
+		; Watching from the floor in front (local +Y taken as the screen side).
+		Int tn = 1 + aiSeed % 2
+		Int tk = 0
+		While tk < tn
+			Form tkind = GroundSit
+			If (aiSeed / (tk + 3)) % 3 == 0
+				tkind = KneelSit
+			EndIf
+			PlaceLocal(akRef, tkind, (tk * 80 - 40 * (tn - 1)) as Float, 130.0, 180.0)
+			tk += 1
+			count += 1
+		EndWhile
+	ElseIf aiKind == K_GATE
+		; Someone posing on guard beside it, facing out.
+		PlaceWorld(akRef, Military, x + 160.0 * Math.Sin(start), y + 160.0 * Math.Cos(start), z, start)
+		count = 1
+	ElseIf aiKind == K_CROP
+		; A Mr Handy tending it (robots only).
+		PlaceWorld(akRef, HandyGarden, x + 90.0 * Math.Sin(start), y + 90.0 * Math.Cos(start), z, start + 180.0)
+		count = 1
+	ElseIf aiKind == K_HEDGE
+		; A Mr Handy trimming it (robots only).
+		PlaceWorld(akRef, HandyTrim, x + 140.0 * Math.Sin(start), y + 140.0 * Math.Cos(start), z, start + 180.0)
+		count = 1
+	EndIf
+	AddAnchorRef(akRef, aiKind)
+	Debug.Trace("Idle Life: " + KindName(aiKind) + " " + akRef + " (" + akRef.GetBaseObject() + ") gets " + count + " spots", 0)
+EndFunction
+
+; Dogs near, calm: a spot to sniff and scratch at a little way off (dogs only), at most two.
+Function DogSpots(Actor akPlayer)
+	ObjectReference[] refs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
+	Int made = 0
+	Int i = 0
+	While i < refs.Length && made < 2 && _spots.Length < MaxSpots - 4
+		Actor d = refs[i] as Actor
+		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !NearKind(d, K_DOG, 400.0)
+			Int seed = Seed(d) % 9973
+			Float da = (seed % 360) as Float
+			ObjectReference spot = d.PlaceAtMe(DogSniff, 1, False, True, True)
+			If spot
+				spot.SetPosition(d.GetPositionX() + 120.0 * Math.Sin(da), d.GetPositionY() + 120.0 * Math.Cos(da), d.GetPositionZ())
+				spot.SetAngle(0.0, 0.0, da)
+				spot.Enable(False)
+				spot.MoveToNearestNavmeshLocation()
+				_spots.Add(spot)
+				_spotFire.Add(spot)
+				AddAnchorRef(spot, K_DOG)
+				made += 1
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	If made > 0
+		Debug.Trace("Idle Life: " + made + " sniffing spots for dogs", 0)
+	EndIf
 EndFunction

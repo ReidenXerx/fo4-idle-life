@@ -89,6 +89,33 @@ TOOLS = [0x0D96C9, 0x0D96C7, 0x0D96CD, 0x0D96C5, 0x0D96C3, 0x0D96C1, 0x0D96BF]  
 DANCE_IDLES = [0x083BE4, 0x083BE5, 0x083BE3, 0x141F3C]   # IdleDrunkDancing, ...Drunker, IdleDrunkFaster, IdleClapping
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
+# ---- wave 2 (owner 2026-10-01: "scale our covered idle markers on maximum") -------------------------
+# Anchors placed by ring or in front, no bounds needed (research/anc2_*). Unlit campfires (every vanilla
+# campfire is an "_Off_" static; flames are separate effects) and the doused cooking fire: sitters round them.
+CAMPFIRES = [0x065582, 0x065584, 0x06356D, 0x060D53, 0x065585, 0x065583, 0x0F3923, 0x10C3B6, 0x14FBCD]
+CROPS = [0x1C400C, 0x0A2958, 0x1C400A, 0x1C4014, 0x1C400B, 0x1C4008, 0x1C4009, 0x1C4BEF, 0x09D107, 0x0EF24A, 0x0F5D8F, 0x0FAFE7]
+HEDGES = [0x13385C, 0x13385E, 0x13385D, 0x13385F, 0x0F40F5, 0x048287, 0x0F40EA]
+POOLS = [0x10907A]                                   # PoolTable01
+TVS = [0x075F38, 0x075F3A, 0x22C66B, 0x22C66F]       # ruin TVs 1/2, workshop TV, TV on a table
+GATES = [0x07CE79, 0x094731, 0x0223DD, 0x075314]     # security gate, latched gate, chainlink gate, picket gate
+# Spots, vetted (research/vet_*): any human unless noted.
+WAVE2_SPOTS = {
+    'Examine': 0x14B737,     # IDLM NPCStandingExamineIdleMarker
+    'Shopping': 0x01F86D,    # IDLM NPCShoppingIdleMarker
+    'Military': 0x161F26,    # IDLM NPCMilitaryPoseIdleMarker (AnimFlavorMilitary)
+    'Clipboard': 0x122F9E,   # IDLM NPCHoldingClipboardIdleMarker
+    'NeedlePrep': 0x15EFB8,  # IDLM NPCNeedlePrepIdleMarker
+    'PipBoy': 0x1CB006,      # IDLM NPCUsePipBoy (sex picks the idle)
+    'UseJet': 0x1B9B83,      # IDLM NPCUseJet
+    'Search': 0x1A03E4,      # FURN NPCSearchStanding
+    'KneelSit': 0x1CC203,    # FURN NPCKneelSit
+    'SadSit': 0x05A47A,      # FURN NpcInvGroundSadSit
+    'PAExamine': 0x197E67,   # IDLM NPCPowerArmorExamineIdleMarker: power armor only
+    'HandyGarden': 0x1B19B8, # IDLM MrHandyGardening: robots only
+    'HandyTrim': 0x068041,   # IDLM MrHandyTrimHedgesIdleMarker: robots only
+    'DogSniff': 0x19FCCA,    # IDLM DogmeatIdleMarkerSniffScratch: dogs only
+}
+
 # The MCM Testing page (owner 2026-10-01: "spawn idiotic npcs ... to test it without wasting time"):
 # harmless settlers placed around the player, held in a reference collection whose package makes them
 # sandbox right there, so they wander and pick up the spots.
@@ -207,6 +234,16 @@ def build():
     def floats(xs):
         return struct.pack('<I', len(xs)) + b''.join(struct.pack('<f', float(x)) for x in xs)
 
+    wave2_lists = {}
+    for kind, bases in (('Campfire', CAMPFIRES), ('Crop', CROPS), ('Hedge', HEDGES), ('Pool', POOLS),
+                        ('Tv', TVS), ('Gate', GATES)):
+        kid = new_id('Anchors' + kind)
+        kl = field('EDID', zstring('IL_Anchors' + kind))
+        for base in bases:
+            kl += field('LNAM', struct.pack('<I', base))
+        flst += record('FLST', kid, kl)
+        wave2_lists[kind] = kid
+
     q = field('EDID', zstring('IL_Spawner'))
     q += field('VMAD', vmad('IdleLife:Spawner', [
         ('FireAnchors', 1, obj(fire_id)),
@@ -236,6 +273,8 @@ def build():
         ('Tools', 11, objs(TOOLS)),
         ('Dance', 1, obj(dance_id)),
         ('GroundSit', 1, obj(GROUND_SIT)),
+    ] + [(k + 'Anchors', 1, obj(v)) for k, v in wave2_lists.items()]
+      + [(k, 1, obj(v)) for k, v in WAVE2_SPOTS.items()] + [
     ]))
     q += field('DNAM', bytes.fromhex('110064670000000000000000'))   # start game enabled
     q += field('NEXT', b'')
