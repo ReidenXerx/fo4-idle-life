@@ -34,5 +34,7 @@
  "Setting_KindGate": "820",
  "Setting_KindDogs": "821",
  "Setting_KindWall": "822",
- "Setting_KindOpen": "823"
+ "Setting_KindOpen": "823",
+ "Setting_KindCrate": "824",
+ "AnchorsCrate": "825"
 }

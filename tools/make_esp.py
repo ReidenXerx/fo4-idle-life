@@ -44,7 +44,7 @@ SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyRe
 # One switch per kind (MCM). Script kind order: fire, counter, rail, work, bench, radio, people, table,
 # campfire, crop, hedge, pool, TV, gate, dog -- crops+hedges share "Robots", pool tables+TVs share one.
 KIND_SWITCHES = ['Fire', 'Counter', 'Rail', 'Work', 'Bench', 'Radio', 'People', 'Table', 'Camp',
-                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs', 'Wall', 'Open']
+                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs', 'Wall', 'Open', 'Crate']
 for _k in dict.fromkeys(KIND_SWITCHES):
     SETTINGS.append(('Kind' + _k, 1.0))
 
@@ -124,6 +124,36 @@ WAVE2_SPOTS = {
     'NewsLeanRight': 0x1338FA,  # FURN NPCNewspaperLeanRight
     'NewsLeanLeft': 0x1338F9,   # FURN NPCNewspaperLeanLeft
 }
+
+# ---- wave 3 (owner 2026-10-02: "use all we can found ... basically free assets") -----------------------
+# Every unused vanilla pose spot that fits a place (research/idle_gap, wave3): none carries a condition, a
+# flag or a race limit in its record. Distances measured from vanilla's own placements.
+WAVE3_SPOTS = {
+    'HandRailA': 0x0C189C,      # FURN NPCHandRailA: back to the rail, ~14 out (n=24)
+    'HandRailB': 0x0C189D,      # FURN NPCHandRailB: back to the rail (n=27)
+    'HandRailC': 0x0C189E,      # FURN NPCHandRailC: facing the rail, ~38 out (n=37)
+    'HandRailD': 0x0C189F,      # FURN NPCHandRailD: facing the rail (n=26)
+    'MapLean': 0x16BAE3,        # FURN NPCMapLean: 20 off a table's edge, facing it (n=11)
+    'BoxSearch': 0x144AAF,      # FURN NPCBoxSearch: 18 off a box, facing it (n=29)
+    'WeldMed': 0x130534,        # FURN NPCWeldingMedium
+    'WeldHigh': 0x130535,       # FURN NPCWeldingHigh
+    'PaintWall': 0x11E6C7,      # FURN NPCPaintWall
+    'GuardPost': 0x05DD9B,      # FURN NPCStandingInvGuardPost: 157 off a gate, facing it (n=4)
+    'Hoe': 0x0EB2B4,            # FURN NPCHoe: 79 off a crop (n=18)
+    'WeedA': 0x0CA064,          # FURN NPCWeedInvA: 64 off (n=10)
+    'WeedB': 0x0CA066,          # FURN NPCWeedInvB: 70 off (n=5)
+    'ClipboardPen': 0x183AD4,   # FURN NPCClipboardWithPen
+    'Broom': 0x0366B6,          # FURN NPCPushBroomSweep
+    'BroomConst': 0x1B46B8,     # FURN NPCPushBroomSweepConstant
+    'PushUps': 0x1AC040,        # FURN NPCPushUps
+    'Pray': 0x2469C6,           # FURN NPCKneelPrayingSit
+    'KidSit': 0x146E92,         # FURN NPCKidSittingOnGround: the children's
+    'Patrol': 0x002CE2,         # IDLM PatrolIdleMarker: looking around
+}
+# Boxes and crates people rummage through: vanilla's box search spots sit by these (OfficeBoxPapers 15 of
+# 29, wood crates); with the steel vault crates, the big green crate, the metal box and the toolbox.
+CRATES = [0x03A9EB, 0x03A9EC, 0x03A9ED, 0x0FD395, 0x0211F5, 0x0211F6, 0x0211F7, 0x0731A6, 0x0BA58F,
+          0x0BA592, 0x0CD29D, 0x059A9A]
 
 # The MCM Testing page (owner 2026-10-01: "spawn idiotic npcs ... to test it without wasting time"):
 # harmless settlers placed around the player, held in a reference collection whose package makes them
@@ -245,7 +275,7 @@ def build():
 
     wave2_lists = {}
     for kind, bases in (('Campfire', CAMPFIRES), ('Crop', CROPS), ('Hedge', HEDGES), ('Pool', POOLS),
-                        ('Tv', TVS), ('Gate', GATES)):
+                        ('Tv', TVS), ('Gate', GATES), ('Crate', CRATES)):
         kid = new_id('Anchors' + kind)
         kl = field('EDID', zstring('IL_Anchors' + kind))
         for base in bases:
@@ -287,7 +317,8 @@ def build():
         ('Dance', 1, obj(dance_id)),
         ('GroundSit', 1, obj(GROUND_SIT)),
     ] + [(k + 'Anchors', 1, obj(v)) for k, v in wave2_lists.items()]
-      + [(k, 1, obj(v)) for k, v in WAVE2_SPOTS.items()] + [
+      + [(k, 1, obj(v)) for k, v in WAVE2_SPOTS.items()]
+      + [(k, 1, obj(v)) for k, v in WAVE3_SPOTS.items()] + [
     ]))
     q += field('DNAM', bytes.fromhex('110064670000000000000000'))   # start game enabled
     q += field('NEXT', b'')

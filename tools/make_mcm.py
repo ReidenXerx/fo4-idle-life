@@ -63,19 +63,22 @@ def build():
         ('Fire', 'Fires', 'Warming hands at fire barrels and burning piles; a smoker.'),
         ('Camp', 'Campfires', 'Sitting round campfires; among raiders, one on Jet.'),
         ('Counter', 'Counters', 'Standing with a coffee or noodles at counters.'),
-        ('Table', 'Tables', 'Standing with a coffee or noodles at tables: market stalls.'),
+        ('Table', 'Tables', 'Standing with a coffee or noodles at tables, or bent over one as over a map.'),
         ('Bench', 'Benches', 'Two standing about by benches, a smoker.'),
-        ('Rail', 'Railings and fences', 'Leaning back against them.'),
-        ('Work', 'Workbenches', 'Hammers and wrenches; power armor checks, chems, clipboards.'),
+        ('Rail', 'Railings and fences', 'Leaning back against them, or hands on the rail looking out.'),
+        ('Work', 'Workbenches', 'Hammers, wrenches and welding; power armor checks, chems, clipboards.'),
         ('Radio', 'Radios', 'Dancing by a radio that is playing.'),
         ('PoolTv', 'Pool tables and TVs', 'Standing at pool tables, watching TV from the floor.'),
-        ('Gate', 'Gates', 'Someone on guard by a gate.'),
-        ('Robots', 'Robots', 'Mr Handys gardening crops and trimming hedges.'),
+        ('Gate', 'Gates', 'Someone on guard by a gate, or watching it from a guard post.'),
+        ('Robots', 'Crops and hedges', 'People hoeing and weeding crops; Mr Handys gardening and trimming hedges.'),
+        ('Crate', 'Boxes and crates', 'Someone rummaging through a box or a crate.'),
         ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
-        ('Wall', 'Along walls', 'Leaning back on walls, reading a paper. Needs the Idle Life plugin '
-                 '(F4SE) that reads the navmesh.'),
-        ('Open', 'In the open', 'A sitting circle on flat open ground. Needs the Idle Life plugin.'),
-        ('People', 'Next to people', 'Where nothing else is: a smoke, a newspaper, a sit, a coffee by the people themselves.'),
+        ('Wall', 'Along walls', 'Leaning back on walls, reading a paper; in settlements painting or welding '
+                 'them. Needs the Idle Life plugin (F4SE) that reads the navmesh.'),
+        ('Open', 'In the open', 'A sitting circle on flat open ground; someone sweeping, doing push-ups, '
+                 'praying or on the lookout. Needs the Idle Life plugin.'),
+        ('People', 'Next to people', 'Where nothing else is: a smoke, a newspaper, a sit, a coffee, a broom or '
+                   'a clipboard by the people themselves; children sit on the ground.'),
     )]
     testing = [
         {'text': 'For testing: see the spots taken without waiting for the locals. Buttons that play out '

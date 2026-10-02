@@ -66,6 +66,30 @@ Form Property NewsLeanLeft Auto Const Mandatory
 Form Property DogSniff Auto Const Mandatory
 {Wave 2 (research/vet_*): any human unless noted -- PAExamine power armor only, the two Handy spots robots
 only, DogSniff dogs only.}
+Form Property HandRailA Auto Const Mandatory
+Form Property HandRailB Auto Const Mandatory
+Form Property HandRailC Auto Const Mandatory
+Form Property HandRailD Auto Const Mandatory
+Form Property MapLean Auto Const Mandatory
+Form Property BoxSearch Auto Const Mandatory
+Form Property WeldMed Auto Const Mandatory
+Form Property WeldHigh Auto Const Mandatory
+Form Property PaintWall Auto Const Mandatory
+Form Property GuardPost Auto Const Mandatory
+Form Property Hoe Auto Const Mandatory
+Form Property WeedA Auto Const Mandatory
+Form Property WeedB Auto Const Mandatory
+Form Property ClipboardPen Auto Const Mandatory
+Form Property Broom Auto Const Mandatory
+Form Property BroomConst Auto Const Mandatory
+Form Property PushUps Auto Const Mandatory
+Form Property Pray Auto Const Mandatory
+Form Property KidSit Auto Const Mandatory
+Form Property Patrol Auto Const Mandatory
+{Wave 3 (owner 2026-10-02: "use all we can found"; research/wave3): every vanilla pose spot that fits a
+place, none restricted in its record. KidSit is the children's; Patrol is vanilla's patrol idle marker.}
+FormList Property CrateAnchors Auto Const Mandatory
+{Boxes and crates: someone rummaging through one (vanilla's box search, 18 off the box, facing it).}
 
 Quest Property TestQuest Auto Const Mandatory
 RefCollectionAlias Property Testers Auto Const Mandatory
@@ -92,6 +116,14 @@ Float Property WorkOut = 50.0 Auto Const
 Float Property BenchOut = 110.0 Auto Const
 {Vanilla's standing spots near benches: ~110 out (research/cal2_work).}
 Float Property PairGap = 110.0 Auto Const
+Float Property RailBackOut = 14.0 Auto Const
+{Vanilla's hand-rail poses A/B: back to the rail, 11-16 out (research/wave3, n=24/27).}
+Float Property RailFaceOut = 38.0 Auto Const
+{Vanilla's hand-rail poses C/D: facing the rail, 37-41 out (n=37/26).}
+Float Property MapLeanOut = 20.0 Auto Const
+{Vanilla's map lean: 20 off the table's edge, facing it (n=11).}
+Int Property MaxCrateCandidates = 8 Auto Const
+{Boxes and crates are everywhere (thousands placed): only this many go into one draw's pool.}
 Form Property GroundSit Auto Const Mandatory
 {NPCInvGroundSit: for the spots that go next to the people where nothing else is.}
 GlobalVariable Property SpotsPerPersonSetting Auto Const Mandatory
@@ -128,6 +160,8 @@ Int Property K_GATE = 13 AutoReadOnly
 Int Property K_DOG = 14 AutoReadOnly
 Int Property K_WALL = 15 AutoReadOnly      ; from the navmesh DLL
 Int Property K_OPEN = 16 AutoReadOnly      ; from the navmesh DLL
+Int Property K_CRATE = 17 AutoReadOnly     ; wave 3
+Int Property KIND_COUNT = 18 AutoReadOnly
 Int Property KW_ROBOT = 0x02CB73 AutoReadOnly          ; ActorTypeRobot
 Int Property KW_DOG = 0x021AD0 AutoReadOnly            ; ActorTypeDog
 Int Property KW_CHILD = 0x1157E8 AutoReadOnly          ; ActorTypeChild
@@ -405,7 +439,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	ObjectReference[] cand = new ObjectReference[0]
 	Int[] kind = new Int[0]
 	Float[] near = new Float[0]
-	FormList[] lists = new FormList[14]
+	FormList[] lists = new FormList[15]
 	lists[0] = FireAnchors
 	lists[1] = FireLights
 	lists[2] = CounterAnchors
@@ -420,7 +454,8 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	lists[11] = PoolAnchors
 	lists[12] = TvAnchors
 	lists[13] = GateAnchors
-	Int[] kinds = new Int[14]
+	lists[14] = CrateAnchors
+	Int[] kinds = new Int[15]
 	kinds[0] = K_FIRE
 	kinds[1] = K_FIRE
 	kinds[2] = K_COUNTER
@@ -435,6 +470,8 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	kinds[11] = K_POOL
 	kinds[12] = K_TV
 	kinds[13] = K_GATE
+	kinds[14] = K_CRATE
+	Int crates = 0
 	Int p = 0
 	While p < akPeople.Length && p < 12
 		Int l = 0
@@ -447,10 +484,13 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 					Int at = cand.Find(r)
 					If at >= 0
 						near[at] = near[at] + 1.0
-					ElseIf cand.Length < 120
+					ElseIf cand.Length < 120 && (kinds[l] != K_CRATE || crates < MaxCrateCandidates)
 						cand.Add(r)
 						kind.Add(kinds[l])
 						near.Add(1.0)
+						If kinds[l] == K_CRATE
+							crates += 1
+						EndIf
 					EndIf
 				EndIf
 				f += 1
@@ -464,7 +504,7 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 	EndIf
 
 	Float[] weight = KindWeights(akPlayer)
-	Int[] drawn = new Int[17]
+	Int[] drawn = new Int[KIND_COUNT]
 	Float[] crowd = new Float[0]
 	Int i = 0
 	While i < cand.Length
@@ -543,6 +583,8 @@ Function SpaceOut(ObjectReference[] akCand, Int[] akKind, Float[] akCrowd, Objec
 	Float spacing = 0.0
 	If aiKind == K_RAIL
 		spacing = 600.0
+	ElseIf aiKind == K_CRATE
+		spacing = 500.0
 	ElseIf aiKind == K_COUNTER || aiKind == K_BENCH || aiKind == K_TABLE
 		spacing = 300.0
 	EndIf
@@ -579,7 +621,7 @@ EndFunction
 
 ; Base shares (fire 3, counter 2, bench 2, work 1.5, rail 1, radio 1), times the hour and the place.
 Float[] Function KindWeights(Actor akPlayer)
-	Float[] w = new Float[17]
+	Float[] w = new Float[KIND_COUNT]
 	w[K_FIRE] = 3.0
 	w[K_COUNTER] = 2.0
 	w[K_RAIL] = 1.0
@@ -593,8 +635,8 @@ Float[] Function KindWeights(Actor akPlayer)
 	w[K_POOL] = 1.5
 	w[K_TV] = 1.0
 	w[K_GATE] = 1.0
-	If _robots == 0          ; the Handy spots are for robots only
-		w[K_CROP] = 0.0
+	w[K_CRATE] = 0.8
+	If _robots == 0          ; the hedge trimming is for robots only (crops have people farming since wave 3)
 		w[K_HEDGE] = 0.0
 	EndIf
 	GlobalVariable gameHour = Game.GetFormFromFile(GAME_HOUR, "Fallout4.esm") as GlobalVariable
@@ -646,6 +688,10 @@ Float[] Function KindWeights(Actor akPlayer)
 		If here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword)
 			w[K_GATE] = w[K_GATE] * 1.5
 			w[K_CROP] = w[K_CROP] * 1.5
+			w[K_CRATE] = w[K_CRATE] * 1.5
+		EndIf
+		If here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
+			w[K_CRATE] = w[K_CRATE] * 1.5
 		EndIf
 		If here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
 			w[K_CAMP] = w[K_CAMP] * 1.5
@@ -676,11 +722,14 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	Int i = 0
 	While i < akPeople.Length && made < MaxPeopleSpots && _spots.Length < _budget
 		Actor person = akPeople[i]
-		If !NearAnyPlace(person, 400.0) && !person.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
+		If !NearAnyPlace(person, 400.0)
 			Int seed = (Seed(person) % 9973) + day * 31
 			Float angle = (seed % 360) as Float
 			Float r = 150.0 + ((seed / 7) % 151) as Float
 			Form kind = PersonSpot(seed)
+			If person.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
+				kind = KidSit      ; wave 3: the children get their own sit on the ground
+			EndIf
 			ObjectReference spot = person.PlaceAtMe(kind, 1, False, True, True)
 			If spot
 				spot.SetPosition(person.GetPositionX() + r * Math.Sin(angle), person.GetPositionY() + r * Math.Cos(angle), person.GetPositionZ())
@@ -786,7 +835,7 @@ Function Dress(ObjectReference akRef, Int aiKind)
 		DressRadio(akRef, seed)
 		Return
 	EndIf
-	If aiKind >= K_CAMP && aiKind <= K_GATE
+	If (aiKind >= K_CAMP && aiKind <= K_GATE) || aiKind == K_CRATE
 		DressRing(akRef, aiKind, seed)
 		Return
 	EndIf
@@ -832,14 +881,32 @@ Function Dress(ObjectReference akRef, Int aiKind)
 			If (seed / (tk + 5)) % 2 == 0
 				tkind = Coffee
 			EndIf
-			AlongSide(akRef, tkind, x1, y1, x2, y2, alongX, plus, tt, CounterOut, True)
+			Float tout = CounterOut
+			If (seed / (tk + 13)) % 4 == 0
+				; Wave 3: bent over the table as over a map, vanilla's 20 off its edge.
+				tkind = MapLean
+				tout = MapLeanOut
+			EndIf
+			AlongSide(akRef, tkind, x1, y1, x2, y2, alongX, plus, tt, tout, True)
 			tk += 1
 			count += 1
 		EndWhile
 	ElseIf aiKind == K_RAIL
-		; Someone leaning back against it, somewhere along it.
+		; Someone leaning back against it, somewhere along it -- or (wave 3) on one of vanilla's four hand-rail
+		; poses: A/B with their back to it, C/D facing it with their hands on it.
 		Float t = 0.2 + ((seed / 7) % 61) / 100.0
-		AlongSide(akRef, Lean, x1, y1, x2, y2, alongX, plus, t, RailOut, False)
+		Int pose = (seed / 11) % 6
+		If pose == 2
+			AlongSide(akRef, HandRailA, x1, y1, x2, y2, alongX, plus, t, RailBackOut, False)
+		ElseIf pose == 3
+			AlongSide(akRef, HandRailB, x1, y1, x2, y2, alongX, plus, t, RailBackOut, False)
+		ElseIf pose == 4
+			AlongSide(akRef, HandRailC, x1, y1, x2, y2, alongX, plus, t, RailFaceOut, True)
+		ElseIf pose == 5
+			AlongSide(akRef, HandRailD, x1, y1, x2, y2, alongX, plus, t, RailFaceOut, True)
+		Else
+			AlongSide(akRef, Lean, x1, y1, x2, y2, alongX, plus, t, RailOut, False)
+		EndIf
 		count = 1
 	ElseIf aiKind == K_WORK
 		; Someone at one end, working with a hammer or a wrench, facing the bench.
@@ -860,10 +927,14 @@ Function Dress(ObjectReference akRef, Int aiKind)
 				Else
 					kind = Clipboard
 				EndIf
-			ElseIf (seed / 5) % 4 == 0
+			ElseIf (seed / 5) % 6 == 0
 				kind = Clipboard
-			ElseIf (seed / 5) % 4 == 1
+			ElseIf (seed / 5) % 6 == 1
 				kind = Search
+			ElseIf (seed / 5) % 6 == 2
+				kind = ClipboardPen      ; wave 3: writing it down
+			ElseIf (seed / 5) % 6 == 3
+				kind = WeldMed           ; wave 3: welding at the bench
 			EndIf
 			AtEnd(akRef, kind, x1, y1, x2, y2, alongX, plus, WorkOut)
 			count = 1
@@ -920,6 +991,8 @@ String Function KindName(Int aiKind)
 		Return "wall"
 	ElseIf aiKind == K_OPEN
 		Return "open ground"
+	ElseIf aiKind == K_CRATE
+		Return "crate"
 	ElseIf aiKind == K_RAIL
 		Return "rail"
 	ElseIf aiKind == K_WORK
@@ -1212,6 +1285,12 @@ EndFunction
 
 ; ---- wave 2 ----------------------------------------------------------------------------------------------
 
+; A town or a workshop settlement: where sweeping, painting and welding belong (wave 3).
+Bool Function Settlement()
+	Location here = Game.GetPlayer().GetCurrentLocation()
+	Return here && (here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword) || here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword))
+EndFunction
+
 Bool Function Raiders()
 	Location here = Game.GetPlayer().GetCurrentLocation()
 	Return here && here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
@@ -1234,7 +1313,7 @@ EndFunction
 ; What a spot next to a person is, by the kind of place: raiders smoke, use Jet, play with knives and
 ; chug (Nuka-World); settlers work; townsfolk read, shop and check their Pip-Boys.
 Form Function PersonSpot(Int aiSeed)
-	Form[] pool = new Form[6]
+	Form[] pool = new Form[8]
 	Location here = Game.GetPlayer().GetCurrentLocation()
 	If here && here.HasKeyword(Game.GetFormFromFile(LOC_RAIDERS, "Fallout4.esm") as Keyword)
 		pool[0] = Smoke
@@ -1243,6 +1322,8 @@ Form Function PersonSpot(Int aiSeed)
 		pool[3] = OrElse(Game.GetFormFromFile(DLC04_KNIFE_PLAY, "DLCNukaWorld.esm"), Smoke)
 		pool[4] = OrElse(Game.GetFormFromFile(DLC04_BOTTLE, "DLCNukaWorld.esm"), SadSit)
 		pool[5] = OrElse(Game.GetFormFromFile(DLC04_KNIFE_CLEAN, "DLCNukaWorld.esm"), KneelSit)
+		pool[6] = Patrol
+		pool[7] = PushUps
 	ElseIf here && here.HasKeyword(Game.GetFormFromFile(LOC_WORKSHOP, "Fallout4.esm") as Keyword)
 		pool[0] = Coffee
 		pool[1] = Clipboard
@@ -1250,6 +1331,8 @@ Form Function PersonSpot(Int aiSeed)
 		pool[3] = KneelSit
 		pool[4] = GroundSit
 		pool[5] = Smoke
+		pool[6] = ClipboardPen
+		pool[7] = BroomConst
 	ElseIf here && here.HasKeyword(Game.GetFormFromFile(LOC_TOWN, "Fallout4.esm") as Keyword)
 		pool[0] = Smoke
 		pool[1] = Newspaper
@@ -1257,6 +1340,8 @@ Form Function PersonSpot(Int aiSeed)
 		pool[3] = Examine
 		pool[4] = PipBoy
 		pool[5] = Shopping
+		pool[6] = Broom
+		pool[7] = GroundSit
 	Else
 		pool[0] = Smoke
 		pool[1] = Newspaper
@@ -1264,8 +1349,10 @@ Form Function PersonSpot(Int aiSeed)
 		pool[3] = Coffee
 		pool[4] = Examine
 		pool[5] = SadSit
+		pool[6] = Pray
+		pool[7] = PushUps
 	EndIf
-	Return pool[(aiSeed / 3) % 6]
+	Return pool[(aiSeed / 3) % pool.Length]
 EndFunction
 
 Form Function OrElse(Form akForm, Form akFallback)
@@ -1333,12 +1420,36 @@ Function DressRing(ObjectReference akRef, Int aiKind, Int aiSeed)
 			count += 1
 		EndWhile
 	ElseIf aiKind == K_GATE
-		; Someone posing on guard beside it, facing out.
-		PlaceWorld(akRef, Military, x + 160.0 * Math.Sin(start), y + 160.0 * Math.Cos(start), z, start)
+		; Someone posing on guard beside it, facing out -- or (wave 3) on vanilla's guard post, watching the gate
+		; from 157 off (its 4 spots by a gate all face it).
+		If aiSeed % 2 == 0
+			PlaceWorld(akRef, GuardPost, x + 157.0 * Math.Sin(start), y + 157.0 * Math.Cos(start), z, start + 180.0)
+		Else
+			PlaceWorld(akRef, Military, x + 160.0 * Math.Sin(start), y + 160.0 * Math.Cos(start), z, start)
+		EndIf
 		count = 1
 	ElseIf aiKind == K_CROP
-		; A Mr Handy tending it (robots only).
-		PlaceWorld(akRef, HandyGarden, x + 90.0 * Math.Sin(start), y + 90.0 * Math.Cos(start), z, start + 180.0)
+		; A Mr Handy tending it (robots only), or (wave 3) someone hoeing or weeding it: vanilla's farmers
+		; stand 64-79 off a crop facing it (research/wave3, n=33).
+		If _robots > 0 && (aiSeed / 3) % 2 == 0
+			PlaceWorld(akRef, HandyGarden, x + 90.0 * Math.Sin(start), y + 90.0 * Math.Cos(start), z, start + 180.0)
+		Else
+			Form farm = Hoe
+			Float fr = 79.0
+			If (aiSeed / 5) % 3 == 1
+				farm = WeedA
+				fr = 64.0
+			ElseIf (aiSeed / 5) % 3 == 2
+				farm = WeedB
+				fr = 70.0
+			EndIf
+			PlaceWorld(akRef, farm, x + fr * Math.Sin(start), y + fr * Math.Cos(start), z, start + 180.0)
+		EndIf
+		count = 1
+	ElseIf aiKind == K_CRATE
+		; Rummaging through it (wave 3): vanilla's box search, 18 off the box, facing it; the navmesh puts the
+		; spot on the floor when the box sits on a shelf.
+		PlaceWorld(akRef, BoxSearch, x + 50.0 * Math.Sin(start), y + 50.0 * Math.Cos(start), z, start + 180.0)
 		count = 1
 	ElseIf aiKind == K_HEDGE
 		; A Mr Handy trimming it (robots only).
@@ -1429,20 +1540,34 @@ Function WallAndOpen(Actor akPlayer, Actor[] akPeople)
 			If !NearPoint(w[i], w[i + 1], w[i + 2], 150.0)
 				Int roll = Math.Floor(Math.Abs(w[i] + w[i + 1])) % 5
 				Form kind = Lean
+				Float face = w[i + 3]
+				Float wx = w[i]
+				Float wy = w[i + 1]
 				If roll == 1
 					kind = NewsLeanRight
 				ElseIf roll == 2
 					kind = NewsLeanLeft
+				ElseIf roll >= 3 && Settlement()
+					; Wave 3, in settlements: painting the wall or welding it, facing it, an arm's length off.
+					kind = PaintWall
+					If roll == 4
+						kind = WeldHigh
+					EndIf
+					wx += 30.0 * Math.Sin(face)
+					wy += 30.0 * Math.Cos(face)
+					face += 180.0
 				EndIf
-				PlaceSelf(akPlayer, kind, w[i], w[i + 1], w[i + 2], w[i + 3], K_WALL)
+				PlaceSelf(akPlayer, kind, wx, wy, w[i + 2], face, K_WALL)
 				made += 1
 			EndIf
 			i += 4
 		EndWhile
 	EndIf
-	If KindIsOn(K_OPEN) && CountKind(K_OPEN) < 3 && _spots.Length < _budget - 2
-		Float[] o = IdleLife:Navmesh.OpenSpots(akPlayer, near, Radius, 250.0, 1)
-		If o.Length >= 4 && !NearPoint(o[0], o[1], o[2], 300.0)
+	If KindIsOn(K_OPEN) && CountKind(K_OPEN) < 5 && _spots.Length < _budget - 2
+		Float[] o = IdleLife:Navmesh.OpenSpots(akPlayer, near, Radius, 250.0, 2)
+		Int at = 0
+		If CountKind(K_OPEN) < 3 && o.Length >= 4 && !NearPoint(o[0], o[1], o[2], 300.0)
+			at = 4
 			Int seed = Math.Floor(Math.Abs(o[0] * 3.0 + o[1])) as Int
 			Float start = (seed % 360) as Float
 			Int k = 0
@@ -1456,6 +1581,31 @@ Function WallAndOpen(Actor akPlayer, Actor[] akPeople)
 				k += 1
 				made += 1
 			EndWhile
+		EndIf
+		; Wave 3: someone alone on open ground -- sweeping in towns and settlements, push-ups, a prayer, a
+		; raider on the lookout.
+		If at + 3 < o.Length && CountKind(K_OPEN) < 5 && !NearPoint(o[at], o[at + 1], o[at + 2], 300.0)
+			Int oseed = Math.Floor(Math.Abs(o[at] * 7.0 + o[at + 1])) as Int
+			Form solo = Pray
+			If Raiders()
+				solo = Patrol
+				If oseed % 3 == 0
+					solo = PushUps
+				EndIf
+			ElseIf Settlement()
+				solo = BroomConst
+				If oseed % 4 == 0
+					solo = PushUps
+				ElseIf oseed % 4 == 1
+					solo = Broom
+				EndIf
+			ElseIf oseed % 3 == 0
+				solo = PushUps
+			ElseIf oseed % 3 == 1
+				solo = Patrol
+			EndIf
+			PlaceSelf(akPlayer, solo, o[at], o[at + 1], o[at + 2], (oseed % 360) as Float, K_OPEN)
+			made += 1
 		EndIf
 	EndIf
 	If made > 0

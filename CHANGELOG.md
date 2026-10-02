@@ -1,5 +1,19 @@
 # Changelog
 
+## Unreleased
+
+Every vanilla pose spot that fits a place, none of them used before by the mod (20 more):
+
+- Railings: vanilla's four hand-rail poses, back to the rail or hands on it looking out.
+- Tables: bent over the table as over a map.
+- Workbenches: welding and writing on a clipboard.
+- Gates: a guard post watching the gate.
+- Crops: people hoeing and weeding them (they were robots only).
+- Boxes and crates, a new kind: someone rummaging through one (its own MCM switch).
+- Walls in settlements: painting or welding them.
+- Open ground: someone sweeping, doing push-ups, praying, or a raider on the lookout.
+- Next to people: a broom, a clipboard and pen, push-ups, a prayer; children get their own sit on the ground.
+
 ## 1.0.0 (2026-10-02)
 
 First release.
