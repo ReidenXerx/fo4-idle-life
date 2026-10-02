@@ -129,6 +129,8 @@ Form Property GroundSit Auto Const Mandatory
 GlobalVariable Property SpotsPerPersonSetting Auto Const Mandatory
 GlobalVariable Property MaxBudgetSetting Auto Const Mandatory
 GlobalVariable Property DailyReshuffle Auto Const Mandatory
+GlobalVariable Property DetailedLog Auto Const Mandatory
+{MCM Testing page (owner 2026-10-02, for testers' reports): every spot placed, with its pose and its place.}
 GlobalVariable[] Property KindOn Auto Const Mandatory
 {MCM: one switch per kind, in kind order (crops+hedges share one, pool tables+TVs share one).}
 Int Property MinBudget = 3 Auto Const
@@ -739,6 +741,7 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 				_spots.Add(spot)
 				_spotFire.Add(spot)      ; its own place: kept while the player is near it
 				AddAnchorRef(spot, K_PEOPLE)
+				Placed(spot, person)
 				made += 1
 			EndIf
 		EndIf
@@ -1096,6 +1099,18 @@ Function PlaceWorld(ObjectReference akAnchor, Form akKind, Float afX, Float afY,
 		spot.SetAngle(0.0, 0.0, afFacing)
 		_spots.Add(spot)
 		_spotFire.Add(akAnchor)
+		Placed(spot, akAnchor)
+	EndIf
+EndFunction
+
+; The detailed log: one line per spot placed -- which pose, for which place, where.
+Function Placed(ObjectReference akSpot, ObjectReference akPlace)
+	If DetailedLog.GetValueInt() == 1
+		String place = "itself"
+		If akPlace && akPlace != akSpot
+			place = akPlace + " (" + akPlace.GetBaseObject() + ")"
+		EndIf
+		Debug.Trace("Idle Life: placed " + akSpot.GetBaseObject() + " " + akSpot + " for " + place + " at " + (akSpot.GetPositionX() as Int) + ", " + (akSpot.GetPositionY() as Int) + ", " + (akSpot.GetPositionZ() as Int) + " facing " + (akSpot.GetAngleZ() as Int), 0)
 	EndIf
 EndFunction
 
@@ -1483,6 +1498,7 @@ Function DogSpots(Actor akPlayer)
 				_spots.Add(spot)
 				_spotFire.Add(spot)
 				AddAnchorRef(spot, K_DOG)
+				Placed(spot, d)
 				made += 1
 			EndIf
 		EndIf
@@ -1623,6 +1639,7 @@ Function PlaceSelf(ObjectReference akNear, Form akKind, Float afX, Float afY, Fl
 		_spots.Add(spot)
 		_spotFire.Add(spot)
 		AddAnchorRef(spot, aiKind)
+		Placed(spot, None)
 	EndIf
 EndFunction
 

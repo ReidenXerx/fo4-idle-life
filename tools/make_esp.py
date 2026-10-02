@@ -40,7 +40,8 @@ WARM_STANDING = 0x1B40BD   # FURN NPCHandWarmingStanding (AnimFurnNPCHandWarming
 WARM_KNEELING = 0x1B40BE   # FURN NPCHandWarmingKneeling, 6 placed
 SMOKE = 0x0E210E           # IDLM NPCSmokeIdleMarker (FurnitureClassRelaxation), 418 placed
 
-SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyReshuffle', 1.0)]
+SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyReshuffle', 1.0),
+            ('DetailedLog', 0.0)]
 # One switch per kind (MCM). Script kind order: fire, counter, rail, work, bench, radio, people, table,
 # campfire, crop, hedge, pool, TV, gate, dog -- crops+hedges share "Robots", pool tables+TVs share one.
 KIND_SWITCHES = ['Fire', 'Counter', 'Rail', 'Work', 'Bench', 'Radio', 'People', 'Table', 'Camp',
@@ -294,6 +295,7 @@ def build():
         ('SpotsPerPersonSetting', 1, obj(ids['Setting_SpotsPerPerson'])),
         ('MaxBudgetSetting', 1, obj(ids['Setting_MaxBudget'])),
         ('DailyReshuffle', 1, obj(ids['Setting_DailyReshuffle'])),
+        ('DetailedLog', 1, obj(ids['Setting_DetailedLog'])),
         ('KindOn', 11, objs([ids['Setting_Kind' + k] for k in KIND_SWITCHES])),
         ('TestQuest', 1, obj(test_quest_id)),
         ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),

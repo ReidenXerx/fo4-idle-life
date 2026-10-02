@@ -36,5 +36,6 @@
  "Setting_KindWall": "822",
  "Setting_KindOpen": "823",
  "Setting_KindCrate": "824",
- "AnchorsCrate": "825"
+ "AnchorsCrate": "825",
+ "Setting_DetailedLog": "826"
 }

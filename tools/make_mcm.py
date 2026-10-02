@@ -89,6 +89,11 @@ def build():
                'sit, and take the spots near you. Stand near a fire, counter, bench or radio first.'),
         button('Remove test settlers', 'DebugRemoveTesters', 'Deletes every test settler.'),
         button('Draw spots again', 'DebugRedraw', 'Places the spots near you again, e.g. after changing the settings.'),
+        {'text': 'Log', 'type': 'section'},
+        switcher('Detailed log', 'Setting_DetailedLog',
+                 'For a bug report: the Papyrus log gets a line for every spot placed (which pose, for which '
+                 'place, where), besides who takes which spot and for how long. Needs Papyrus logging on in '
+                 'Fallout4Custom.ini. Off by default.'),
         {'text': 'Status', 'type': 'section'},
         button('Show status', 'DebugStatus',
                'Fires near you with spots, how many spots, how many are in use right now, and the testers.'),
