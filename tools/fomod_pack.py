@@ -40,10 +40,14 @@ FEATURES = [
      'The number of spots follows the people near you: 1.5 each, at least 3, at most 40, drawn from one pool across '
      'every kind with weights for the hour and the place. A crowded market gets a mix, never twelve of one kind; a '
      'lone settler still gets a smoke and a sit. Recounted every 30 s.'),
-    ('Seventeen kinds', None,
+    ('Eighteen kinds', None,
      'Fires, campfires, counters, tables, benches, railings, walls, open ground, workbenches by type (power armor, '
      'chems, tools), playing radios with a dance spot made from two vanilla dance loops nothing used, pool tables, '
-     'TVs, gates, Mr Handys gardening and trimming hedges, dogs, and spots next to people that suit the place.'),
+     'TVs, gates, crops, boxes and crates, Mr Handys gardening and trimming hedges, dogs, and spots next to people '
+     'that suit the place.\n'
+     'Every vanilla pose that fits a place: hands on a rail looking out, bent over a map, rummaging a crate, '
+     'welding, painting a wall, sweeping, hoeing and weeding, a guard post, push-ups, a prayer, a lookout; '
+     'children sit on the ground.'),
 ]
 EXTRAS = ('Settings',
           'MCM: spots per person, the most at once, a daily reshuffle (a place keeps its spots for the day), a switch '

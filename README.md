@@ -10,10 +10,14 @@ campfire, a Mr Handy tending the crops. Placed at run time around you, gone when
   ground) are invisible furniture. Idle Life places them by measured rules: hand-warming spots 69 units from the fire
   and facing it, as Bethesda's 66 do; campfire sitters 131 out; rail leans with their back to the rail. NPCs who
   sandbox nearby walk over, stay a minute or so (32-111 s measured), and move on -- often to another spot.
-- **17 kinds:** fires and burning barrels, campfires, counters, tables, benches, railings and fences, walls, open
-  ground, workbenches by type (power armor, chems, tools), playing radios (dancing), pool tables, TVs, gates, robots
-  (Mr Handy gardening and trimming hedges), dogs, and spots next to the people themselves that suit the place
-  (raiders: Jet and knives; settlers: clipboards; townsfolk: newspapers and Pip-Boys).
+- **18 kinds:** fires and burning barrels, campfires, counters, tables, benches, railings and fences, walls, open
+  ground, workbenches by type (power armor, chems, tools), playing radios (dancing), pool tables, TVs, gates, crops,
+  boxes and crates, robots (Mr Handy gardening and trimming hedges), dogs, and spots next to the people themselves
+  that suit the place (raiders: Jet and knives; settlers: clipboards and brooms; townsfolk: newspapers and
+  Pip-Boys; children: a sit on the ground).
+- **Every vanilla pose that fits a place** (1.1.0): hands on a rail looking out, bent over a map, rummaging a crate,
+  welding, painting a wall, sweeping, hoeing and weeding, a guard post, push-ups, a prayer, a lookout -- placed by
+  the distances measured from Bethesda's own placements.
 - **Walls and open ground from the navmesh.** A small F4SE plugin reads the walkable area around you: its border
   edges are walls (a drop beyond one is left out), and flat ground far from every edge gets a sitting circle. Works
   anywhere, other mods' places included.

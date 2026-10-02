@@ -787,7 +787,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs, " + CountKind(K_WALL) + " by walls, " + CountKind(K_OPEN) + " in the open; " + _spots.Length + " of " + _budget + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_CRATE) + " crates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs, " + CountKind(K_WALL) + " by walls, " + CountKind(K_OPEN) + " in the open; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -1437,7 +1437,7 @@ Function DressRing(ObjectReference akRef, Int aiKind, Int aiSeed)
 	ElseIf aiKind == K_GATE
 		; Someone posing on guard beside it, facing out -- or (wave 3) on vanilla's guard post, watching the gate
 		; from 157 off (its 4 spots by a gate all face it).
-		If aiSeed % 2 == 0
+		If (aiSeed / 7) % 2 == 0
 			PlaceWorld(akRef, GuardPost, x + 157.0 * Math.Sin(start), y + 157.0 * Math.Cos(start), z, start + 180.0)
 		Else
 			PlaceWorld(akRef, Military, x + 160.0 * Math.Sin(start), y + 160.0 * Math.Cos(start), z, start)
@@ -1462,8 +1462,9 @@ Function DressRing(ObjectReference akRef, Int aiKind, Int aiSeed)
 		EndIf
 		count = 1
 	ElseIf aiKind == K_CRATE
-		; Rummaging through it (wave 3): vanilla's box search, 18 off the box, facing it; the navmesh puts the
-		; spot on the floor when the box sits on a shelf.
+		; Rummaging through it (wave 3): vanilla's box search stands 18 off the box's EDGE, facing it; 50 from
+		; the centre is that for a typical box (~30 half-size). The navmesh puts the spot on the floor when the
+		; box sits on a shelf.
 		PlaceWorld(akRef, BoxSearch, x + 50.0 * Math.Sin(start), y + 50.0 * Math.Cos(start), z, start + 180.0)
 		count = 1
 	ElseIf aiKind == K_HEDGE
@@ -1600,7 +1601,10 @@ Function WallAndOpen(Actor akPlayer, Actor[] akPeople)
 		EndIf
 		; Wave 3: someone alone on open ground -- sweeping in towns and settlements, push-ups, a prayer, a
 		; raider on the lookout.
-		If at + 3 < o.Length && CountKind(K_OPEN) < 5 && !NearPoint(o[at], o[at + 1], o[at + 2], 300.0)
+		If at == 0 && o.Length >= 8 && NearPoint(o[0], o[1], o[2], 300.0)
+			at = 4
+		EndIf
+		If at + 3 < o.Length && CountKind(K_OPEN) < 5 && _spots.Length < _budget && !NearPoint(o[at], o[at + 1], o[at + 2], 300.0)
 			Int oseed = Math.Floor(Math.Abs(o[at] * 7.0 + o[at + 1])) as Int
 			Form solo = Pray
 			If Raiders()

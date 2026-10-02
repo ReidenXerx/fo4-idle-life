@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-10-02)
 
 Every vanilla pose spot that fits a place, none of them used before by the mod (20 more):
 
@@ -9,6 +9,7 @@ Every vanilla pose spot that fits a place, none of them used before by the mod (
 - Workbenches: welding and writing on a clipboard.
 - Gates: a guard post watching the gate.
 - Crops: people hoeing and weeding them (they were robots only).
+- Testing page: a detailed log for bug reports (every spot placed, with its pose and its place).
 - Boxes and crates, a new kind: someone rummaging through one (its own MCM switch).
 - Walls in settlements: painting or welding them.
 - Open ground: someone sweeping, doing push-ups, praying, or a raider on the lookout.
