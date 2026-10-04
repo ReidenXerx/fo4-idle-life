@@ -110,8 +110,11 @@ namespace IL::Spots
 			return cells;
 		}
 
-		// Every triangle of every navmesh in these cells, with its neighbour links and flags.
-		[[nodiscard]] std::vector<Tri> Triangles(const std::vector<RE::TESObjectCELL*>& a_cells, std::string& a_why)
+		// Every triangle of every navmesh in these cells within a_keep (in plan) of the centre, with its neighbour
+		// links and flags. An exterior cell is 4096 units square and a town loads several: 20-32k triangles, of which
+		// a query near the people needs a few thousand (a tester's stutter, 2026-10-04).
+		[[nodiscard]] std::vector<Tri> Triangles(const std::vector<RE::TESObjectCELL*>& a_cells, const RE::NiPoint3& a_centre,
+			float a_keep, std::string& a_why)
 		{
 			static const auto vtableResolved = REL::IDDatabase::get().resolve(RE::VTABLE::NavMesh[0]);
 			if (!vtableResolved) {
@@ -138,8 +141,15 @@ namespace IL::Spots
 						if (t.vertices[0] >= verts.size() || t.vertices[1] >= verts.size() || t.vertices[2] >= verts.size()) {
 							continue;
 						}
-						tris.push_back(Tri{ verts[t.vertices[0]].location, verts[t.vertices[1]].location, verts[t.vertices[2]].location,
-							{ t.triangles[0], t.triangles[1], t.triangles[2] }, t.triangleFlags });
+						const auto& va = verts[t.vertices[0]].location;
+						const auto& vb = verts[t.vertices[1]].location;
+						const auto& vc = verts[t.vertices[2]].location;
+						const float cx = (va.x + vb.x + vc.x) / 3.0f - a_centre.x;
+						const float cy = (va.y + vb.y + vc.y) / 3.0f - a_centre.y;
+						if (cx * cx + cy * cy > a_keep * a_keep) {
+							continue;
+						}
+						tris.push_back(Tri{ va, vb, vc, { t.triangles[0], t.triangles[1], t.triangles[2] }, t.triangleFlags });
 					}
 				}
 			}
@@ -154,11 +164,62 @@ namespace IL::Spots
 			return std::hypot(a_a.x - a_b.x, a_a.y - a_b.y);
 		}
 
-		// The walkable floor under (x, y) nearest a_near in height, from these triangles.
-		[[nodiscard]] std::optional<float> FloorAt(const std::vector<Tri>& a_tris, float a_x, float a_y, float a_near, float a_within)
+		// Items bucketed by plan position (x, y): each one in every bucket its bounding box touches.
+		class Grid
+		{
+		public:
+			explicit Grid(float a_cell) :
+				_cell(a_cell)
+			{}
+
+			void Add(std::uint32_t a_index, float a_x0, float a_y0, float a_x1, float a_y1)
+			{
+				for (auto ix = Key(a_x0); ix <= Key(a_x1); ++ix) {
+					for (auto iy = Key(a_y0); iy <= Key(a_y1); ++iy) {
+						_buckets[Pack(ix, iy)].push_back(a_index);
+					}
+				}
+			}
+
+			[[nodiscard]] const std::vector<std::uint32_t>* At(float a_x, float a_y, int a_dx = 0, int a_dy = 0) const
+			{
+				const auto it = _buckets.find(Pack(Key(a_x) + a_dx, Key(a_y) + a_dy));
+				return it == _buckets.end() ? nullptr : &it->second;
+			}
+
+		private:
+			[[nodiscard]] std::int32_t Key(float a_v) const noexcept { return static_cast<std::int32_t>(std::floor(a_v / _cell)); }
+			[[nodiscard]] static std::int64_t Pack(std::int32_t a_x, std::int32_t a_y) noexcept
+			{
+				return (static_cast<std::int64_t>(a_x) << 32) | static_cast<std::uint32_t>(a_y);
+			}
+
+			float                                                         _cell;
+			std::unordered_map<std::int64_t, std::vector<std::uint32_t>> _buckets;
+		};
+
+		[[nodiscard]] Grid TriangleGrid(const std::vector<Tri>& a_tris)
+		{
+			Grid grid{ 256.0f };
+			for (std::uint32_t i = 0; i < a_tris.size(); ++i) {
+				const auto& t = a_tris[i];
+				grid.Add(i, std::min({ t.a.x, t.b.x, t.c.x }), std::min({ t.a.y, t.b.y, t.c.y }), std::max({ t.a.x, t.b.x, t.c.x }),
+					std::max({ t.a.y, t.b.y, t.c.y }));
+			}
+			return grid;
+		}
+
+		// The walkable floor under (x, y) nearest a_near in height, from the triangles in (x, y)'s bucket.
+		[[nodiscard]] std::optional<float> FloorAt(const std::vector<Tri>& a_tris, const Grid& a_grid, float a_x, float a_y, float a_near,
+			float a_within)
 		{
 			std::optional<float> best;
-			for (const auto& t : a_tris) {
+			const auto*          bucket = a_grid.At(a_x, a_y);
+			if (!bucket) {
+				return best;
+			}
+			for (const auto index : *bucket) {
+				const auto& t = a_tris[index];
 				const float d = (t.b.y - t.c.y) * (t.a.x - t.c.x) + (t.c.x - t.b.x) * (t.a.y - t.c.y);
 				if (std::fabs(d) < 1e-3f) {
 					continue;
@@ -271,13 +332,15 @@ namespace IL::Spots
 		if (!a_centre || a_max <= 0) {
 			return {};
 		}
+		const auto  started = std::chrono::steady_clock::now();
 		std::string why;
-		const auto  tris = Triangles(Cells(a_centre, a_near), why);
+		const auto  centre = a_centre->GetPosition();
+		const auto  tris = Triangles(Cells(a_centre, a_near), centre, a_radius + 2500.0f, why);
 		if (tris.empty()) {
 			logger::info("wall spots: none - {}", why);
 			return {};
 		}
-		const auto centre = a_centre->GetPosition();
+		const auto grid = TriangleGrid(tris);
 		const auto people = Positions(a_centre, a_near);
 		const auto edges = Borders(tris, centre, a_radius, kMinWall);
 		std::vector<Candidate> cands;
@@ -293,13 +356,13 @@ namespace IL::Spots
 				const float px = on.x - e.in.x * kProbe;
 				const float py = on.y - e.in.y * kProbe;
 				// (40 to 1000 units down: a step is not a drop; a floor further down than that is another storey.)
-				if (FloorAt(tris, px, py, on.z - 520.0f, 480.0f)) {
+				if (FloorAt(tris, grid, px, py, on.z - 520.0f, 480.0f)) {
 					++ledges;
 					dropAt.push_back(on);
 					continue;
 				}
 				RE::NiPoint3 at{ on.x + e.in.x * kLeanOut, on.y + e.in.y * kLeanOut, on.z };
-				const auto   floor = FloorAt(tris, at.x, at.y, on.z, 40.0f);
+				const auto   floor = FloorAt(tris, grid, at.x, at.y, on.z, 40.0f);
 				if (!floor) {
 					continue;
 				}
@@ -333,8 +396,9 @@ namespace IL::Spots
 			j += "]}";
 			Dump("walls", j);
 		}
-		logger::info("wall spots: {} triangles, {} border edges, {} drops left out, {} candidates, {} chosen", tris.size(),
-			edges.size(), ledges, cands.size(), out.size() / 4);
+		logger::info("wall spots: {} triangles, {} border edges, {} drops left out, {} candidates, {} chosen, {} ms", tris.size(),
+			edges.size(), ledges, cands.size(), out.size() / 4,
+			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count());
 		return out;
 	}
 
@@ -343,16 +407,23 @@ namespace IL::Spots
 		if (!a_centre || a_max <= 0) {
 			return {};
 		}
+		const auto  started = std::chrono::steady_clock::now();
 		std::string why;
-		const auto  tris = Triangles(Cells(a_centre, a_near), why);
+		const auto  centre = a_centre->GetPosition();
+		const auto  tris = Triangles(Cells(a_centre, a_near), centre, a_radius + a_clearance + 2500.0f, why);
 		if (tris.empty()) {
 			logger::info("open ground: none - {}", why);
 			return {};
 		}
-		const auto centre = a_centre->GetPosition();
 		const auto people = Positions(a_centre, a_near);
 		// Every border counts against clearance here, short ones and drops included.
 		const auto edges = Borders(tris, centre, a_radius + a_clearance, 0.0f);
+		// Buckets at least the clearance wide: every edge closer than it to a point is in the 3x3 around that point.
+		Grid edgeGrid{ std::max(a_clearance, 64.0f) };
+		for (std::uint32_t i = 0; i < edges.size(); ++i) {
+			const auto& e = edges[i];
+			edgeGrid.Add(i, std::min(e.a.x, e.b.x), std::min(e.a.y, e.b.y), std::max(e.a.x, e.b.x), std::max(e.a.y, e.b.y));
+		}
 		std::vector<Candidate> cands;
 		for (const auto& t : tris) {
 			const RE::NiPoint3 mid{ (t.a.x + t.b.x + t.c.x) / 3, (t.a.y + t.b.y + t.c.y) / 3, (t.a.z + t.b.z + t.c.z) / 3 };
@@ -365,18 +436,27 @@ namespace IL::Spots
 				continue;   // not flat, or wet
 			}
 			bool clear = true;
-			for (const auto& e : edges) {
-				if (std::fabs((e.a.z + e.b.z) / 2 - mid.z) > kStorey) {
-					continue;
-				}
-				// Distance from the point to the segment, in plan.
-				const float ex = e.b.x - e.a.x, ey = e.b.y - e.a.y;
-				const float len2 = ex * ex + ey * ey;
-				float       u = len2 > 0 ? ((mid.x - e.a.x) * ex + (mid.y - e.a.y) * ey) / len2 : 0.0f;
-				u = std::clamp(u, 0.0f, 1.0f);
-				if (std::hypot(mid.x - (e.a.x + u * ex), mid.y - (e.a.y + u * ey)) < a_clearance) {
-					clear = false;
-					break;
+			for (int dx = -1; dx <= 1 && clear; ++dx) {
+				for (int dy = -1; dy <= 1 && clear; ++dy) {
+					const auto* bucket = edgeGrid.At(mid.x, mid.y, dx, dy);
+					if (!bucket) {
+						continue;
+					}
+					for (const auto index : *bucket) {
+						const auto& e = edges[index];
+						if (std::fabs((e.a.z + e.b.z) / 2 - mid.z) > kStorey) {
+							continue;
+						}
+						// Distance from the point to the segment, in plan.
+						const float ex = e.b.x - e.a.x, ey = e.b.y - e.a.y;
+						const float len2 = ex * ex + ey * ey;
+						float       u = len2 > 0 ? ((mid.x - e.a.x) * ex + (mid.y - e.a.y) * ey) / len2 : 0.0f;
+						u = std::clamp(u, 0.0f, 1.0f);
+						if (std::hypot(mid.x - (e.a.x + u * ex), mid.y - (e.a.y + u * ey)) < a_clearance) {
+							clear = false;
+							break;
+						}
+					}
 				}
 			}
 			if (clear) {
@@ -384,8 +464,9 @@ namespace IL::Spots
 			}
 		}
 		auto out = Pick(cands, a_clearance * 2.0f, a_max);
-		logger::info("open ground: {} triangles, {} border edges, {} clear flat points, {} chosen", tris.size(), edges.size(),
-			cands.size(), out.size() / 4);
+		logger::info("open ground: {} triangles, {} border edges, {} clear flat points, {} chosen, {} ms", tris.size(), edges.size(),
+			cands.size(), out.size() / 4,
+			std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now() - started).count());
 		return out;
 	}
 }

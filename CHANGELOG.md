@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.1 (2026-10-04)
+
+- Fixed stutter in busy places: the wall and open-ground search now looks only at the nearby navmesh, not every triangle loaded.
+
 ## 1.1.0 (2026-10-02)
 
 Every vanilla pose spot that fits a place, none of them used before by the mod (20 more):
