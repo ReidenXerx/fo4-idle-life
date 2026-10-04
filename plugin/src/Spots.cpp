@@ -110,11 +110,11 @@ namespace IL::Spots
 			return cells;
 		}
 
-		// Every triangle of every navmesh in these cells within a_keep (in plan) of the centre, with its neighbour
-		// links and flags. An exterior cell is 4096 units square and a town loads several: 20-32k triangles, of which
-		// a query near the people needs a few thousand (a tester's stutter, 2026-10-04).
-		[[nodiscard]] std::vector<Tri> Triangles(const std::vector<RE::TESObjectCELL*>& a_cells, const RE::NiPoint3& a_centre,
-			float a_keep, std::string& a_why)
+		// Every triangle of every navmesh in these cells, with its neighbour links and flags. ALL of them, as before
+		// 1.1.1: reading 20-32k triangles is cheap; what stuttered was asking all of them every question (a tester,
+		// 2026-10-04), and the grids below answer from the few nearby. A cut by distance would be a guess -- a long
+		// wall samples spots well past the radius -- so there is none: the answers are exactly the old ones.
+		[[nodiscard]] std::vector<Tri> Triangles(const std::vector<RE::TESObjectCELL*>& a_cells, std::string& a_why)
 		{
 			static const auto vtableResolved = REL::IDDatabase::get().resolve(RE::VTABLE::NavMesh[0]);
 			if (!vtableResolved) {
@@ -141,15 +141,8 @@ namespace IL::Spots
 						if (t.vertices[0] >= verts.size() || t.vertices[1] >= verts.size() || t.vertices[2] >= verts.size()) {
 							continue;
 						}
-						const auto& va = verts[t.vertices[0]].location;
-						const auto& vb = verts[t.vertices[1]].location;
-						const auto& vc = verts[t.vertices[2]].location;
-						const float cx = (va.x + vb.x + vc.x) / 3.0f - a_centre.x;
-						const float cy = (va.y + vb.y + vc.y) / 3.0f - a_centre.y;
-						if (cx * cx + cy * cy > a_keep * a_keep) {
-							continue;
-						}
-						tris.push_back(Tri{ va, vb, vc, { t.triangles[0], t.triangles[1], t.triangles[2] }, t.triangleFlags });
+						tris.push_back(Tri{ verts[t.vertices[0]].location, verts[t.vertices[1]].location, verts[t.vertices[2]].location,
+							{ t.triangles[0], t.triangles[1], t.triangles[2] }, t.triangleFlags });
 					}
 				}
 			}
@@ -335,7 +328,7 @@ namespace IL::Spots
 		const auto  started = std::chrono::steady_clock::now();
 		std::string why;
 		const auto  centre = a_centre->GetPosition();
-		const auto  tris = Triangles(Cells(a_centre, a_near), centre, a_radius + 2500.0f, why);
+		const auto  tris = Triangles(Cells(a_centre, a_near), why);
 		if (tris.empty()) {
 			logger::info("wall spots: none - {}", why);
 			return {};
@@ -410,7 +403,7 @@ namespace IL::Spots
 		const auto  started = std::chrono::steady_clock::now();
 		std::string why;
 		const auto  centre = a_centre->GetPosition();
-		const auto  tris = Triangles(Cells(a_centre, a_near), centre, a_radius + a_clearance + 2500.0f, why);
+		const auto  tris = Triangles(Cells(a_centre, a_near), why);
 		if (tris.empty()) {
 			logger::info("open ground: none - {}", why);
 			return {};

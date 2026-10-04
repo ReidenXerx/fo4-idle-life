@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.1.2 (2026-10-04)
+
+- The stutter fix now reads the whole loaded navmesh again, so wall and open-ground spots are exactly as before 1.1.1, just as fast.
+
 ## 1.1.1 (2026-10-04)
 
 - Fixed stutter in busy places: the wall and open-ground search now looks only at the nearby navmesh, not every triangle loaded.
