@@ -109,6 +109,9 @@ Form Property ChatDog Auto Const Mandatory
 {A dog's half of a chat: it answers with its yes and no barks.}
 Form Property ChatHandy Auto Const Mandatory
 {A Mr. Handy's half of a chat: it scans the one talking to it.}
+Quest Property ChatQuest Auto Const Mandatory
+RefCollectionAlias Property Chatters Auto Const Mandatory
+{The two in a chat: its package is HoldPosition, so their sandbox package does not walk them off mid-gesture.}
 Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
@@ -335,6 +338,9 @@ Event OnTimer(Int aiTimerID)
 				Draw(player)
 			EndIf
 		EndIf
+	EndIf
+	If !_chA && Chatters.GetCount() > 0
+		LetGo()      ; a save made mid-chat: nobody stays held
 	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_CHAT) && !_chA
 		StartChat(player, False)
@@ -1578,6 +1584,7 @@ Int Property IDLE_LAUGH = 0x118013 AutoReadOnly     ; ActionCustomLaughingStandi
 Int Property IDLE_DOG_YES = 0x02B99E AutoReadOnly   ; Dogmeat_Neutral_TalkYes1
 Int Property IDLE_DOG_NO = 0x02B9A0 AutoReadOnly    ; Dogmeat_Neutral_TalkNo1
 Int Property IDLE_DOG_PLAY = 0x02B9A1 AutoReadOnly  ; Dogmeat_Playful_TalkYes1
+Int Property IDLE_STOP = 0x029380 AutoReadOnly      ; LooseIdleStop: back to standing, before the hold is let go
 Float Property ChatNear = 70.0 Auto Const
 Float Property ChatFar = 260.0 Auto Const
 {How close two must stand to fall into a chat: closer is a crowd, further is shouting.}
@@ -1603,7 +1610,7 @@ Float[] _stillY
 ; Free for a chat: here, standing still since the last look, on no furniture, in no scene or combat, no child,
 ; not the player's companion (they follow the player).
 Bool Function FreeToChat(Actor akWho, Actor[] akWho0, Float[] afX0, Float[] afY0)
-	If !akWho || akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || !akWho.Is3DLoaded()
+	If !akWho || !akWho.Is3DLoaded() || akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate()
 		Return False
 	EndIf
 	If akWho.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
@@ -1694,12 +1701,32 @@ Function StartChat(Actor akPlayer, Bool abNow)
 	_chAY = best1.GetPositionY()
 	_chBX = best2.GetPositionX()
 	_chBY = best2.GetPositionY()
+	If !ChatQuest.IsRunning()
+		ChatQuest.Start()
+	EndIf
+	Chatters.AddRef(best1)
+	Chatters.AddRef(best2)
+	best1.EvaluatePackage()
+	best2.EvaluatePackage()
 	best1.SetAngle(0.0, 0.0, best1.GetAngleZ() + best1.GetHeadingAngle(best2))
 	best2.SetAngle(0.0, 0.0, best2.GetAngleZ() + best2.GetHeadingAngle(best1))
 	best1.SetLookAt(best2, False)
 	best2.SetLookAt(best1, False)
 	Debug.Trace("Idle Life: a chat starts - " + best1 + " (" + best1.GetBaseObject() + ") and " + best2 + " (" + best2.GetBaseObject() + "), " + (bestD as Int) + " apart, " + _chSteps + " gestures", 0)
 	StartTimer(0.6, CHAT_TIMER)
+EndFunction
+
+; Everyone held for a chat goes back to their own package (also after a save made mid-chat).
+Function LetGo()
+	Int i = Chatters.GetCount() - 1
+	While i >= 0
+		Actor a = Chatters.GetAt(i) as Actor
+		Chatters.RemoveRef(Chatters.GetAt(i))
+		If a
+			a.EvaluatePackage()
+		EndIf
+		i -= 1
+	EndWhile
 EndFunction
 
 Function RememberStill(Actor akPlayer)
@@ -1776,12 +1803,16 @@ Function ChatStep()
 EndFunction
 
 Function EndChat()
-	If _chA
+	Idle stop = Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle
+	If _chA && _chA.Is3DLoaded()
+		_chA.PlayIdle(stop)
 		_chA.ClearLookAt()
 	EndIf
-	If _chB
+	If _chB && _chB.Is3DLoaded()
+		_chB.PlayIdle(stop)
 		_chB.ClearLookAt()
 	EndIf
+	LetGo()
 	Debug.Trace("Idle Life: the chat ends after " + _chStep + " gestures - " + _chA + " and " + _chB, 0)
 	_chA = None
 	_chB = None

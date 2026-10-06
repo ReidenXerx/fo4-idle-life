@@ -117,6 +117,7 @@ CHAT_IDLES = [0x038C7B, 0x038C7C, 0x1793E3, 0x038C7A, 0x118013, 0x1793E4, 0x038C
 # A creature's half of a mixed pair: its own skeleton's unconditioned idles, one marker per skeleton.
 CHAT_DOG_IDLES = [0x02B99E, 0x02B9A0, 0x02B9A1, 0x02B99F, 0x02B9A2]   # Dogmeat_Neutral_TalkYes1/No1, Playful Yes1, Neutral Yes2, Playful No1
 CHAT_HANDY_IDLES = [0x1428E3, 0x1428E2, 0x18A2FD]                     # HandyScanHigh, HandyScanLow, HandyMaintenanceIdle1
+HOLD_PACKAGE = 0x01D415   # Fallout4.esm PACK HoldPosition, no conditions (AN76 Toilets: reached 14 of 14)
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
 # ---- wave 2 (owner 2026-10-01: "scale our covered idle markers on maximum") -------------------------
@@ -273,6 +274,7 @@ def build():
     flst += record('FLST', lamps_id, ls)
 
     test_quest_id = new_id('TestQuest')
+    chat_quest_id = new_id('ChatQuest')
 
     kind_lists = {}
     for kind, rows in KINDS.items():
@@ -361,6 +363,8 @@ def build():
         ('KindOn', 11, objs([ids['Setting_Kind' + k] for k in KIND_SWITCHES])),
         ('TestQuest', 1, obj(test_quest_id)),
         ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),
+        ('ChatQuest', 1, obj(chat_quest_id)),
+        ('Chatters', 1, struct.pack('<HhI', 0, 0, chat_quest_id)),
         ('TestNpc', 1, obj(TEST_NPC)),
         ('CounterAnchors', 1, obj(kind_lists['Counter'])),
         ('RailAnchors', 1, obj(kind_lists['Rail'])),
@@ -407,6 +411,23 @@ def build():
     t += field('VTCK', struct.pack('<I', 0))
     t += field('ALED', b'')
     quest += record('QUST', test_quest_id, t)
+
+    # The chatters' quest (1.2.0): start-game enabled, one reference collection whose package is vanilla
+    # HoldPosition -- the alias package measured to reach sandboxing locals (AN76 Toilets, 14 of 14), so the
+    # two in a chat are not walked off mid-gesture (Chemistry bud's advice, 10-06).
+    c = field('EDID', zstring('IL_Chatters'))
+    c += field('DNAM', bytes.fromhex('110064670000000000000000'))
+    c += field('NEXT', b'')
+    c += field('ANAM', struct.pack('<I', 1))
+    c += field('ALCS', struct.pack('<I', 0))
+    c += field('ALMI', b'\x00')
+    c += field('ALST', struct.pack('<I', 0))
+    c += field('ALID', zstring('Chatters'))
+    c += field('FNAM', struct.pack('<I', 0x202))
+    c += field('ALPC', struct.pack('<I', HOLD_PACKAGE))
+    c += field('VTCK', struct.pack('<I', 0))
+    c += field('ALED', b'')
+    quest += record('QUST', chat_quest_id, c)
 
     for fid in ids.values():
         if not 0x800 <= (fid & 0xFFFFFF) <= 0xFFF:

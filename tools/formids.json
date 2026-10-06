@@ -43,5 +43,6 @@
  "ChatMarker": "829",
  "ChatDogMarker": "82A",
  "ChatHandyMarker": "82B",
- "Setting_KindChat": "82C"
+ "Setting_KindChat": "82C",
+ "ChatQuest": "82D"
 }
