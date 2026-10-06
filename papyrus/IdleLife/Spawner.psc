@@ -1523,7 +1523,9 @@ Function TrackChats()
 		ObjectReference spot = _spots[i]
 		If spot
 			Form b = spot.GetBaseObject()
-			If b == Chat || b == ChatDog || b == ChatHandy
+			; every idle-marker spot, not only chats: whether the locals use runtime-placed idle markers at all
+			; (examine, shopping, military, clipboard, smoke, dance) was never measured -- furniture spots only
+			If !(b as Furniture)
 				Actor who = Game.FindClosestActorFromRef(spot, ChatAtRange)
 				If who && who != Game.GetPlayer()
 					nowAt.Add(spot)
@@ -1533,7 +1535,7 @@ Function TrackChats()
 						prev = _chatAt.Find(spot)
 					EndIf
 					If prev < 0 || _chatWho[prev] != who
-						Debug.Trace("Idle Life: " + who + " (" + who.GetBaseObject() + ") is at chat spot " + spot + " (" + b + ")", 0)
+						Debug.Trace("Idle Life: " + who + " (" + who.GetBaseObject() + ") is at idle spot " + spot + " (" + b + ")", 0)
 					EndIf
 				EndIf
 			EndIf

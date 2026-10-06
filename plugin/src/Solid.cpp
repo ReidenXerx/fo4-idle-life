@@ -36,8 +36,8 @@ namespace IL::Solid
 		bool InsideRef(RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_spot)
 		{
 			auto* base = a_ref->GetObjectReference();
-			if (!base || !Compact(base->GetFormType())) {
-				return false;
+			if (!base || !Compact(base->GetFormType()) || base->GetFormID() < 0x800) {
+				return false;   // < 0x800: the engine's own forms -- XMarker, XMarkerHeading and the like, bodiless
 			}
 			const auto& b = base->boundData;
 			const float scale = a_ref->refScale > 0 ? a_ref->refScale / 100.0f : 1.0f;
