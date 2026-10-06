@@ -93,7 +93,7 @@ def build():
         button('Place a chat pair here', 'DebugPlaceChat',
                'Two chat spots facing each other a few steps ahead of you: people who take them should gesture at '
                'each other without a word. A test of the coming chat pairs.'),
-        button('Draw spots again', 'DebugRedraw', 'Places the spots near you again, e.g. after changing the settings.'),
+        button('Draw spots again', 'DebugRedraw', 'Takes away every spot near you and draws them all again, e.g. after changing the settings.'),
         {'text': 'Log', 'type': 'section'},
         switcher('Detailed log', 'Setting_DetailedLog',
                  'For a bug report: the Papyrus log gets a line for every spot placed (which pose, for which '

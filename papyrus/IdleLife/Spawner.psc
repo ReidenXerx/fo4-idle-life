@@ -1737,6 +1737,9 @@ EndFunction
 
 ; MCM Testing page: draw again now (after changing settings).
 Function DebugRedraw()
+	; Every spot goes first: kept, a full set left nothing to draw (owner's test 10-06: "0 new", 40 of 40), so a
+	; save from before a new kind never got any of it.
+	Prune(Game.GetPlayer(), True)
 	_drawCell = None
 	Debug.Notification("Idle Life: spots drawn again when you close the menu.")
 EndFunction
