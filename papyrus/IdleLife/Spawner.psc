@@ -1583,8 +1583,8 @@ Float Property ChatFar = 260.0 Auto Const
 {How close two must stand to fall into a chat: closer is a crowd, further is shouting.}
 Float Property ChatBeat = 2.8 Auto Const
 {Seconds between two gestures.}
-Float Property ChatCooldown = 20.0 Auto Const
-{Seconds between the end of one chat and the start of the next.}
+Float Property ChatCooldown = 120.0 Auto Const
+{Seconds between the end of one chat and the start of the next: a couple of minutes (owner 10-06).}
 
 Actor _chA            ; the two in the chat now (None: no chat)
 Actor _chB
