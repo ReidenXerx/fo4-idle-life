@@ -342,6 +342,10 @@ Event OnTimer(Int aiTimerID)
 	If !_chA && Chatters.GetCount() > 0
 		LetGo()      ; a save made mid-chat: nobody stays held
 	EndIf
+	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > 20.0
+		Debug.Trace("Idle Life: a chat called off - " + _chA + " still walking after 20 s", 0)
+		EndChat()    ; a walk that never arrives must not stop every later chat
+	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_CHAT) && !_chA
 		StartChat(player, False)
 	EndIf
@@ -1586,8 +1590,12 @@ Int Property IDLE_DOG_NO = 0x02B9A0 AutoReadOnly    ; Dogmeat_Neutral_TalkNo1
 Int Property IDLE_DOG_PLAY = 0x02B9A1 AutoReadOnly  ; Dogmeat_Playful_TalkYes1
 Int Property IDLE_STOP = 0x029380 AutoReadOnly      ; LooseIdleStop: back to standing, before the hold is let go
 Float Property ChatNear = 70.0 Auto Const
-Float Property ChatFar = 260.0 Auto Const
-{How close two must stand to fall into a chat: closer is a crowd, further is shouting.}
+Float Property ChatFar = 400.0 Auto Const
+{How far apart two may stand and still fall into a chat: one walks over (owner 10-06, option 2).}
+Float Property ChatTalk = 110.0 Auto Const
+{The distance they talk at: one walks up to this far from the other (vanilla's conversation distance).}
+Float Property ChatWalkFrom = 150.0 Auto Const
+{Further apart than this, the first walks up to the second before the chat.}
 Float Property ChatBeat = 2.8 Auto Const
 {Seconds between two gestures.}
 Float Property ChatCooldown = 120.0 Auto Const
@@ -1603,6 +1611,8 @@ Float _chAY
 Float _chBX
 Float _chBY
 Float _chNext         ; real time the next chat may start
+Float _chSince        ; real time this chat was picked
+Bool _chBegun         ; the gestures have started (False: someone is still walking over)
 Actor[] _stillWho     ; where everyone stood at the last look: who stands still is free for a chat
 Float[] _stillX
 Float[] _stillY
@@ -1697,22 +1707,63 @@ Function StartChat(Actor akPlayer, Bool abNow)
 	_chDog = dog
 	_chStep = 0
 	_chSteps = Utility.RandomInt(8, 14)
-	_chAX = best1.GetPositionX()
-	_chAY = best1.GetPositionY()
-	_chBX = best2.GetPositionX()
-	_chBY = best2.GetPositionY()
+	_chSince = Utility.GetCurrentRealTime()
+	_chBegun = False
 	If !ChatQuest.IsRunning()
 		ChatQuest.Start()
 	EndIf
-	Chatters.AddRef(best1)
+	; the second is held where it stands; the first comes over if they are too far apart to talk
 	Chatters.AddRef(best2)
-	best1.EvaluatePackage()
 	best2.EvaluatePackage()
-	best1.SetAngle(0.0, 0.0, best1.GetAngleZ() + best1.GetHeadingAngle(best2))
-	best2.SetAngle(0.0, 0.0, best2.GetAngleZ() + best2.GetHeadingAngle(best1))
-	best1.SetLookAt(best2, False)
-	best2.SetLookAt(best1, False)
-	Debug.Trace("Idle Life: a chat starts - " + best1 + " (" + best1.GetBaseObject() + ") and " + best2 + " (" + best2.GetBaseObject() + "), " + (bestD as Int) + " apart, " + _chSteps + " gestures", 0)
+	Float apart = best1.GetDistance(best2)
+	If apart > ChatWalkFrom
+		Float k = ChatTalk / apart
+		Float tx = best2.GetPositionX() + (best1.GetPositionX() - best2.GetPositionX()) * k
+		Float ty = best2.GetPositionY() + (best1.GetPositionY() - best2.GetPositionY()) * k
+		ObjectReference goal = best2.PlaceAtMe(Game.GetFormFromFile(0x00003B, "Fallout4.esm"), 1, False, True, True)   ; XMarker
+		goal.SetPosition(tx, ty, best2.GetPositionZ())
+		Debug.Trace("Idle Life: a chat - " + best1 + " (" + best1.GetBaseObject() + ") walks over to " + best2 + " (" + best2.GetBaseObject() + "), " + (apart as Int) + " apart", 0)
+		Var[] args = new Var[1]
+		args[0] = goal
+		CallFunctionNoWait("WalkUp", args)       ; PathToReference is latent: never inside the scan's timer
+	Else
+		BeginChat()
+	EndIf
+EndFunction
+
+; The first walks up to the second (its own stack: the walk takes seconds). There: the chat begins; lost on
+; the way, or the chat called off meanwhile: everyone is let go.
+Function WalkUp(ObjectReference akGoal)
+	Actor walker = _chA
+	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.0)
+	akGoal.Disable()
+	akGoal.Delete()
+	If _chA && _chA == walker && there
+		BeginChat()
+	ElseIf _chA == walker
+		Debug.Trace("Idle Life: a chat called off - " + walker + " did not get there", 0)
+		EndChat()
+	EndIf
+EndFunction
+
+; Both held, face to face, looking at each other; the gestures start.
+Function BeginChat()
+	If !_chA || !_chB || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
+		EndChat()
+		Return
+	EndIf
+	Chatters.AddRef(_chA)
+	_chA.EvaluatePackage()
+	_chAX = _chA.GetPositionX()
+	_chAY = _chA.GetPositionY()
+	_chBX = _chB.GetPositionX()
+	_chBY = _chB.GetPositionY()
+	_chA.SetAngle(0.0, 0.0, _chA.GetAngleZ() + _chA.GetHeadingAngle(_chB))
+	_chB.SetAngle(0.0, 0.0, _chB.GetAngleZ() + _chB.GetHeadingAngle(_chA))
+	_chA.SetLookAt(_chB, False)
+	_chB.SetLookAt(_chA, False)
+	_chBegun = True
+	Debug.Trace("Idle Life: a chat starts - " + _chA + " (" + _chA.GetBaseObject() + ") and " + _chB + " (" + _chB.GetBaseObject() + "), " + (_chA.GetDistance(_chB) as Int) + " apart, " + _chSteps + " gestures", 0)
 	StartTimer(0.6, CHAT_TIMER)
 EndFunction
 
@@ -1818,6 +1869,7 @@ Function EndChat()
 	Debug.Trace("Idle Life: the chat ends after " + _chStep + " gestures - " + _chA + " and " + _chB, 0)
 	_chA = None
 	_chB = None
+	_chBegun = False
 	_chNext = Utility.GetCurrentRealTime() + ChatCooldown
 EndFunction
 
