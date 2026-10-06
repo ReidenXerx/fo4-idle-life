@@ -117,6 +117,7 @@ CHAT_IDLES = [0x038C7B, 0x038C7C, 0x1793E3, 0x038C7A, 0x118013, 0x1793E4, 0x038C
 # A creature's half of a mixed pair: its own skeleton's unconditioned idles, one marker per skeleton.
 CHAT_DOG_IDLES = [0x02B99E, 0x02B9A0, 0x02B9A1, 0x02B99F, 0x02B9A2]   # Dogmeat_Neutral_TalkYes1/No1, Playful Yes1, Neutral Yes2, Playful No1
 CHAT_HANDY_IDLES = [0x1428E3, 0x1428E2, 0x18A2FD]                     # HandyScanHigh, HandyScanLow, HandyMaintenanceIdle1
+TRAVEL_PACKAGE = 0x0849AF   # PACK AO_TravelToAO_LinkedRefRealClose: to the AO_LinkedRef-keyed linked ref, within 50
 HOLD_PACKAGE = 0x01D415   # Fallout4.esm PACK HoldPosition, no conditions (AN76 Toilets: reached 14 of 14)
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
@@ -365,6 +366,7 @@ def build():
         ('Testers', 1, struct.pack('<HhI', 0, 0, test_quest_id)),
         ('ChatQuest', 1, obj(chat_quest_id)),
         ('Chatters', 1, struct.pack('<HhI', 0, 0, chat_quest_id)),
+        ('Walkers', 1, struct.pack('<HhI', 0, 1, chat_quest_id)),
         ('TestNpc', 1, obj(TEST_NPC)),
         ('CounterAnchors', 1, obj(kind_lists['Counter'])),
         ('RailAnchors', 1, obj(kind_lists['Rail'])),
@@ -418,13 +420,23 @@ def build():
     c = field('EDID', zstring('IL_Chatters'))
     c += field('DNAM', bytes.fromhex('110064670000000000000000'))
     c += field('NEXT', b'')
-    c += field('ANAM', struct.pack('<I', 1))
+    c += field('ANAM', struct.pack('<I', 2))
     c += field('ALCS', struct.pack('<I', 0))
     c += field('ALMI', b'\x00')
     c += field('ALST', struct.pack('<I', 0))
     c += field('ALID', zstring('Chatters'))
     c += field('FNAM', struct.pack('<I', 0x202))
     c += field('ALPC', struct.pack('<I', HOLD_PACKAGE))
+    c += field('VTCK', struct.pack('<I', 0))
+    c += field('ALED', b'')
+    # Walkers: the one walking over to the other, by the vanilla travel package. PathToReference did not move a
+    # sandboxing local at all (owner's DC tests 10-06, any speed), and returned True after 15-19 s anyway.
+    c += field('ALCS', struct.pack('<I', 1))
+    c += field('ALMI', b'\x00')
+    c += field('ALST', struct.pack('<I', 1))
+    c += field('ALID', zstring('Walkers'))
+    c += field('FNAM', struct.pack('<I', 0x202))
+    c += field('ALPC', struct.pack('<I', TRAVEL_PACKAGE))
     c += field('VTCK', struct.pack('<I', 0))
     c += field('ALED', b'')
     quest += record('QUST', chat_quest_id, c)

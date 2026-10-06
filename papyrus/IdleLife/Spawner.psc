@@ -112,6 +112,8 @@ Form Property ChatHandy Auto Const Mandatory
 Quest Property ChatQuest Auto Const Mandatory
 RefCollectionAlias Property Chatters Auto Const Mandatory
 {The two in a chat: its package is HoldPosition, so their sandbox package does not walk them off mid-gesture.}
+RefCollectionAlias Property Walkers Auto Const Mandatory
+{The one walking over: its package is vanilla AO_TravelToAO_LinkedRefRealClose, to the linked ref keyed AO_LinkedRef.}
 Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
@@ -339,12 +341,14 @@ Event OnTimer(Int aiTimerID)
 			EndIf
 		EndIf
 	EndIf
-	If !_chA && Chatters.GetCount() > 0
-		LetGo()      ; a save made mid-chat: nobody stays held
+	If !_chA && (Chatters.GetCount() > 0 || Walkers.GetCount() > 0)
+		LetGo()      ; a save made mid-chat: nobody stays held or walking
+		StopWalk()
 	EndIf
-	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > ChatWalkSeconds
+	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > ChatWalkSeconds + 10.0
 		; a walk that does not arrive (owner's DC test 10-06: Cathy, 72 units short, still walking after 20 s):
 		; near enough by now, they talk where they are; not, it is called off -- never a stuck director
+		StopWalk()
 		If _chB && _chA.GetDistance(_chB) <= ChatTalkMax
 			Debug.Trace("Idle Life: the walk-over ran long - the chat starts where they are", 0)
 			BeginChat(_chId)
@@ -1596,6 +1600,7 @@ Int Property IDLE_DOG_YES = 0x02B99E AutoReadOnly   ; Dogmeat_Neutral_TalkYes1
 Int Property IDLE_DOG_NO = 0x02B9A0 AutoReadOnly    ; Dogmeat_Neutral_TalkNo1
 Int Property IDLE_DOG_PLAY = 0x02B9A1 AutoReadOnly  ; Dogmeat_Playful_TalkYes1
 Int Property IDLE_STOP = 0x029380 AutoReadOnly      ; LooseIdleStop: back to standing, before the hold is let go
+Int Property KW_AO_LINKED = 0x02BF09 AutoReadOnly   ; the keyword AO_TravelToAO_LinkedRef* travel to
 Float Property ChatNear = 70.0 Auto Const
 Float Property ChatFar = 400.0 Auto Const
 {How far apart two may stand and still fall into a chat: one walks over (owner 10-06, option 2).}
@@ -1620,8 +1625,11 @@ Float _chBY
 Float _chNext         ; real time the next chat may start
 Float _chSince        ; real time this chat was picked
 Bool _chBegun         ; the gestures have started (False: someone is still walking over)
+Bool _chPicking       ; a pick is running: a second one (latent calls let it in) backs off -- two at once gave
+                      ; the same walker two PathToReference calls and the second cancelled the first (DC 10-06)
+ObjectReference _chGoal   ; where the walker is going (an XMarker), None when nobody walks
 Int _chId             ; this chat's number: a walk that ends late must not touch a newer chat (or none)
-Float Property ChatWalkSeconds = 8.0 Auto Const
+Float Property ChatWalkSeconds = 15.0 Auto Const
 {How long the walk-over may take: then the chat starts where they are if near enough, else it is called off.}
 Float Property ChatTalkMax = 260.0 Auto Const
 {The furthest apart two may still chat once the walk is over.}
@@ -1651,6 +1659,15 @@ Bool Function FreeToChat(Actor akWho, Actor[] akWho0, Float[] afX0, Float[] afY0
 EndFunction
 
 Function StartChat(Actor akPlayer, Bool abNow)
+	If _chPicking || _chA
+		Return
+	EndIf
+	_chPicking = True
+	PickChat(akPlayer, abNow)
+	_chPicking = False
+EndFunction
+
+Function PickChat(Actor akPlayer, Bool abNow)
 	If !abNow && Utility.GetCurrentRealTime() < _chNext
 		RememberStill(akPlayer)
 		Return
@@ -1735,41 +1752,53 @@ Function StartChat(Actor akPlayer, Bool abNow)
 		Float ty = best2.GetPositionY() + (best1.GetPositionY() - best2.GetPositionY()) * k
 		ObjectReference goal = best2.PlaceAtMe(Game.GetFormFromFile(0x00003B, "Fallout4.esm"), 1, False, True, True)   ; XMarker
 		goal.SetPosition(tx, ty, best2.GetPositionZ())
+		_chGoal = goal
+		best1.SetLinkedRef(goal, Game.GetFormFromFile(KW_AO_LINKED, "Fallout4.esm") as Keyword)
+		Walkers.AddRef(best1)
+		best1.EvaluatePackage()
 		Debug.Trace("Idle Life: a chat - " + best1 + " (" + best1.GetBaseObject() + ") walks over to " + best2 + " (" + best2.GetBaseObject() + "), " + (apart as Int) + " apart", 0)
-		Var[] args = new Var[2]
-		args[0] = goal
-		args[1] = _chId
-		CallFunctionNoWait("WalkUp", args)       ; PathToReference is latent: never inside the scan's timer
+		StartTimer(1.0, CHAT_TIMER)              ; the step timer watches the walk
 	Else
 		BeginChat(_chId)
 	EndIf
 EndFunction
 
-; The first walks up to the second (its own stack: the walk takes seconds). There: the chat begins; lost on
-; the way, or the chat called off meanwhile: everyone is let go.
-Function WalkUp(ObjectReference akGoal, Int aiChat)
-	Actor walker = _chA
-	Float t0 = Utility.GetCurrentRealTime()
-	; 0.5: walking pace. 0.0 is NOT "walk" -- the walker never moved and PathToReference still returned True after
-	; 15-19 s (owner's DC tests 10-06: John 73 from the meeting point before and after)
-	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.5)
-	String where = ""
-	If walker && _chB
-		where = "; walker " + (walker.GetDistance(akGoal) as Int) + " from the meeting point, " + (walker.GetDistance(_chB) as Int) + " from " + _chB + "; the meeting point " + (akGoal.GetDistance(_chB) as Int) + " from them"
+; The walk over, checked once a second by the chat timer: there (by the meeting point, or near the other) -- the
+; chat begins; out of time -- it begins where they are if near enough, else it is called off.
+Function WalkCheck()
+	Float took = Utility.GetCurrentRealTime() - _chSince
+	Bool there = _chGoal && (_chA.GetDistance(_chGoal) < 70.0 || _chA.GetDistance(_chB) < ChatTalk + 40.0)
+	If !there && took < ChatWalkSeconds && _chA.Is3DLoaded() && _chB.Is3DLoaded()
+		StartTimer(1.0, CHAT_TIMER)
+		Return
 	EndIf
-	akGoal.Disable()
-	akGoal.Delete()
-	Debug.Trace("Idle Life: the walk-over " + aiChat + " ended after " + ((Utility.GetCurrentRealTime() - t0) as Int) + " s, arrived " + there + where, 0)
-	If aiChat != _chId || _chBegun || !_chA
-		Return      ; the chat already began (the walk ran long) or was called off
-	EndIf
-	; near enough to talk, whatever the walk said (DC test: "arrived" after 15 s, still 378 apart -- a patrolling
-	; guard as the other one)
-	If _chB && _chA.GetDistance(_chB) <= ChatTalkMax
-		BeginChat(aiChat)
+	Debug.Trace("Idle Life: the walk-over " + _chId + " ended after " + (took as Int) + " s, there " + there + "; walker " + (_chA.GetDistance(_chGoal) as Int) + " from the meeting point, " + (_chA.GetDistance(_chB) as Int) + " from " + _chB, 0)
+	StopWalk()
+	If _chA.GetDistance(_chB) <= ChatTalkMax
+		BeginChat(_chId)
 	Else
-		Debug.Trace("Idle Life: a chat called off - " + walker + " did not get near", 0)
+		Debug.Trace("Idle Life: a chat called off - " + _chA + " did not get near", 0)
 		EndChat()
+	EndIf
+EndFunction
+
+; The walker leaves the travel package and its meeting point goes.
+Function StopWalk()
+	Keyword kw = Game.GetFormFromFile(KW_AO_LINKED, "Fallout4.esm") as Keyword
+	Int i = Walkers.GetCount() - 1
+	While i >= 0
+		ObjectReference w = Walkers.GetAt(i)
+		Walkers.RemoveRef(w)
+		If w
+			w.SetLinkedRef(None, kw)
+			(w as Actor).EvaluatePackage()
+		EndIf
+		i -= 1
+	EndWhile
+	If _chGoal
+		_chGoal.Disable()
+		_chGoal.Delete()
+		_chGoal = None
 	EndIf
 EndFunction
 
@@ -1833,6 +1862,10 @@ EndFunction
 ; One gesture: the two take turns. Over when either has walked off or got busy, or the gestures are spent.
 Function ChatStep()
 	If !_chA || !_chB
+		Return
+	EndIf
+	If !_chBegun
+		WalkCheck()
 		Return
 	EndIf
 	Bool over = _chStep >= _chSteps || _chA.IsDead() || _chB.IsDead() || _chA.IsInCombat() || _chB.IsInCombat() || _chA.IsInScene() || _chB.IsInScene() || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
@@ -1899,6 +1932,7 @@ Function EndChat()
 		_chB.ClearLookAt()
 	EndIf
 	LetGo()
+	StopWalk()
 	Debug.Trace("Idle Life: the chat ends after " + _chStep + " gestures - " + _chA + " and " + _chB, 0)
 	_chA = None
 	_chB = None
