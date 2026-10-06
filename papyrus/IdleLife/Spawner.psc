@@ -1784,7 +1784,9 @@ Function ChatStep()
 	ElseIf r < 4
 		gesture = Game.GetFormFromFile(IDLE_NO, "Fallout4.esm") as Idle
 	ElseIf r < 6
-		gesture = Game.GetFormFromFile(IDLE_SHRUG, "Fallout4.esm") as Idle
+		; not the shrug: its event is dlg_question and it never played outside dialogue (3 of 3 failed, owner's DC
+		; test 10-06, Cathy and John); a laugh in its place
+		gesture = Game.GetFormFromFile(IDLE_LAUGH, "Fallout4.esm") as Idle
 	ElseIf r < 7
 		gesture = Game.GetFormFromFile(IDLE_POINT_F, "Fallout4.esm") as Idle
 	ElseIf r < 8
