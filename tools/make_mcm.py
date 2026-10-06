@@ -73,8 +73,8 @@ def build():
         ('Robots', 'Crops and hedges', 'People hoeing and weeding crops; Mr Handys gardening and trimming hedges.'),
         ('Crate', 'Boxes and crates', 'Someone rummaging through a box or a crate.'),
         ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
-        ('Chat', 'Chatting', 'Two people facing each other, talking with their hands: nods, shrugs, pointing, a laugh, '
-                 'no words. Now and then a person and a dog or a Mr Handy.'),
+        ('Chat', 'Chatting', 'Two people standing about turn to each other and talk with their hands: nods, shrugs, '
+                 'pointing, a laugh, no words. Now and then a person and a dog.'),
         ('Wall', 'Along walls', 'Leaning back on walls, reading a paper; in settlements painting or welding '
                  'them. Needs the Idle Life plugin (F4SE) that reads the navmesh.'),
         ('Open', 'In the open', 'A sitting circle on flat open ground; someone sweeping, doing push-ups, '
@@ -90,9 +90,9 @@ def build():
                'Four harmless settlers appear a few steps around you and sandbox right there: they wander, '
                'sit, and take the spots near you. Stand near a fire, counter, bench or radio first.'),
         button('Remove test settlers', 'DebugRemoveTesters', 'Deletes every test settler.'),
-        button('Place a chat pair here', 'DebugPlaceChat',
-               'Two chat spots facing each other a few steps ahead of you: people who take them should gesture at '
-               'each other without a word. A test of the coming chat pairs.'),
+        button('Start a chat here', 'DebugPlaceChat',
+               'Two people standing about near each other (or a person and a dog) turn face to face and talk with '
+               'their hands for half a minute, no words. Nobody near standing still: nothing happens.'),
         button('Draw spots again', 'DebugRedraw', 'Takes away every spot near you and draws them all again, e.g. after changing the settings.'),
         {'text': 'Log', 'type': 'section'},
         switcher('Detailed log', 'Setting_DetailedLog',

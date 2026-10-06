@@ -207,6 +207,7 @@ Int Property LOC_BAR = 0x022632 AutoReadOnly           ; LocTypeBar
 Int Property SCAN_TIMER = 1 AutoReadOnly
 Int Property DEBUG_SPAWN_TIMER = 10 AutoReadOnly
 Int Property DEBUG_STATUS_TIMER = 11 AutoReadOnly
+Int Property CHAT_TIMER = 12 AutoReadOnly       ; the chat director's next gesture
 Int Property RECOUNT_EVERY = 6 AutoReadOnly    ; scans between two people recounts (30 s)
 Int Property REPORT_EVERY = 3 AutoReadOnly     ; scans between two reports (15 s: who is on which spot)
 Int Property SPAWNER_QUEST = 0x000800 AutoReadOnly
@@ -313,6 +314,9 @@ Event OnTimer(Int aiTimerID)
 	ElseIf aiTimerID == DEBUG_STATUS_TIMER
 		Debug.MessageBox(StatusText())
 		Return
+	ElseIf aiTimerID == CHAT_TIMER
+		ChatStep()
+		Return
 	ElseIf aiTimerID != SCAN_TIMER
 		Return
 	EndIf
@@ -331,6 +335,9 @@ Event OnTimer(Int aiTimerID)
 				Draw(player)
 			EndIf
 		EndIf
+	EndIf
+	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_CHAT) && !_chA
+		StartChat(player, False)
 	EndIf
 	_scans += 1
 	If _scans % REPORT_EVERY == 0 && _spots.Length > 0
@@ -387,10 +394,6 @@ Function Draw(Actor akPlayer)
 	_budget = BudgetFor(people.Length + _robots)
 	Trim(akPlayer)
 	Int before = _spots.Length
-	; Chats first: drawn last they found the budget always full (owner's DC test 10-06: "0 chatting", 40 of 40).
-	If _spots.Length < _budget
-		ChatSpots(akPlayer, people)
-	EndIf
 	If _spots.Length < _budget
 		WallAndOpen(akPlayer, people)
 	EndIf
@@ -1317,17 +1320,13 @@ EndFunction
 
 ; ---- the MCM Testing page (buttons that play out in the world wait until the menu closes) --------
 
-; Testing page: a chat pair 150 ahead of the player, the two spots 110 apart, facing each other (vanilla's
-; conversation distance; our bench pairs use the same). The premise test for chat pairs.
+; Testing page: a chat between the two standing nearest each other near the player, right away.
 Function DebugPlaceChat()
-	Actor player = Game.GetPlayer()
-	Float h = player.GetAngleZ()
-	Float cx = player.GetPositionX() + 150.0 * Math.Sin(h)
-	Float cy = player.GetPositionY() + 150.0 * Math.Cos(h)
-	ChatPair(player, Chat, cx, cy, player.GetPositionZ(), h + 90.0)
-	Debug.Trace("Idle Life: chat pair placed for a test at " + (cx as Int) + ", " + (cy as Int), 0)
-	String mixed = MixedChat(player)
-	Debug.Notification("Idle Life: a chat pair is placed ahead of you" + mixed + ".")
+	If _chA
+		EndChat()
+	EndIf
+	_chNext = 0.0
+	StartChat(Game.GetPlayer(), True)
 EndFunction
 
 ; A person and a creature: a creature's chat spot where a dog or a robot stands about, a person's facing it
@@ -1559,6 +1558,234 @@ Function TrackChats()
 	EndWhile
 	_chatAt = nowAt
 	_chatWho = nowWho
+EndFunction
+
+; ---- the chat director (1.2.0) ---------------------------------------------------------------------------
+;
+; Chats are not spots. Nexus user fR1eNd asked for people talking with their hands, no words; the owner added
+; "human - basically any creature, even robot". Chat MARKERS were placed first (IL_ChatMarker and its dog/Handy
+; halves) and in the owner's Diamond City tests (10-06, three sessions) no local ever stopped at one: they walked
+; past, whatever the marker carried. So the director picks two who are already standing about near each other,
+; turns them face to face, and plays the gestures on them in turns. Only idles with no conditions: the dialogue
+; talk/listen idles need a real conversation (TalkMTRoot) and do not play.
+Int Property IDLE_YES = 0x038C7B AutoReadOnly       ; HeadShakeYes
+Int Property IDLE_NO = 0x038C7A AutoReadOnly        ; HeadShakeNo
+Int Property IDLE_SHRUG = 0x038C7C AutoReadOnly     ; Shrug
+Int Property IDLE_POINT_F = 0x1793E3 AutoReadOnly   ; PointForward
+Int Property IDLE_POINT_L = 0x1793E4 AutoReadOnly   ; PointLeft
+Int Property IDLE_POINT_R = 0x1793E5 AutoReadOnly   ; PointRight
+Int Property IDLE_LAUGH = 0x118013 AutoReadOnly     ; ActionCustomLaughingStandingA
+Int Property IDLE_DOG_YES = 0x02B99E AutoReadOnly   ; Dogmeat_Neutral_TalkYes1
+Int Property IDLE_DOG_NO = 0x02B9A0 AutoReadOnly    ; Dogmeat_Neutral_TalkNo1
+Int Property IDLE_DOG_PLAY = 0x02B9A1 AutoReadOnly  ; Dogmeat_Playful_TalkYes1
+Float Property ChatNear = 70.0 Auto Const
+Float Property ChatFar = 260.0 Auto Const
+{How close two must stand to fall into a chat: closer is a crowd, further is shouting.}
+Float Property ChatBeat = 2.8 Auto Const
+{Seconds between two gestures.}
+Float Property ChatCooldown = 20.0 Auto Const
+{Seconds between the end of one chat and the start of the next.}
+
+Actor _chA            ; the two in the chat now (None: no chat)
+Actor _chB
+Bool _chDog           ; _chB is a dog
+Int _chStep
+Int _chSteps
+Float _chAX
+Float _chAY
+Float _chBX
+Float _chBY
+Float _chNext         ; real time the next chat may start
+Actor[] _stillWho     ; where everyone stood at the last look: who stands still is free for a chat
+Float[] _stillX
+Float[] _stillY
+
+; Free for a chat: here, standing still since the last look, on no furniture, in no scene or combat, no child,
+; not the player's companion (they follow the player).
+Bool Function FreeToChat(Actor akWho, Actor[] akWho0, Float[] afX0, Float[] afY0)
+	If !akWho || akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || !akWho.Is3DLoaded()
+		Return False
+	EndIf
+	If akWho.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
+		Return False
+	EndIf
+	Int at = -1
+	If akWho0
+		at = akWho0.Find(akWho)
+	EndIf
+	If at < 0
+		Return False
+	EndIf
+	Float dx = akWho.GetPositionX() - afX0[at]
+	Float dy = akWho.GetPositionY() - afY0[at]
+	Return dx * dx + dy * dy < 30.0 * 30.0
+EndFunction
+
+Function StartChat(Actor akPlayer, Bool abNow)
+	If !abNow && Utility.GetCurrentRealTime() < _chNext
+		RememberStill(akPlayer)
+		Return
+	EndIf
+	Actor[] people = People(akPlayer)
+	Actor[] w0 = _stillWho
+	Float[] x0 = _stillX
+	Float[] y0 = _stillY
+	RememberStill(akPlayer)
+	If abNow && !w0
+		w0 = _stillWho     ; the test button: no earlier look -- take everyone where they stand now
+		x0 = _stillX
+		y0 = _stillY
+	EndIf
+	Actor best1 = None
+	Actor best2 = None
+	Float bestD = 999999.0
+	Int i = 0
+	While i < people.Length
+		If FreeToChat(people[i], w0, x0, y0)
+			Int j = i + 1
+			While j < people.Length
+				Float d = people[i].GetDistance(people[j])
+				If d > ChatNear && d < ChatFar && d < bestD && FreeToChat(people[j], w0, x0, y0)
+					bestD = d
+					best1 = people[i]
+					best2 = people[j]
+				EndIf
+				j += 1
+			EndWhile
+		EndIf
+		i += 1
+	EndWhile
+	Bool dog = False
+	; now and then a person and a dog standing about (the owner's "any creature")
+	If (!best1 || Utility.RandomInt(0, 3) == 0)
+		ObjectReference[] dogs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
+		Int k = 0
+		While k < dogs.Length
+			Actor d = dogs[k] as Actor
+			If d && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !d.IsPlayerTeammate() && d.Is3DLoaded()
+				Int m = 0
+				While m < people.Length
+					Float dd = people[m].GetDistance(d)
+					If dd > ChatNear && dd < ChatFar && FreeToChat(people[m], w0, x0, y0)
+						best1 = people[m]
+						best2 = d
+						dog = True
+						m = people.Length
+						k = dogs.Length
+					EndIf
+					m += 1
+				EndWhile
+			EndIf
+			k += 1
+		EndWhile
+	EndIf
+	If !best1
+		If abNow
+			Debug.Notification("Idle Life: nobody standing about near each other right now.")
+		EndIf
+		Return
+	EndIf
+	_chA = best1
+	_chB = best2
+	_chDog = dog
+	_chStep = 0
+	_chSteps = Utility.RandomInt(8, 14)
+	_chAX = best1.GetPositionX()
+	_chAY = best1.GetPositionY()
+	_chBX = best2.GetPositionX()
+	_chBY = best2.GetPositionY()
+	best1.SetAngle(0.0, 0.0, best1.GetAngleZ() + best1.GetHeadingAngle(best2))
+	best2.SetAngle(0.0, 0.0, best2.GetAngleZ() + best2.GetHeadingAngle(best1))
+	best1.SetLookAt(best2, False)
+	best2.SetLookAt(best1, False)
+	Debug.Trace("Idle Life: a chat starts - " + best1 + " (" + best1.GetBaseObject() + ") and " + best2 + " (" + best2.GetBaseObject() + "), " + (bestD as Int) + " apart, " + _chSteps + " gestures", 0)
+	StartTimer(0.6, CHAT_TIMER)
+EndFunction
+
+Function RememberStill(Actor akPlayer)
+	Actor[] people = People(akPlayer)
+	Actor[] w = new Actor[0]
+	Float[] x = new Float[0]
+	Float[] y = new Float[0]
+	Int i = 0
+	While i < people.Length
+		w.Add(people[i])
+		x.Add(people[i].GetPositionX())
+		y.Add(people[i].GetPositionY())
+		i += 1
+	EndWhile
+	_stillWho = w
+	_stillX = x
+	_stillY = y
+EndFunction
+
+; One gesture: the two take turns. Over when either has walked off or got busy, or the gestures are spent.
+Function ChatStep()
+	If !_chA || !_chB
+		Return
+	EndIf
+	Bool over = _chStep >= _chSteps || _chA.IsDead() || _chB.IsDead() || _chA.IsInCombat() || _chB.IsInCombat() || _chA.IsInScene() || _chB.IsInScene() || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
+	If !over
+		Float ax = _chA.GetPositionX() - _chAX
+		Float ay = _chA.GetPositionY() - _chAY
+		Float bx = _chB.GetPositionX() - _chBX
+		Float by = _chB.GetPositionY() - _chBY
+		over = ax * ax + ay * ay > 60.0 * 60.0 || bx * bx + by * by > 60.0 * 60.0
+	EndIf
+	If over
+		EndChat()
+		Return
+	EndIf
+	Actor speaker = _chA
+	Bool dogTurn = False
+	If _chStep % 2 == 1
+		speaker = _chB
+		dogTurn = _chDog
+	EndIf
+	Idle gesture = None
+	Int r = Utility.RandomInt(0, 9)
+	If dogTurn
+		If r < 4
+			gesture = Game.GetFormFromFile(IDLE_DOG_YES, "Fallout4.esm") as Idle
+		ElseIf r < 7
+			gesture = Game.GetFormFromFile(IDLE_DOG_PLAY, "Fallout4.esm") as Idle
+		Else
+			gesture = Game.GetFormFromFile(IDLE_DOG_NO, "Fallout4.esm") as Idle
+		EndIf
+	ElseIf r < 3
+		gesture = Game.GetFormFromFile(IDLE_YES, "Fallout4.esm") as Idle
+	ElseIf r < 4
+		gesture = Game.GetFormFromFile(IDLE_NO, "Fallout4.esm") as Idle
+	ElseIf r < 6
+		gesture = Game.GetFormFromFile(IDLE_SHRUG, "Fallout4.esm") as Idle
+	ElseIf r < 7
+		gesture = Game.GetFormFromFile(IDLE_POINT_F, "Fallout4.esm") as Idle
+	ElseIf r < 8
+		gesture = Game.GetFormFromFile(IDLE_POINT_L, "Fallout4.esm") as Idle
+	ElseIf r < 9
+		gesture = Game.GetFormFromFile(IDLE_POINT_R, "Fallout4.esm") as Idle
+	Else
+		gesture = Game.GetFormFromFile(IDLE_LAUGH, "Fallout4.esm") as Idle
+	EndIf
+	Bool played = speaker.PlayIdle(gesture)
+	If DetailedLog.GetValueInt() == 1
+		Debug.Trace("Idle Life: chat gesture " + _chStep + " - " + speaker + " " + gesture + (played as String), 0)
+	EndIf
+	_chStep += 1
+	StartTimer(ChatBeat, CHAT_TIMER)
+EndFunction
+
+Function EndChat()
+	If _chA
+		_chA.ClearLookAt()
+	EndIf
+	If _chB
+		_chB.ClearLookAt()
+	EndIf
+	Debug.Trace("Idle Life: the chat ends after " + _chStep + " gestures - " + _chA + " and " + _chB, 0)
+	_chA = None
+	_chB = None
+	_chNext = Utility.GetCurrentRealTime() + ChatCooldown
 EndFunction
 
 ; ---- wave 2 ----------------------------------------------------------------------------------------------
