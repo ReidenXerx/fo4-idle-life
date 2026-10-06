@@ -6,7 +6,7 @@
 // pose inside the pillar. So the spot's body -- knee and chest height above it -- is tested against the boxes of the
 // compact, upright objects of its cell. No physics ray (CommonLibF4RD's cell pick crashed, VATS Bullets 0.7/0.9).
 //
-// Which objects: statics, movable statics, containers, activators whose footprint is at most kMaxFootprint and
+// Which objects: statics, containers, activators whose footprint is at most kMaxFootprint and
 // that stand at least kMinHeight tall -- pillars, posts, machines, shelves, lockers. Bigger pieces (a wall, a whole
 // shack, a static collection) have boxes that cover the room, so a box test says nothing about them.
 // How: with the object's 3D loaded, exactly in its frame (an engine matrix keeps its local axes in its ROWS,
@@ -28,7 +28,9 @@ namespace IL::Solid
 		bool Compact(RE::ENUM_FORM_ID a_type)
 		{
 			using T = RE::ENUM_FORM_ID;
-			return a_type == T::kSTAT || a_type == T::kMSTT || a_type == T::kCONT || a_type == T::kACTI;
+			// Not movable statics: in the game they are fog, smoke, flames and tarps -- no body to stand in. The first
+			// test dropped spots "inside" MistLargeRoundDustyDim and DiamondRedTarp03ms (owner's DC log, 10-06).
+			return a_type == T::kSTAT || a_type == T::kCONT || a_type == T::kACTI;
 		}
 
 		bool InsideRef(RE::TESObjectREFR* a_ref, const RE::NiPoint3& a_spot)
