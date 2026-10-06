@@ -40,5 +40,7 @@
  "Setting_DetailedLog": "826",
  "FireSources": "827",
  "LampSources": "828",
- "ChatMarker": "829"
+ "ChatMarker": "829",
+ "ChatDogMarker": "82A",
+ "ChatHandyMarker": "82B"
 }

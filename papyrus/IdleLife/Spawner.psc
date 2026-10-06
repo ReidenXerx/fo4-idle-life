@@ -104,7 +104,11 @@ RefCollectionAlias Property Testers Auto Const Mandatory
 {The MCM Testing page's settlers: their alias package makes them sandbox where they stand.}
 Form Property TestNpc Auto Const Mandatory
 Form Property Chat Auto Const Mandatory
-{Our chat spot: silent talk and listen gestures (an IDLM like Dance). A pair faces each other.}
+{Our chat spot: nods, head shakes, shrugs, pointing, a laugh -- no words (an IDLM like Dance). A pair faces each other.}
+Form Property ChatDog Auto Const Mandatory
+{A dog's half of a chat: it answers with its yes and no barks.}
+Form Property ChatHandy Auto Const Mandatory
+{A Mr. Handy's half of a chat: it scans the one talking to it.}
 Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
@@ -1235,7 +1239,47 @@ Function DebugPlaceChat()
 	PlaceWorld(player, Chat, ax, ay, player.GetPositionZ(), side + 180.0)
 	PlaceWorld(player, Chat, bx, by, player.GetPositionZ(), side)
 	Debug.Trace("Idle Life: chat pair placed for a test at " + (cx as Int) + ", " + (cy as Int), 0)
-	Debug.Notification("Idle Life: a chat pair is placed ahead of you.")
+	String mixed = MixedChat(player)
+	Debug.Notification("Idle Life: a chat pair is placed ahead of you" + mixed + ".")
+EndFunction
+
+; A person and a creature: a human chat spot facing a creature's chat spot, beside the nearest dog or robot that is
+; standing around (owner 10-06: "human - basically any creature, even robot, it would be hilarious").
+String Function MixedChat(Actor akPlayer)
+	ObjectReference[] dogs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
+	ObjectReference[] bots = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), Radius)
+	Actor who = None
+	Form half = None
+	Int i = 0
+	While !who && i < dogs.Length
+		Actor d = dogs[i] as Actor
+		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer)
+			who = d
+			half = ChatDog
+		EndIf
+		i += 1
+	EndWhile
+	i = 0
+	While !who && i < bots.Length
+		Actor r = bots[i] as Actor
+		If r && r.Is3DLoaded() && !r.IsDead() && !r.IsInCombat() && !r.IsHostileToActor(akPlayer)
+			who = r
+			half = ChatHandy
+		EndIf
+		i += 1
+	EndWhile
+	If !who
+		Debug.Trace("Idle Life: no dog or robot near for a mixed chat pair", 0)
+		Return ""
+	EndIf
+	Float h = (Seed(who) % 360) as Float
+	Float x = who.GetPositionX()
+	Float y = who.GetPositionY()
+	; the creature's spot where it stands, the person's 110 away, facing each other
+	PlaceWorld(who, half, x, y, who.GetPositionZ(), h)
+	PlaceWorld(who, Chat, x + 110.0 * Math.Sin(h), y + 110.0 * Math.Cos(h), who.GetPositionZ(), h + 180.0)
+	Debug.Trace("Idle Life: mixed chat pair placed by " + who + " (" + who.GetBaseObject() + ")", 0)
+	Return ", and a mixed one by a " + who.GetDisplayName()
 EndFunction
 
 Function DebugSpawnTesters()

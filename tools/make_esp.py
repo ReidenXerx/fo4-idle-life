@@ -106,14 +106,17 @@ TOOLS = [0x0D96C9, 0x0D96C7, 0x0D96CD, 0x0D96C5, 0x0D96C3, 0x0D96C1, 0x0D96BF]  
 # Our dance spot: no dance marker exists in the game. An IDLM cloned from vanilla's shape (IDLF 08, a timer,
 # an idle list) listing the two dance loops nothing in vanilla uses, the drunk sway and the clap.
 DANCE_IDLES = [0x083BE4, 0x083BE5, 0x083BE3, 0x141F3C]   # IdleDrunkDancing, ...Drunker, IdleDrunkFaster, IdleClapping
-# Our chat spot (1.2.0, Nexus user fR1eNd: "NPCs engage in conversations with each other ... hand gestures without
-# actually speaking lines"). No chat marker exists in the game either: an IDLM like the dance one, listing the
-# silent talk and listen gestures of human dialogue (MTBehavior, event dyn_talkGeneric) and a shrug. A pair of
-# them face each other. PREMISE, unproven: that these play from a marker outside real dialogue (the Testing page's
-# "Place a chat pair here" button tests it).
-CHAT_IDLES = [0x062271, 0x085B4A, 0x062270, 0x249011, 0x06226F, 0x249010, 0x038C7C, 0x24900F]
-# RaiderTalkMT_PoseA_S, RaiderListenMT_PoseA, ..._PoseA_M, RaiderListenMT_PoseB, ..._PoseA_L, RaiderTalkMT_PoseB_S,
-# Shrug, RaiderTalkMT_PoseB_M -- talk and listen alternate as the marker runs its list
+# Our chat spots (1.2.0, Nexus user fR1eNd: "NPCs engage in conversations with each other ... hand gestures without
+# actually speaking lines"; owner 10-06: "not only human-human but human-basically any creature, even robot").
+# No chat marker exists in the game. The first build listed human dialogue's talk/listen gestures: nobody took the
+# marker in 2 minutes of Diamond City (owner's test 10-06) -- every one of them is conditioned on real dialogue
+# (TalkMTRoot: in-dialogue checks; the S/M/L talks: line timing), and an NPC skips a marker it can play nothing
+# from. These carry NO conditions (research/idlm_catalog): nods, head shakes, shrugs, pointing, a laugh.
+CHAT_IDLES = [0x038C7B, 0x038C7C, 0x1793E3, 0x038C7A, 0x118013, 0x1793E4, 0x038C7B, 0x1793E5]
+# HeadShakeYes, Shrug, PointForward, HeadShakeNo, ActionCustomLaughingStandingA, PointLeft, HeadShakeYes, PointRight
+# A creature's half of a mixed pair: its own skeleton's unconditioned idles, one marker per skeleton.
+CHAT_DOG_IDLES = [0x02B99E, 0x02B9A0, 0x02B9A1, 0x02B99F, 0x02B9A2]   # Dogmeat_Neutral_TalkYes1/No1, Playful Yes1, Neutral Yes2, Playful No1
+CHAT_HANDY_IDLES = [0x1428E3, 0x1428E2, 0x18A2FD]                     # HandyScanHigh, HandyScanLow, HandyMaintenanceIdle1
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
 # ---- wave 2 (owner 2026-10-01: "scale our covered idle markers on maximum") -------------------------
@@ -307,6 +310,21 @@ def build():
     cm += field('IDLA', b''.join(struct.pack('<I', i) for i in CHAT_IDLES))
     idlm += record('IDLM', chat_id, cm)
 
+    def chat_marker(key, edid, idles, timer):
+        rid = new_id(key)
+        body = field('EDID', zstring(edid))
+        body += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))
+        body += field('IDLF', b'\x08')
+        body += field('IDLC', struct.pack('<B', len(idles)))
+        body += field('IDLT', struct.pack('<f', timer))
+        body += field('IDLA', b''.join(struct.pack('<I', i) for i in idles))
+        return rid, record('IDLM', rid, body)
+
+    chat_dog_id, rec = chat_marker('ChatDogMarker', 'IL_ChatDogMarker', CHAT_DOG_IDLES, 4.0)
+    idlm += rec
+    chat_handy_id, rec = chat_marker('ChatHandyMarker', 'IL_ChatHandyMarker', CHAT_HANDY_IDLES, 5.0)
+    idlm += rec
+
     # Bounds of every counter/rail/work/bench base, one table (<= 128 entries: a Papyrus array's limit).
     geo = [(b, box) for kind in KINDS for b, _, box in KINDS[kind]]
     assert len(geo) <= 128, len(geo)
@@ -363,6 +381,8 @@ def build():
         ('Tools', 11, objs(TOOLS)),
         ('Dance', 1, obj(dance_id)),
         ('Chat', 1, obj(chat_id)),
+        ('ChatDog', 1, obj(chat_dog_id)),
+        ('ChatHandy', 1, obj(chat_handy_id)),
         ('GroundSit', 1, obj(GROUND_SIT)),
     ] + [(k + 'Anchors', 1, obj(v)) for k, v in wave2_lists.items()]
       + [(k, 1, obj(v)) for k, v in WAVE2_SPOTS.items()]
