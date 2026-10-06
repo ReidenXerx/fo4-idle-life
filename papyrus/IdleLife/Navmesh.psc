@@ -10,6 +10,10 @@ Float[] Function WallSpots(ObjectReference akCentre, ObjectReference[] akNear, F
 ; circle): nearest the given people first, at most aiMax.
 Float[] Function OpenSpots(ObjectReference akCentre, ObjectReference[] akNear, Float afRadius, Float afClearance, Int aiMax) Global Native
 
+; The pillar, post or machine whose box holds this spot's body (a pose there plays inside it), or None.
+; Plugin 0.3.0 (Version() >= 300).
+ObjectReference Function Inside(ObjectReference akSpot) Global Native
+
 Int Function Version() Global Native
 
 ; The navmesh can be read on this runtime: Runtime Database is present and knows it.

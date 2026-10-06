@@ -19,6 +19,14 @@ FormList Property FireAnchors Auto Const Mandatory
 {Lit fire barrels and the workshop cooking fire (Fallout4.esm); DLC braziers and barrels join at run time.}
 FormList Property FireLights Auto Const Mandatory
 {Fire lights: most fires in the game are a plain barrel or a burn pile lit by one of these.}
+FormList Property FireSources Auto Const Mandatory
+{What burns under a fire light: flame effects and the cooking fire (the fire barrels are FireAnchors). A light with
+ none of these near is room light, not a fire (1.2.0).}
+FormList Property LampSources Auto Const Mandatory
+{Oil lamps: a fire light over one gets a single spot at the lamp.}
+Float Property FireSourceRadius = 160.0 Auto Const
+{How far from a fire light its fire may be: 36 of the 37 lights vanilla warms hands at (research/fire_sources.md).}
+Float Property LampRadius = 60.0 Auto Const
 FormList Property CounterAnchors Auto Const Mandatory
 FormList Property RailAnchors Auto Const Mandatory
 FormList Property WorkAnchors Auto Const Mandatory
@@ -209,6 +217,7 @@ Float _drawX = 0.0
 Float _drawY = 0.0
 Int _budget = 0
 Bool _native = False         ; IdleLife.dll is loaded: walls and open ground
+Bool _solid = False          ; ... and it can tell a spot inside a pillar (plugin 0.3.0)
 Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
 Actor[] _dwUser
@@ -553,13 +562,19 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 		Int pk = kind[best]
 		cand[best] = None
 		Bool isLight = FireLights.HasForm(pick.GetBaseObject())
+		Int lightKind = LIGHT_FIRE
+		If pk == K_FIRE && isLight
+			lightKind = LightKind(pick)
+		EndIf
 		If pk == K_FIRE && isLight && NearKind(pick, K_FIRE, SameFire)
 			; the flame of a fire already dressed
+		ElseIf pk == K_FIRE && lightKind == LIGHT_NONE
+			; room light: nothing burns under it (1.2.0, fR1eNd: hands warmed "out of nowhere" in the Dugout Inn)
 		ElseIf pk == K_RADIO && !pick.IsRadioOn()
 			; a radio that is off
 		Else
 			If pk == K_FIRE
-				DressFire(pick, isLight)
+				DressFire(pick, isLight, lightKind == LIGHT_LAMP)
 			Else
 				Dress(pick, pk)
 			EndIf
@@ -738,11 +753,13 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 				spot.SetAngle(0.0, 0.0, (seed % 360) as Float)
 				spot.Enable(False)
 				spot.MoveToNearestNavmeshLocation()
-				_spots.Add(spot)
-				_spotFire.Add(spot)      ; its own place: kept while the player is near it
-				AddAnchorRef(spot, K_PEOPLE)
-				Placed(spot, person)
-				made += 1
+				If !Buried(spot)
+					_spots.Add(spot)
+					_spotFire.Add(spot)      ; its own place: kept while the player is near it
+					AddAnchorRef(spot, K_PEOPLE)
+					Placed(spot, person)
+					made += 1
+				EndIf
 			EndIf
 		EndIf
 		i += 1
@@ -802,32 +819,49 @@ EndFunction
 
 ; Fires: 1 to 3 hand-warming spots around the fire (vanilla: 1-3, never 5), unevenly spaced as vanilla's
 ; are, each facing it; mostly standing, now and then one kneeling; sometimes a smoker a little off.
-Function DressFire(ObjectReference akFire, Bool abLight)
+Function DressFire(ObjectReference akFire, Bool abLight, Bool abLamp = False)
 	Int seed = Seed(akFire)
 	Float z = akFire.GetPositionZ()
 	If abLight
 		z -= LightDrop
 	EndIf
 	Int count = 1 + seed % 3
+	If abLamp
+		count = 1   ; a lamp warms one pair of hands, standing
+	EndIf
 	Float start = (seed % 360) as Float
 	Float step = 360.0 / count
 	Int k = 0
 	While k < count
 		Float angle = start + step * k + ((seed / (k + 3)) % 51 - 25) as Float   ; +-25 degrees off even
 		Form kind = WarmStanding
-		If (seed / (k + 7)) % 5 == 0
+		If !abLamp && (seed / (k + 7)) % 5 == 0
 			kind = WarmKneeling
 		EndIf
 		PlaceWorld(akFire, kind, akFire.GetPositionX() + Ring * Math.Sin(angle), akFire.GetPositionY() + Ring * Math.Cos(angle), z, angle + 180.0)
 		k += 1
 	EndWhile
-	If (seed / 11) % 3 == 0
+	If !abLamp && (seed / 11) % 3 == 0
 		Float away = start + step / 2.0
 		PlaceWorld(akFire, Smoke, akFire.GetPositionX() + SmokeRing * Math.Sin(away), akFire.GetPositionY() + SmokeRing * Math.Cos(away), z, (seed % 360) as Float)
 		count += 1
 	EndIf
 	AddAnchorRef(akFire, K_FIRE)
 	Debug.Trace("Idle Life: fire " + akFire + " (" + akFire.GetBaseObject() + ") gets " + count + " spots", 0)
+EndFunction
+
+Int Property LIGHT_NONE = 0 AutoReadOnly
+Int Property LIGHT_FIRE = 1 AutoReadOnly
+Int Property LIGHT_LAMP = 2 AutoReadOnly
+
+; What a fire light lights: a fire (a barrel or a flame within FireSourceRadius), an oil lamp, or just the room.
+Int Function LightKind(ObjectReference akLight)
+	If Game.FindClosestReferenceOfAnyTypeInListFromRef(FireAnchors, akLight, FireSourceRadius) || Game.FindClosestReferenceOfAnyTypeInListFromRef(FireSources, akLight, FireSourceRadius)
+		Return LIGHT_FIRE
+	ElseIf Game.FindClosestReferenceOfAnyTypeInListFromRef(LampSources, akLight, LampRadius)
+		Return LIGHT_LAMP
+	EndIf
+	Return LIGHT_NONE
 EndFunction
 
 ; Everything else works in the object's own frame: local +Y is its forward, +X its right; its bounds come
@@ -1096,11 +1130,32 @@ Function PlaceWorld(ObjectReference akAnchor, Form akKind, Float afX, Float afY,
 		spot.SetAngle(0.0, 0.0, afFacing)
 		spot.Enable(False)
 		spot.MoveToNearestNavmeshLocation()
+		If Buried(spot)
+			Return
+		EndIf
 		spot.SetAngle(0.0, 0.0, afFacing)
 		_spots.Add(spot)
 		_spotFire.Add(akAnchor)
 		Placed(spot, akAnchor)
 	EndIf
+EndFunction
+
+; A spot that landed inside a pillar, a post or a machine is taken away again: the navmesh runs under them, so
+; the snap to it does not keep a pose out (1.2.0, Nexus user fR1eNd: "they go inside pillars and do things").
+Bool Function Buried(ObjectReference akSpot)
+	If !_solid || !akSpot
+		Return False
+	EndIf
+	ObjectReference holder = IdleLife:Navmesh.Inside(akSpot)
+	If !holder
+		Return False
+	EndIf
+	If DetailedLog.GetValueInt() == 1
+		Debug.Trace("Idle Life: " + akSpot.GetBaseObject() + " fell inside " + holder + " (" + holder.GetBaseObject() + ") - not placed", 0)
+	EndIf
+	akSpot.Disable()
+	akSpot.Delete()
+	Return True
 EndFunction
 
 ; The detailed log: one line per spot placed -- which pose, for which place, where.
@@ -1496,11 +1551,13 @@ Function DogSpots(Actor akPlayer)
 				spot.SetAngle(0.0, 0.0, da)
 				spot.Enable(False)
 				spot.MoveToNearestNavmeshLocation()
-				_spots.Add(spot)
-				_spotFire.Add(spot)
-				AddAnchorRef(spot, K_DOG)
-				Placed(spot, d)
-				made += 1
+				If !Buried(spot)
+					_spots.Add(spot)
+					_spotFire.Add(spot)
+					AddAnchorRef(spot, K_DOG)
+					Placed(spot, d)
+					made += 1
+				EndIf
 			EndIf
 		EndIf
 		i += 1
@@ -1683,6 +1740,7 @@ Function CheckSetup()
 	EndIf
 	If F4SE.GetPluginVersion("IdleLife") > 0
 		_native = IdleLife:Navmesh.Ready()
+		_solid = _native && IdleLife:Navmesh.Version() >= 300
 		If !_native
 			Debug.Trace("Idle Life: the navmesh plugin is loaded but cannot read the navmesh (Runtime Database?) - walls and the open are off", 0)
 			If !_toldNavmesh

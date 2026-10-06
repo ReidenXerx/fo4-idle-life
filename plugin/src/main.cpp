@@ -3,6 +3,7 @@
 // Papyrus asks, C++ answers: three global natives on IdleLife:Navmesh, each returning plain floats.
 // The plugin never calls into the Papyrus VM (fo4-rapport's first rule: it crashed the game twice).
 
+#include "Solid.h"
 #include "Spots.h"
 
 namespace
@@ -35,6 +36,16 @@ namespace
 		return {};
 	}
 
+	RE::TESObjectREFR* Papyrus_Inside(std::monostate, RE::TESObjectREFR* a_spot)
+	{
+		try {
+			return IL::Solid::Inside(a_spot);
+		} catch (...) {
+			logger::critical("Inside threw");
+		}
+		return nullptr;
+	}
+
 	bool Papyrus_Ready(std::monostate)
 	{
 		return IL::Spots::Ready();
@@ -52,6 +63,7 @@ namespace
 		}
 		a_vm->BindNativeMethod(kScript, "WallSpots"sv, Papyrus_WallSpots, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "OpenSpots"sv, Papyrus_OpenSpots, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "Inside"sv, Papyrus_Inside, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Version"sv, Papyrus_Version, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Ready"sv, Papyrus_Ready, std::nullopt, false);
 		logger::info("papyrus functions registered on {}", kScript);

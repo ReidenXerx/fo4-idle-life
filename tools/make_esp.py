@@ -35,6 +35,18 @@ FIRE_LIGHTS = [
     0x12B52C,   # defaultLightFire01FlickerGoboWireBarrel 303 placed (the wire-barrel flame)
     0x08ADF9,   # defaultLightFire01Flicker       122 placed
 ]
+# A fire light is only a FIRE with something burning under it (1.2.0, user fR1eNd on Nexus: hands warmed "in
+# the Diamond City inn out of nowhere"). Bethesda lights rooms with the same fire-coloured lights: the Dugout
+# Inn has 19 and not one fire. Measured over Fallout4.esm (research/fire_sources.md): with one of these within
+# 160 units, 36 of the 37 lights vanilla's own hand-warming spots face count, and 1002 of 4713 lights in all.
+FIRE_SOURCES = [
+    0x1DA025, 0x1DA026, 0x1DA027, 0x1DA028,   # FXFireMed01, FXFireMedSmokey01, FXFireSmall01, FXFireBigWallFlames
+    0x03FBA1, 0x03FBA0, 0x09F250,             # FXFireLargeMarker, FXFireLargeLP, FXFireBarrelTrashLP
+    0x1E6191, 0x1E6192, 0x231DA6, 0x231DA7,   # FXFire{Medium,Small}LPM, FXFire{Medium,Small}AddOnNodeLPM
+    0x10C3B6,                                 # WorkbenchCookingFire (the fire barrels are FIRE_ANCHORS)
+]
+# An oil lamp under the light (456 lights): one standing spot at it -- warming hands at a lamp (owner 10-06).
+LAMP_SOURCES = [0x08E7C5, 0x15A0A7]   # OilLampOn, OilLampOnHandleUp
 # The spots: vanilla markers, placed as they are.
 WARM_STANDING = 0x1B40BD   # FURN NPCHandWarmingStanding (AnimFurnNPCHandWarming), 68 placed
 WARM_KNEELING = 0x1B40BE   # FURN NPCHandWarmingKneeling, 6 placed
@@ -237,6 +249,18 @@ def build():
         fl += field('LNAM', struct.pack('<I', base))
     flst += record('FLST', lights_id, fl)
 
+    sources_id = new_id('FireSources')
+    fs = field('EDID', zstring('IL_FireSources'))
+    for base in FIRE_SOURCES:
+        fs += field('LNAM', struct.pack('<I', base))
+    flst += record('FLST', sources_id, fs)
+
+    lamps_id = new_id('LampSources')
+    ls = field('EDID', zstring('IL_LampSources'))
+    for base in LAMP_SOURCES:
+        ls += field('LNAM', struct.pack('<I', base))
+    flst += record('FLST', lamps_id, ls)
+
     test_quest_id = new_id('TestQuest')
 
     kind_lists = {}
@@ -288,6 +312,8 @@ def build():
     q += field('VMAD', vmad('IdleLife:Spawner', [
         ('FireAnchors', 1, obj(fire_id)),
         ('FireLights', 1, obj(lights_id)),
+        ('FireSources', 1, obj(sources_id)),
+        ('LampSources', 1, obj(lamps_id)),
         ('WarmStanding', 1, obj(WARM_STANDING)),
         ('WarmKneeling', 1, obj(WARM_KNEELING)),
         ('Smoke', 1, obj(SMOKE)),

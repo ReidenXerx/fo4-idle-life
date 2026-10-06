@@ -6,7 +6,7 @@ set(VCPKG_TARGET_TRIPLET "x64-windows-static-md" CACHE STRING "")
 
 project(
 	IdleLife
-	VERSION 0.2.0
+	VERSION 0.3.0
 	LANGUAGES CXX
 )
 
@@ -23,7 +23,7 @@ endif()
 # through Runtime Database (f4rd-runtime.bin), as No Auto-Greet and Rapport do.
 add_subdirectory("extern/CommonLibF4RD/CommonLibF4" "CommonLibF4")
 
-add_library("${PROJECT_NAME}" SHARED "src/PCH.h" "src/main.cpp" "src/Spots.cpp" "src/Spots.h")
+add_library("${PROJECT_NAME}" SHARED "src/PCH.h" "src/main.cpp" "src/Spots.cpp" "src/Spots.h" "src/Solid.cpp" "src/Solid.h")
 target_compile_features("${PROJECT_NAME}" PRIVATE cxx_std_23)
 target_compile_definitions(
 	"${PROJECT_NAME}"

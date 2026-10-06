@@ -37,5 +37,7 @@
  "Setting_KindOpen": "823",
  "Setting_KindCrate": "824",
  "AnchorsCrate": "825",
- "Setting_DetailedLog": "826"
+ "Setting_DetailedLog": "826",
+ "FireSources": "827",
+ "LampSources": "828"
 }
