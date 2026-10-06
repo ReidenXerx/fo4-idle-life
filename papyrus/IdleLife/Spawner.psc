@@ -1750,7 +1750,9 @@ EndFunction
 Function WalkUp(ObjectReference akGoal, Int aiChat)
 	Actor walker = _chA
 	Float t0 = Utility.GetCurrentRealTime()
-	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.0)
+	; 0.5: walking pace. 0.0 is NOT "walk" -- the walker never moved and PathToReference still returned True after
+	; 15-19 s (owner's DC tests 10-06: John 73 from the meeting point before and after)
+	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.5)
 	String where = ""
 	If walker && _chB
 		where = "; walker " + (walker.GetDistance(akGoal) as Int) + " from the meeting point, " + (walker.GetDistance(_chB) as Int) + " from " + _chB + "; the meeting point " + (akGoal.GetDistance(_chB) as Int) + " from them"
