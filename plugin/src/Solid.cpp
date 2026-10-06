@@ -22,7 +22,9 @@ namespace IL::Solid
 		constexpr float kMaxFootprint = 400.0f;   // the longer side of the box, in the world
 		constexpr float kMinHeight = 60.0f;       // shorter than this, a spot may stand beside it on it
 		constexpr float kMargin = 4.0f;           // a hair inside the box before it counts
-		constexpr float kHeights[] = { 40.0f, 110.0f };   // knee and chest above the spot
+		// Knee height only (1.2.0 review): a chest-height test also caught awnings, pipes and lamps hanging over a
+		// spot. A pillar, a post, a machine or a table fills knee height; something hanging does not.
+		constexpr float kHeights[] = { 40.0f };
 		constexpr float kReach = 600.0f;          // objects further than this cannot hold the spot
 
 		bool Compact(RE::ENUM_FORM_ID a_type)
@@ -52,7 +54,8 @@ namespace IL::Solid
 			if (ox * ox + oy * oy > kReach * kReach) {
 				return false;
 			}
-			if (auto* obj = a_ref->Get3D()) {
+			// Held while read: the cell lock does not keep a ref's 3D alive, and the main thread may unload it.
+			if (const RE::NiPointer<RE::NiAVObject> obj{ a_ref->Get3D() }) {
 				const auto& m = obj->world.rotate;
 				const auto& t = obj->world.translate;
 				const float s = obj->world.scale > 0.0f ? obj->world.scale : 1.0f;
@@ -77,7 +80,7 @@ namespace IL::Solid
 			if (cx * cx + cy * cy > 20.0f * 20.0f) {
 				return false;   // a box well off its origin: its centre would need the rotation
 			}
-			const float r = std::min(dx, dy) * 0.5f - kMargin;
+			const float r = std::min(dx, dy) * 0.5f - kMargin - std::sqrt(cx * cx + cy * cy);   // the circle stays inside the box
 			if (r <= 0.0f || ox * ox + oy * oy > r * r) {
 				return false;
 			}

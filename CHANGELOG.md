@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.2.0 (2026-10-07)
+
+- New: people standing about turn to each other and talk with their hands, no words; one walks over if they stand apart, and now and then it is a person and a dog (MCM: Chatting). Idea by fR1eNd.
+- Fixed: hands warmed at room lights with no fire (Diamond City inn); oil lamps still get one spot.
+- Fixed: spots inside pillars and posts.
+- "Draw spots again" now redraws everything near you.
+
 ## 1.1.2 (2026-10-04)
 
 - The stutter fix now reads the whole loaded navmesh again, so wall and open-ground spots are exactly as before 1.1.1, just as fast.

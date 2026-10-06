@@ -188,7 +188,7 @@ Int Property K_WALL = 15 AutoReadOnly      ; from the navmesh DLL
 Int Property K_OPEN = 16 AutoReadOnly      ; from the navmesh DLL
 Int Property K_CRATE = 17 AutoReadOnly     ; wave 3
 Int Property K_CHAT = 18 AutoReadOnly      ; 1.2.0: chat pairs
-Int Property KIND_COUNT = 18 AutoReadOnly
+Int Property KIND_COUNT = 19 AutoReadOnly   ; K_FIRE..K_CHAT
 Int Property KW_ROBOT = 0x02CB73 AutoReadOnly          ; ActorTypeRobot
 Int Property KW_DOG = 0x021AD0 AutoReadOnly            ; ActorTypeDog
 Int Property KW_CHILD = 0x1157E8 AutoReadOnly          ; ActorTypeChild
@@ -235,7 +235,6 @@ Float _drawX = 0.0
 Float _drawY = 0.0
 Int _budget = 0
 Bool _native = False         ; IdleLife.dll is loaded: walls and open ground
-ObjectReference _mixedChat = None   ; the creature's half of the one mixed chat
 Bool _solid = False          ; ... and it can tell a spot inside a pillar (plugin 0.3.0)
 Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
@@ -287,6 +286,7 @@ Function Begin()
 	_dwUser = new Actor[0]
 	_dwSince = new Float[0]
 	_drawCell = None   ; draw again on the first scan after a load
+	ResetChats()
 	AddAnchor(FireAnchors, DLC01_BRAZIER01, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER02, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER03, "DLCRobot.esm")
@@ -345,7 +345,7 @@ Event OnTimer(Int aiTimerID)
 		LetGo()      ; a save made mid-chat: nobody stays held or walking
 		StopWalk()
 	EndIf
-	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > ChatWalkSeconds + 10.0
+	If _chA && _chB && !_chBegun && Utility.GetCurrentRealTime() - _chSince > ChatWalkSeconds + 10.0 && _chA.Is3DLoaded() && _chB.Is3DLoaded()
 		; a walk that does not arrive (owner's DC test 10-06: Cathy, 72 units short, still walking after 20 s):
 		; near enough by now, they talk where they are; not, it is called off -- never a stuck director
 		StopWalk()
@@ -619,9 +619,18 @@ Function FillFromPool(Actor akPlayer, Actor[] akPeople)
 			Else
 				Dress(pick, pk)
 			EndIf
-			drawn[pk] = drawn[pk] + 1
-			Crowd(cand, crowd, pick)
-			SpaceOut(cand, kind, crowd, pick, pk)
+			If _spotFire.Find(pick) < 0
+				; every spot fell inside something (Buried): not a dressed place -- it may be tried again later
+				Int gone = _anchors.Find(pick)
+				If gone >= 0
+					_anchors.Remove(gone, 1)
+					_anchorKind.Remove(gone, 1)
+				EndIf
+			Else
+				drawn[pk] = drawn[pk] + 1
+				Crowd(cand, crowd, pick)
+				SpaceOut(cand, kind, crowd, pick, pk)
+			EndIf
 		EndIf
 	EndWhile
 EndFunction
@@ -808,88 +817,6 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	If made > 0
 		Debug.Trace("Idle Life: " + made + " spots next to people where nothing else was", 0)
 	EndIf
-EndFunction
-
-; Chat pairs (1.2.0; Nexus user fR1eNd's idea, the owner's "human - basically any creature, even robot"): two
-; spots facing each other ChatGap apart, by a person standing where nothing else is dressed, never two chats close.
-; At most one pair is a person and a creature (a dog barking yes and no, a Mr Handy scanning), by one standing about.
-Function ChatSpots(Actor akPlayer, Actor[] akPeople)
-	If !KindIsOn(K_CHAT)
-		Return
-	EndIf
-	Int want = akPeople.Length / PeoplePerChat
-	If want > MaxChatPairs
-		want = MaxChatPairs
-	EndIf
-	Int day = Day()
-	Int i = 0
-	While i < akPeople.Length && CountKind(K_CHAT) / 2 < want && _spots.Length + 2 <= _budget
-		Actor person = akPeople[i]
-		If !person.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword) && !NearAnyPlace(person, 400.0) && !NearKind(person, K_CHAT, 700.0)
-			Int seed = (Seed(person) % 9973) + day * 31
-			Float a = (seed % 360) as Float
-			Float r = 180.0 + ((seed / 7) % 121) as Float
-			Float cx = person.GetPositionX() + r * Math.Sin(a)
-			Float cy = person.GetPositionY() + r * Math.Cos(a)
-			ChatPair(person, Chat, cx, cy, person.GetPositionZ(), ((seed / 13) % 360) as Float)
-		EndIf
-		i += 1
-	EndWhile
-	If !_mixedChat || _spots.Find(_mixedChat) < 0
-		MixedChat(akPlayer)
-	EndIf
-EndFunction
-
-; Two spots facing each other across the centre, along heading afAlong; the first takes akFirst (a creature's half
-; or a person's), the second a person's. Either one inside a pillar: neither (a lone half gestures at nobody).
-ObjectReference Function ChatPair(ObjectReference akNear, Form akFirst, Float afX, Float afY, Float afZ, Float afAlong)
-	Float half = ChatGap / 2.0
-	ObjectReference one = ChatSpot(akNear, akFirst, afX - half * Math.Sin(afAlong), afY - half * Math.Cos(afAlong), afZ, afAlong)
-	If !one
-		Return None
-	EndIf
-	ObjectReference two = ChatSpot(akNear, Chat, afX + half * Math.Sin(afAlong), afY + half * Math.Cos(afAlong), afZ, afAlong + 180.0)
-	If !two
-		DropSpot(one)
-		Return None
-	EndIf
-	Return one
-EndFunction
-
-ObjectReference Function ChatSpot(ObjectReference akNear, Form akKind, Float afX, Float afY, Float afZ, Float afFacing)
-	ObjectReference spot = akNear.PlaceAtMe(akKind, 1, False, True, True)
-	If !spot
-		Return None
-	EndIf
-	spot.SetPosition(afX, afY, afZ)
-	spot.SetAngle(0.0, 0.0, afFacing)
-	spot.Enable(False)
-	spot.MoveToNearestNavmeshLocation()
-	If Buried(spot)
-		Return None
-	EndIf
-	spot.SetAngle(0.0, 0.0, afFacing)
-	_spots.Add(spot)
-	_spotFire.Add(spot)      ; its own place: kept while the player is near it
-	AddAnchorRef(spot, K_CHAT)
-	Placed(spot, akNear)
-	Return spot
-EndFunction
-
-; A spot placed a moment ago, taken back (its pair failed).
-Function DropSpot(ObjectReference akSpot)
-	Int i = _spots.Find(akSpot)
-	If i >= 0
-		_spots.Remove(i, 1)
-		_spotFire.Remove(i, 1)
-	EndIf
-	Int a = _anchors.Find(akSpot)
-	If a >= 0
-		_anchors.Remove(a, 1)
-		_anchorKind.Remove(a, 1)
-	EndIf
-	akSpot.Disable(False)
-	akSpot.Delete()
 EndFunction
 
 Bool Function NearAnyPlace(ObjectReference akRef, Float afDistance)
@@ -1253,7 +1180,7 @@ Function PlaceWorld(ObjectReference akAnchor, Form akKind, Float afX, Float afY,
 		spot.SetAngle(0.0, 0.0, afFacing)
 		spot.Enable(False)
 		spot.MoveToNearestNavmeshLocation()
-		If Buried(spot)
+		If Buried(spot, akAnchor)
 			Return
 		EndIf
 		spot.SetAngle(0.0, 0.0, afFacing)
@@ -1265,13 +1192,13 @@ EndFunction
 
 ; A spot that landed inside a pillar, a post or a machine is taken away again: the navmesh runs under them, so
 ; the snap to it does not keep a pose out (1.2.0, Nexus user fR1eNd: "they go inside pillars and do things").
-Bool Function Buried(ObjectReference akSpot)
+Bool Function Buried(ObjectReference akSpot, ObjectReference akPlace = None)
 	If !_solid || !akSpot
 		Return False
 	EndIf
 	ObjectReference holder = IdleLife:Navmesh.Inside(akSpot)
-	If !holder
-		Return False
+	If !holder || holder == akPlace
+		Return False     ; nothing there, or the place the spot belongs to (it is meant to touch it)
 	EndIf
 	If DetailedLog.GetValueInt() == 1
 		Debug.Trace("Idle Life: " + akSpot.GetBaseObject() + " fell inside " + holder + " (" + holder.GetBaseObject() + ") - not placed", 0)
@@ -1350,47 +1277,6 @@ Function DebugPlaceChat()
 	StartChat(Game.GetPlayer(), True)
 EndFunction
 
-; A person and a creature: a creature's chat spot where a dog or a robot stands about, a person's facing it
-; (owner 10-06: "human - basically any creature, even robot, it would be hilarious"). One at a time.
-String Function MixedChat(Actor akPlayer)
-	If !KindIsOn(K_CHAT) || _spots.Length + 2 > MaxSpots
-		Return ""
-	EndIf
-	ObjectReference[] dogs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
-	ObjectReference[] bots = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), Radius)
-	Actor who = None
-	Form half = None
-	Int i = 0
-	While !who && i < dogs.Length
-		Actor d = dogs[i] as Actor
-		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !NearKind(d, K_CHAT, 400.0)
-			who = d
-			half = ChatDog
-		EndIf
-		i += 1
-	EndWhile
-	i = 0
-	While !who && i < bots.Length
-		Actor r = bots[i] as Actor
-		If r && r.Is3DLoaded() && !r.IsDead() && !r.IsInCombat() && !r.IsHostileToActor(akPlayer) && !NearKind(r, K_CHAT, 400.0)
-			who = r
-			half = ChatHandy
-		EndIf
-		i += 1
-	EndWhile
-	If !who
-		Return ""
-	EndIf
-	Float h = (Seed(who) % 360) as Float
-	; the creature's half where it stands, the person's ChatGap away
-	ObjectReference first = ChatPair(who, half, who.GetPositionX() + (ChatGap / 2.0) * Math.Sin(h), who.GetPositionY() + (ChatGap / 2.0) * Math.Cos(h), who.GetPositionZ(), h)
-	If !first
-		Return ""
-	EndIf
-	_mixedChat = first
-	Debug.Trace("Idle Life: a mixed chat by " + who + " (" + who.GetBaseObject() + ")", 0)
-	Return ", and a mixed one by a " + who.GetDisplayName()
-EndFunction
 
 Function DebugSpawnTesters()
 	StartTimer(0.5, DEBUG_SPAWN_TIMER)
@@ -1536,6 +1422,9 @@ ObjectReference[] _chatAt     ; chat spots taken at the last report
 Actor[] _chatWho
 
 Function TrackChats()
+	If DetailedLog.GetValueInt() != 1
+		Return
+	EndIf
 	ObjectReference[] nowAt = new ObjectReference[0]
 	Actor[] nowWho = new Actor[0]
 	Int i = 0
@@ -1560,21 +1449,6 @@ Function TrackChats()
 				EndIf
 			EndIf
 		EndIf
-		i += 1
-	EndWhile
-	; both halves of a pair taken: they face each other ChatGap apart
-	i = 0
-	While i < nowAt.Length
-		Int j = i + 1
-		While j < nowAt.Length
-			If nowAt[i].GetDistance(nowAt[j]) < ChatGap + 30.0 && nowWho[i] != nowWho[j]
-				Bool was = _chatAt && _chatAt.Find(nowAt[i]) >= 0 && _chatAt.Find(nowAt[j]) >= 0
-				If !was
-					Debug.Trace("Idle Life: a chat is on - " + nowWho[i] + " (" + nowWho[i].GetBaseObject() + ") and " + nowWho[j] + " (" + nowWho[j].GetBaseObject() + ")", 0)
-				EndIf
-			EndIf
-			j += 1
-		EndWhile
 		i += 1
 	EndWhile
 	_chatAt = nowAt
@@ -1628,6 +1502,7 @@ Bool _chBegun         ; the gestures have started (False: someone is still walki
 Bool _chPicking       ; a pick is running: a second one (latent calls let it in) backs off -- two at once gave
                       ; the same walker two PathToReference calls and the second cancelled the first (DC 10-06)
 ObjectReference _chGoal   ; where the walker is going (an XMarker), None when nobody walks
+ObjectReference _chWalkerLink   ; the walker's own AO_LinkedRef link before the walk, given back after
 Int _chId             ; this chat's number: a walk that ends late must not touch a newer chat (or none)
 Float Property ChatWalkSeconds = 15.0 Auto Const
 {How long the walk-over may take: then the chat starts where they are if near enough, else it is called off.}
@@ -1637,25 +1512,18 @@ Actor[] _stillWho     ; where everyone stood at the last look: who stands still 
 Float[] _stillX
 Float[] _stillY
 
-; Free for a chat: here, standing still since the last look, on no furniture, in no scene or combat, no child,
-; not the player's companion (they follow the player).
-Bool Function FreeToChat(Actor akWho, Actor[] akWho0, Float[] afX0, Float[] afY0)
-	If !akWho || !akWho.Is3DLoaded() || akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate()
-		Return False
+; Busy: anything that keeps someone from a chat, now or mid-chat. Loaded first: asking an unloaded actor anything
+; is how other mods' bridges wedged (shared memory papyrus-resolving-is-not-loaded).
+Bool Function Busy(Actor akWho)
+	If !akWho || !akWho.Is3DLoaded()
+		Return True
 	EndIf
-	If akWho.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword)
-		Return False
-	EndIf
-	Int at = -1
-	If akWho0
-		at = akWho0.Find(akWho)
-	EndIf
-	If at < 0
-		Return False
-	EndIf
-	Float dx = akWho.GetPositionX() - afX0[at]
-	Float dy = akWho.GetPositionY() - afY0[at]
-	Return dx * dx + dy * dy < 30.0 * 30.0
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate()
+EndFunction
+
+; The player, the switch or Idle Life itself says no chats now.
+Bool Function ChatOff()
+	Return Enabled.GetValueInt() == 0 || !KindIsOn(K_CHAT) || Game.GetPlayer().IsInCombat()
 EndFunction
 
 Function StartChat(Actor akPlayer, Bool abNow)
@@ -1667,56 +1535,82 @@ Function StartChat(Actor akPlayer, Bool abNow)
 	_chPicking = False
 EndFunction
 
+; Who stood still since the last look is read from the positions noted then and now (plain arithmetic: few
+; engine calls, few chances for another thread to cut in); only those few get the busy checks.
 Function PickChat(Actor akPlayer, Bool abNow)
-	If !abNow && Utility.GetCurrentRealTime() < _chNext
-		RememberStill(akPlayer)
-		Return
-	EndIf
-	Actor[] people = People(akPlayer)
 	Actor[] w0 = _stillWho
 	Float[] x0 = _stillX
 	Float[] y0 = _stillY
 	RememberStill(akPlayer)
+	If !abNow && Utility.GetCurrentRealTime() < _chNext
+		Return
+	EndIf
 	If abNow && !w0
-		w0 = _stillWho     ; the test button: no earlier look -- take everyone where they stand now
+		w0 = _stillWho     ; the test button with no earlier look: everyone where they stand now
 		x0 = _stillX
 		y0 = _stillY
 	EndIf
+	If !w0
+		Return
+	EndIf
+	Keyword child = Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword
+	Actor[] free = new Actor[0]
+	Float[] fx = new Float[0]
+	Float[] fy = new Float[0]
+	Int i = 0
+	While i < _stillWho.Length && free.Length < 24
+		Actor a = _stillWho[i]
+		Int at = w0.Find(a)
+		If at >= 0
+			Float dx = _stillX[i] - x0[at]
+			Float dy = _stillY[i] - y0[at]
+			If dx * dx + dy * dy < 30.0 * 30.0 && !Busy(a) && !a.HasKeyword(child)
+				free.Add(a)
+				fx.Add(_stillX[i])
+				fy.Add(_stillY[i])
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
 	Actor best1 = None
 	Actor best2 = None
-	Float bestD = 999999.0
-	Int i = 0
-	While i < people.Length
-		If FreeToChat(people[i], w0, x0, y0)
-			Int j = i + 1
-			While j < people.Length
-				Float d = people[i].GetDistance(people[j])
-				If d > ChatNear && d < ChatFar && d < bestD && FreeToChat(people[j], w0, x0, y0)
-					bestD = d
-					best1 = people[i]
-					best2 = people[j]
-				EndIf
-				j += 1
-			EndWhile
-		EndIf
+	Float bestD = ChatFar * ChatFar
+	i = 0
+	While i < free.Length
+		Int j = i + 1
+		While j < free.Length
+			Float ddx = fx[i] - fx[j]
+			Float ddy = fy[i] - fy[j]
+			Float d2 = ddx * ddx + ddy * ddy
+			If d2 > ChatNear * ChatNear && d2 < bestD
+				bestD = d2
+				best1 = free[i]
+				best2 = free[j]
+			EndIf
+			j += 1
+		EndWhile
 		i += 1
 	EndWhile
 	Bool dog = False
 	; now and then a person and a dog standing about (the owner's "any creature")
-	If (!best1 || Utility.RandomInt(0, 3) == 0)
+	If free.Length > 0 && (!best1 || Utility.RandomInt(0, 3) == 0)
 		ObjectReference[] dogs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
 		Int k = 0
 		While k < dogs.Length
-			Actor d = dogs[k] as Actor
-			If d && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !d.IsPlayerTeammate() && d.Is3DLoaded()
+			Actor dg = dogs[k] as Actor
+			If dg && !Busy(dg) && !dg.IsHostileToActor(akPlayer)
+				Float gx = dg.GetPositionX()
+				Float gy = dg.GetPositionY()
 				Int m = 0
-				While m < people.Length
-					Float dd = people[m].GetDistance(d)
-					If dd > ChatNear && dd < ChatFar && FreeToChat(people[m], w0, x0, y0)
-						best1 = people[m]
-						best2 = d
+				While m < free.Length
+					Float ex = fx[m] - gx
+					Float ey = fy[m] - gy
+					Float e2 = ex * ex + ey * ey
+					If e2 > ChatNear * ChatNear && e2 < ChatFar * ChatFar
+						best1 = free[m]
+						best2 = dg
 						dog = True
-						m = people.Length
+						m = free.Length
 						k = dogs.Length
 					EndIf
 					m += 1
@@ -1731,6 +1625,8 @@ Function PickChat(Actor akPlayer, Bool abNow)
 		EndIf
 		Return
 	EndIf
+	_chId += 1
+	Int id = _chId
 	_chA = best1
 	_chB = best2
 	_chDog = dog
@@ -1738,82 +1634,119 @@ Function PickChat(Actor akPlayer, Bool abNow)
 	_chSteps = Utility.RandomInt(8, 14)
 	_chSince = Utility.GetCurrentRealTime()
 	_chBegun = False
-	_chId += 1
 	If !ChatQuest.IsRunning()
 		ChatQuest.Start()
 	EndIf
 	; the second is held where it stands; the first comes over if they are too far apart to talk
 	Chatters.AddRef(best2)
 	best2.EvaluatePackage()
-	Float apart = best1.GetDistance(best2)
+	If id != _chId
+		Return      ; called off meanwhile (the test button)
+	EndIf
+	Float bx = best2.GetPositionX()
+	Float by = best2.GetPositionY()
+	Float ax = best1.GetPositionX()
+	Float ay = best1.GetPositionY()
+	Float apart = Math.Sqrt((ax - bx) * (ax - bx) + (ay - by) * (ay - by))
 	If apart > ChatWalkFrom
-		Float k = ChatTalk / apart
-		Float tx = best2.GetPositionX() + (best1.GetPositionX() - best2.GetPositionX()) * k
-		Float ty = best2.GetPositionY() + (best1.GetPositionY() - best2.GetPositionY()) * k
-		ObjectReference goal = best2.PlaceAtMe(Game.GetFormFromFile(0x00003B, "Fallout4.esm"), 1, False, True, True)   ; XMarker
-		goal.SetPosition(tx, ty, best2.GetPositionZ())
+		Float f = ChatTalk / apart
+		ObjectReference goal = best2.PlaceAtMe(Game.GetFormFromFile(0x00003B, "Fallout4.esm"), 1, False, False, True)   ; XMarker
+		goal.SetPosition(bx + (ax - bx) * f, by + (ay - by) * f, best2.GetPositionZ())
+		Keyword kw = Game.GetFormFromFile(KW_AO_LINKED, "Fallout4.esm") as Keyword
 		_chGoal = goal
-		best1.SetLinkedRef(goal, Game.GetFormFromFile(KW_AO_LINKED, "Fallout4.esm") as Keyword)
-		Walkers.AddRef(best1)
+		_chWalkerLink = best1.GetLinkedRef(kw)    ; its own AO link, given back after the walk
+		Walkers.AddRef(best1)                     ; first: StopWalk finds whoever it has to give back
+		best1.SetLinkedRef(goal, kw)
 		best1.EvaluatePackage()
+		If id != _chId
+			Return
+		EndIf
 		Debug.Trace("Idle Life: a chat - " + best1 + " (" + best1.GetBaseObject() + ") walks over to " + best2 + " (" + best2.GetBaseObject() + "), " + (apart as Int) + " apart", 0)
 		StartTimer(1.0, CHAT_TIMER)              ; the step timer watches the walk
 	Else
-		BeginChat(_chId)
+		BeginChat(id)
 	EndIf
 EndFunction
 
 ; The walk over, checked once a second by the chat timer: there (by the meeting point, or near the other) -- the
-; chat begins; out of time -- it begins where they are if near enough, else it is called off.
-Function WalkCheck()
+; chat begins; out of time -- it begins where they are if near enough, else it is called off; either one busy,
+; or chats switched off -- called off.
+Function WalkCheck(Int aiChat)
+	If aiChat != _chId || !_chA || !_chB
+		Return
+	EndIf
+	If Busy(_chA) || Busy(_chB) || ChatOff()
+		Debug.Trace("Idle Life: a chat called off on the way - " + _chA + " or " + _chB + " got busy", 0)
+		EndChat()
+		Return
+	EndIf
 	Float took = Utility.GetCurrentRealTime() - _chSince
-	Bool there = _chGoal && (_chA.GetDistance(_chGoal) < 70.0 || _chA.GetDistance(_chB) < ChatTalk + 40.0)
-	If !there && took < ChatWalkSeconds && _chA.Is3DLoaded() && _chB.Is3DLoaded()
+	Float toGoal = 9999.0
+	If _chGoal
+		toGoal = _chA.GetDistance(_chGoal)
+	EndIf
+	Float toB = _chA.GetDistance(_chB)
+	If aiChat != _chId
+		Return
+	EndIf
+	Bool there = toGoal < 70.0 || toB < ChatTalk + 40.0
+	If !there && took < ChatWalkSeconds
 		StartTimer(1.0, CHAT_TIMER)
 		Return
 	EndIf
-	Debug.Trace("Idle Life: the walk-over " + _chId + " ended after " + (took as Int) + " s, there " + there + "; walker " + (_chA.GetDistance(_chGoal) as Int) + " from the meeting point, " + (_chA.GetDistance(_chB) as Int) + " from " + _chB, 0)
+	Debug.Trace("Idle Life: the walk-over " + aiChat + " ended after " + (took as Int) + " s, there " + there + "; walker " + (toGoal as Int) + " from the meeting point, " + (toB as Int) + " from the other", 0)
 	StopWalk()
-	If _chA.GetDistance(_chB) <= ChatTalkMax
-		BeginChat(_chId)
+	If aiChat != _chId
+		Return
+	EndIf
+	If toB <= ChatTalkMax
+		BeginChat(aiChat)
 	Else
 		Debug.Trace("Idle Life: a chat called off - " + _chA + " did not get near", 0)
 		EndChat()
 	EndIf
 EndFunction
 
-; The walker leaves the travel package and its meeting point goes.
+; The walker leaves the travel package with its own AO link back, and its meeting point goes.
 Function StopWalk()
 	Keyword kw = Game.GetFormFromFile(KW_AO_LINKED, "Fallout4.esm") as Keyword
 	Int i = Walkers.GetCount() - 1
 	While i >= 0
 		ObjectReference w = Walkers.GetAt(i)
 		Walkers.RemoveRef(w)
-		If w
-			w.SetLinkedRef(None, kw)
-			(w as Actor).EvaluatePackage()
+		Actor wa = w as Actor
+		If wa
+			wa.SetLinkedRef(_chWalkerLink, kw)
+			If wa.Is3DLoaded()
+				wa.EvaluatePackage()
+			EndIf
 		EndIf
 		i -= 1
 	EndWhile
+	_chWalkerLink = None
 	If _chGoal
-		_chGoal.Disable()
-		_chGoal.Delete()
+		ObjectReference g = _chGoal
 		_chGoal = None
+		g.Disable()
+		g.Delete()
 	EndIf
 EndFunction
 
 ; Both held, face to face, looking at each other; the gestures start.
 Function BeginChat(Int aiChat)
-	If aiChat != _chId || _chBegun
+	If aiChat != _chId || _chBegun || !_chA || !_chB
 		Return
 	EndIf
-	If !_chA || !_chB || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
+	If Busy(_chA) || Busy(_chB) || ChatOff()
 		EndChat()
 		Return
 	EndIf
 	_chBegun = True     ; at once: the calls below can let another thread in
 	Chatters.AddRef(_chA)
 	_chA.EvaluatePackage()
+	If aiChat != _chId || !_chA || !_chB
+		Return
+	EndIf
 	_chAX = _chA.GetPositionX()
 	_chAY = _chA.GetPositionY()
 	_chBX = _chB.GetPositionX()
@@ -1825,7 +1758,9 @@ Function BeginChat(Int aiChat)
 	If aiChat != _chId || !_chA || !_chB
 		Return      ; called off while turning them
 	EndIf
-	Debug.Trace("Idle Life: a chat starts - " + _chA + " (" + _chA.GetBaseObject() + ") and " + _chB + " (" + _chB.GetBaseObject() + "), " + (_chA.GetDistance(_chB) as Int) + " apart, " + _chSteps + " gestures", 0)
+	Float dx = _chAX - _chBX
+	Float dy = _chAY - _chBY
+	Debug.Trace("Idle Life: a chat starts - " + _chA + " (" + _chA.GetBaseObject() + ") and " + _chB + " (" + _chB.GetBaseObject() + "), " + (Math.Sqrt(dx * dx + dy * dy) as Int) + " apart, " + _chSteps + " gestures", 0)
 	StartTimer(0.6, CHAT_TIMER)
 EndFunction
 
@@ -1833,9 +1768,10 @@ EndFunction
 Function LetGo()
 	Int i = Chatters.GetCount() - 1
 	While i >= 0
-		Actor a = Chatters.GetAt(i) as Actor
-		Chatters.RemoveRef(Chatters.GetAt(i))
-		If a
+		ObjectReference r = Chatters.GetAt(i)
+		Chatters.RemoveRef(r)
+		Actor a = r as Actor
+		If a && a.Is3DLoaded()
 			a.EvaluatePackage()
 		EndIf
 		i -= 1
@@ -1859,22 +1795,28 @@ Function RememberStill(Actor akPlayer)
 	_stillY = y
 EndFunction
 
-; One gesture: the two take turns. Over when either has walked off or got busy, or the gestures are spent.
+; One gesture: the two take turns. Over when either has walked off or got busy, chats were switched off or the
+; player is fighting, or the gestures are spent. Every step carries its chat's number: a step of an ended chat
+; never touches the next one.
 Function ChatStep()
+	Int id = _chId
 	If !_chA || !_chB
 		Return
 	EndIf
 	If !_chBegun
-		WalkCheck()
+		WalkCheck(id)
 		Return
 	EndIf
-	Bool over = _chStep >= _chSteps || _chA.IsDead() || _chB.IsDead() || _chA.IsInCombat() || _chB.IsInCombat() || _chA.IsInScene() || _chB.IsInScene() || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
+	Bool over = _chStep >= _chSteps || Busy(_chA) || Busy(_chB) || ChatOff()
 	If !over
 		Float ax = _chA.GetPositionX() - _chAX
 		Float ay = _chA.GetPositionY() - _chAY
 		Float bx = _chB.GetPositionX() - _chBX
 		Float by = _chB.GetPositionY() - _chBY
 		over = ax * ax + ay * ay > 60.0 * 60.0 || bx * bx + by * by > 60.0 * 60.0
+	EndIf
+	If id != _chId
+		Return
 	EndIf
 	If over
 		EndChat()
@@ -1914,6 +1856,9 @@ Function ChatStep()
 		gesture = Game.GetFormFromFile(IDLE_LAUGH, "Fallout4.esm") as Idle
 	EndIf
 	Bool played = speaker.PlayIdle(gesture)
+	If id != _chId
+		Return
+	EndIf
 	If DetailedLog.GetValueInt() == 1
 		Debug.Trace("Idle Life: chat gesture " + _chStep + " - " + speaker + " " + gesture + (played as String), 0)
 	EndIf
@@ -1922,23 +1867,41 @@ Function ChatStep()
 EndFunction
 
 Function EndChat()
-	Idle stop = Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle
-	If _chA && _chA.Is3DLoaded()
-		_chA.PlayIdle(stop)
-		_chA.ClearLookAt()
-	EndIf
-	If _chB && _chB.Is3DLoaded()
-		_chB.PlayIdle(stop)
-		_chB.ClearLookAt()
-	EndIf
-	LetGo()
-	StopWalk()
-	Debug.Trace("Idle Life: the chat ends after " + _chStep + " gestures - " + _chA + " and " + _chB, 0)
+	CancelTimer(CHAT_TIMER)
+	_chId += 1          ; first: any step or walk check still running belongs to an ended chat now
+	Actor a = _chA
+	Actor b = _chB
+	Int steps = _chStep
 	_chA = None
 	_chB = None
 	_chBegun = False
-	_chId += 1
+	Idle stop = Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle
+	If a && a.Is3DLoaded()
+		a.PlayIdle(stop)
+		a.ClearLookAt()
+	EndIf
+	If b && b.Is3DLoaded()
+		b.PlayIdle(stop)
+		b.ClearLookAt()
+	EndIf
+	LetGo()
+	StopWalk()
+	Debug.Trace("Idle Life: the chat ends after " + steps + " gestures - " + a + " and " + b, 0)
 	_chNext = Utility.GetCurrentRealTime() + ChatCooldown
+EndFunction
+
+; A game loaded: real time starts over (a cooldown or a walk timed in the old session means nothing here), and a
+; chat saved mid-way is ended -- nobody stays held or walking (review 1.2.0).
+Function ResetChats()
+	CancelTimer(CHAT_TIMER)
+	_chPicking = False
+	If _chA || Chatters.GetCount() > 0 || Walkers.GetCount() > 0
+		EndChat()
+	EndIf
+	_chNext = 0.0
+	_stillWho = None
+	_stillX = None
+	_stillY = None
 EndFunction
 
 ; ---- wave 2 ----------------------------------------------------------------------------------------------
@@ -2174,6 +2137,8 @@ Function DebugRedraw()
 	; Every spot goes first: kept, a full set left nothing to draw (owner's test 10-06: "0 new", 40 of 40), so a
 	; save from before a new kind never got any of it.
 	Prune(Game.GetPlayer(), True)
+	_anchors = new ObjectReference[0]
+	_anchorKind = new Int[0]
 	_drawCell = None
 	Debug.Notification("Idle Life: spots drawn again when you close the menu.")
 EndFunction
@@ -2288,6 +2253,9 @@ Function PlaceSelf(ObjectReference akNear, Form akKind, Float afX, Float afY, Fl
 		spot.SetPosition(afX, afY, afZ)
 		spot.SetAngle(0.0, 0.0, afFacing)
 		spot.Enable(False)
+		If Buried(spot)
+			Return      ; open ground under a post, a wall beside a pillar: the navmesh runs under them
+		EndIf
 		_spots.Add(spot)
 		_spotFire.Add(spot)
 		AddAnchorRef(spot, aiKind)

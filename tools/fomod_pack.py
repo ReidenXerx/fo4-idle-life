@@ -36,6 +36,11 @@ FEATURES = [
      'A small F4SE plugin reads the walkable area around you: its border edges are walls (a drop beyond one is left '
      'out), so people lean on real walls and read a paper; flat ground far from every edge gets a sitting circle. '
      'Anywhere, other mods\' places included.'),
+    ('People stop and talk', 'chat.png',
+     'Two people standing about turn to each other and talk with their hands, no words: nods, head shakes, '
+     'pointing, a laugh, taking turns. Too far apart, one walks over first and stops at talking distance; now and '
+     'then it is a person and a dog that answers with its barks. One chat at a time, a couple of minutes apart '
+     '(MCM: Chatting). The idea came from fR1eNd on the Nexus Posts tab.'),
     ('Busy where it is busy', 'how-many.png',
      'The number of spots follows the people near you: 1.5 each, at least 3, at most 40, drawn from one pool across '
      'every kind with weights for the hour and the place. A crowded market gets a mix, never twelve of one kind; a '
