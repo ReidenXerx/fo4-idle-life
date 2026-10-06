@@ -73,6 +73,8 @@ def build():
         ('Robots', 'Crops and hedges', 'People hoeing and weeding crops; Mr Handys gardening and trimming hedges.'),
         ('Crate', 'Boxes and crates', 'Someone rummaging through a box or a crate.'),
         ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
+        ('Chat', 'Chatting', 'Two people facing each other, talking with their hands: nods, shrugs, pointing, a laugh, '
+                 'no words. Now and then a person and a dog or a Mr Handy.'),
         ('Wall', 'Along walls', 'Leaning back on walls, reading a paper; in settlements painting or welding '
                  'them. Needs the Idle Life plugin (F4SE) that reads the navmesh.'),
         ('Open', 'In the open', 'A sitting circle on flat open ground; someone sweeping, doing push-ups, '

@@ -42,5 +42,6 @@
  "LampSources": "828",
  "ChatMarker": "829",
  "ChatDogMarker": "82A",
- "ChatHandyMarker": "82B"
+ "ChatHandyMarker": "82B",
+ "Setting_KindChat": "82C"
 }

@@ -156,6 +156,11 @@ Float Property KindDecay = 0.6 Auto Const
 {Each place of a kind drawn makes the next of that kind worth this much less.}
 Float Property RedrawMove = 1000.0 Auto Const
 Int Property MaxPeopleSpots = 6 Auto Const
+Int Property MaxChatPairs = 3 Auto Const
+{Chat pairs at a time: one per PeoplePerChat people, at most this many (each pair is two spots of the budget).}
+Int Property PeoplePerChat = 5 Auto Const
+Float Property ChatGap = 110.0 Auto Const
+{How far apart the two of a chat stand: vanilla's conversation distance, as our bench pairs.}
 Int Property MaxSpots = 120 Auto Const
 {Inside Papyrus' 128-element arrays.}
 
@@ -177,6 +182,7 @@ Int Property K_DOG = 14 AutoReadOnly
 Int Property K_WALL = 15 AutoReadOnly      ; from the navmesh DLL
 Int Property K_OPEN = 16 AutoReadOnly      ; from the navmesh DLL
 Int Property K_CRATE = 17 AutoReadOnly     ; wave 3
+Int Property K_CHAT = 18 AutoReadOnly      ; 1.2.0: chat pairs
 Int Property KIND_COUNT = 18 AutoReadOnly
 Int Property KW_ROBOT = 0x02CB73 AutoReadOnly          ; ActorTypeRobot
 Int Property KW_DOG = 0x021AD0 AutoReadOnly            ; ActorTypeDog
@@ -223,6 +229,7 @@ Float _drawX = 0.0
 Float _drawY = 0.0
 Int _budget = 0
 Bool _native = False         ; IdleLife.dll is loaded: walls and open ground
+ObjectReference _mixedChat = None   ; the creature's half of the one mixed chat
 Bool _solid = False          ; ... and it can tell a spot inside a pillar (plugin 0.3.0)
 Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
@@ -385,6 +392,9 @@ Function Draw(Actor akPlayer)
 	EndIf
 	If _spots.Length < _budget
 		FillFromPool(akPlayer, people)
+	EndIf
+	If _spots.Length < _budget
+		ChatSpots(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
 		PeopleSpots(akPlayer, people)
@@ -775,6 +785,88 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	EndIf
 EndFunction
 
+; Chat pairs (1.2.0; Nexus user fR1eNd's idea, the owner's "human - basically any creature, even robot"): two
+; spots facing each other ChatGap apart, by a person standing where nothing else is dressed, never two chats close.
+; At most one pair is a person and a creature (a dog barking yes and no, a Mr Handy scanning), by one standing about.
+Function ChatSpots(Actor akPlayer, Actor[] akPeople)
+	If !KindIsOn(K_CHAT)
+		Return
+	EndIf
+	Int want = akPeople.Length / PeoplePerChat
+	If want > MaxChatPairs
+		want = MaxChatPairs
+	EndIf
+	Int day = Day()
+	Int i = 0
+	While i < akPeople.Length && CountKind(K_CHAT) / 2 < want && _spots.Length + 2 <= _budget
+		Actor person = akPeople[i]
+		If !person.HasKeyword(Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword) && !NearAnyPlace(person, 400.0) && !NearKind(person, K_CHAT, 700.0)
+			Int seed = (Seed(person) % 9973) + day * 31
+			Float a = (seed % 360) as Float
+			Float r = 180.0 + ((seed / 7) % 121) as Float
+			Float cx = person.GetPositionX() + r * Math.Sin(a)
+			Float cy = person.GetPositionY() + r * Math.Cos(a)
+			ChatPair(person, Chat, cx, cy, person.GetPositionZ(), ((seed / 13) % 360) as Float)
+		EndIf
+		i += 1
+	EndWhile
+	If !_mixedChat || _spots.Find(_mixedChat) < 0
+		MixedChat(akPlayer)
+	EndIf
+EndFunction
+
+; Two spots facing each other across the centre, along heading afAlong; the first takes akFirst (a creature's half
+; or a person's), the second a person's. Either one inside a pillar: neither (a lone half gestures at nobody).
+ObjectReference Function ChatPair(ObjectReference akNear, Form akFirst, Float afX, Float afY, Float afZ, Float afAlong)
+	Float half = ChatGap / 2.0
+	ObjectReference one = ChatSpot(akNear, akFirst, afX - half * Math.Sin(afAlong), afY - half * Math.Cos(afAlong), afZ, afAlong)
+	If !one
+		Return None
+	EndIf
+	ObjectReference two = ChatSpot(akNear, Chat, afX + half * Math.Sin(afAlong), afY + half * Math.Cos(afAlong), afZ, afAlong + 180.0)
+	If !two
+		DropSpot(one)
+		Return None
+	EndIf
+	Return one
+EndFunction
+
+ObjectReference Function ChatSpot(ObjectReference akNear, Form akKind, Float afX, Float afY, Float afZ, Float afFacing)
+	ObjectReference spot = akNear.PlaceAtMe(akKind, 1, False, True, True)
+	If !spot
+		Return None
+	EndIf
+	spot.SetPosition(afX, afY, afZ)
+	spot.SetAngle(0.0, 0.0, afFacing)
+	spot.Enable(False)
+	spot.MoveToNearestNavmeshLocation()
+	If Buried(spot)
+		Return None
+	EndIf
+	spot.SetAngle(0.0, 0.0, afFacing)
+	_spots.Add(spot)
+	_spotFire.Add(spot)      ; its own place: kept while the player is near it
+	AddAnchorRef(spot, K_CHAT)
+	Placed(spot, akNear)
+	Return spot
+EndFunction
+
+; A spot placed a moment ago, taken back (its pair failed).
+Function DropSpot(ObjectReference akSpot)
+	Int i = _spots.Find(akSpot)
+	If i >= 0
+		_spots.Remove(i, 1)
+		_spotFire.Remove(i, 1)
+	EndIf
+	Int a = _anchors.Find(akSpot)
+	If a >= 0
+		_anchors.Remove(a, 1)
+		_anchorKind.Remove(a, 1)
+	EndIf
+	akSpot.Disable(False)
+	akSpot.Delete()
+EndFunction
+
 Bool Function NearAnyPlace(ObjectReference akRef, Float afDistance)
 	Int i = 0
 	While i < _anchors.Length
@@ -810,7 +902,7 @@ Int Function CountKind(Int aiKind)
 EndFunction
 
 String Function KindCounts()
-	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_CRATE) + " crates, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs, " + CountKind(K_WALL) + " by walls, " + CountKind(K_OPEN) + " in the open; " + _spots.Length + " of " + _budget + " spots"
+	Return CountKind(K_FIRE) + " fires, " + CountKind(K_COUNTER) + " counters, " + CountKind(K_RAIL) + " rails, " + CountKind(K_WORK) + " workbenches, " + CountKind(K_BENCH) + " benches, " + CountKind(K_RADIO) + " radios, " + CountKind(K_TABLE) + " tables, " + CountKind(K_CAMP) + " campfires, " + CountKind(K_CROP) + " crops, " + CountKind(K_HEDGE) + " hedges, " + CountKind(K_POOL) + " pool tables, " + CountKind(K_TV) + " TVs, " + CountKind(K_GATE) + " gates, " + CountKind(K_CRATE) + " crates, " + CountKind(K_CHAT) + " chatting, " + CountKind(K_PEOPLE) + " by people, " + CountKind(K_DOG) + " by dogs, " + CountKind(K_WALL) + " by walls, " + CountKind(K_OPEN) + " in the open; " + _spots.Length + " of " + _budget + " spots"
 EndFunction
 
 Int Function Seed(ObjectReference akRef)
@@ -1231,21 +1323,18 @@ Function DebugPlaceChat()
 	Float h = player.GetAngleZ()
 	Float cx = player.GetPositionX() + 150.0 * Math.Sin(h)
 	Float cy = player.GetPositionY() + 150.0 * Math.Cos(h)
-	Float side = h + 90.0
-	Float ax = cx + 55.0 * Math.Sin(side)
-	Float ay = cy + 55.0 * Math.Cos(side)
-	Float bx = cx - 55.0 * Math.Sin(side)
-	Float by = cy - 55.0 * Math.Cos(side)
-	PlaceWorld(player, Chat, ax, ay, player.GetPositionZ(), side + 180.0)
-	PlaceWorld(player, Chat, bx, by, player.GetPositionZ(), side)
+	ChatPair(player, Chat, cx, cy, player.GetPositionZ(), h + 90.0)
 	Debug.Trace("Idle Life: chat pair placed for a test at " + (cx as Int) + ", " + (cy as Int), 0)
 	String mixed = MixedChat(player)
 	Debug.Notification("Idle Life: a chat pair is placed ahead of you" + mixed + ".")
 EndFunction
 
-; A person and a creature: a human chat spot facing a creature's chat spot, beside the nearest dog or robot that is
-; standing around (owner 10-06: "human - basically any creature, even robot, it would be hilarious").
+; A person and a creature: a creature's chat spot where a dog or a robot stands about, a person's facing it
+; (owner 10-06: "human - basically any creature, even robot, it would be hilarious"). One at a time.
 String Function MixedChat(Actor akPlayer)
+	If !KindIsOn(K_CHAT) || _spots.Length + 2 > MaxSpots
+		Return ""
+	EndIf
 	ObjectReference[] dogs = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), Radius)
 	ObjectReference[] bots = akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), Radius)
 	Actor who = None
@@ -1253,7 +1342,7 @@ String Function MixedChat(Actor akPlayer)
 	Int i = 0
 	While !who && i < dogs.Length
 		Actor d = dogs[i] as Actor
-		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer)
+		If d && d.Is3DLoaded() && !d.IsDead() && !d.IsInCombat() && !d.IsHostileToActor(akPlayer) && !NearKind(d, K_CHAT, 400.0)
 			who = d
 			half = ChatDog
 		EndIf
@@ -1262,23 +1351,23 @@ String Function MixedChat(Actor akPlayer)
 	i = 0
 	While !who && i < bots.Length
 		Actor r = bots[i] as Actor
-		If r && r.Is3DLoaded() && !r.IsDead() && !r.IsInCombat() && !r.IsHostileToActor(akPlayer)
+		If r && r.Is3DLoaded() && !r.IsDead() && !r.IsInCombat() && !r.IsHostileToActor(akPlayer) && !NearKind(r, K_CHAT, 400.0)
 			who = r
 			half = ChatHandy
 		EndIf
 		i += 1
 	EndWhile
 	If !who
-		Debug.Trace("Idle Life: no dog or robot near for a mixed chat pair", 0)
 		Return ""
 	EndIf
 	Float h = (Seed(who) % 360) as Float
-	Float x = who.GetPositionX()
-	Float y = who.GetPositionY()
-	; the creature's spot where it stands, the person's 110 away, facing each other
-	PlaceWorld(who, half, x, y, who.GetPositionZ(), h)
-	PlaceWorld(who, Chat, x + 110.0 * Math.Sin(h), y + 110.0 * Math.Cos(h), who.GetPositionZ(), h + 180.0)
-	Debug.Trace("Idle Life: mixed chat pair placed by " + who + " (" + who.GetBaseObject() + ")", 0)
+	; the creature's half where it stands, the person's ChatGap away
+	ObjectReference first = ChatPair(who, half, who.GetPositionX() + (ChatGap / 2.0) * Math.Sin(h), who.GetPositionY() + (ChatGap / 2.0) * Math.Cos(h), who.GetPositionZ(), h)
+	If !first
+		Return ""
+	EndIf
+	_mixedChat = first
+	Debug.Trace("Idle Life: a mixed chat by " + who + " (" + who.GetBaseObject() + ")", 0)
 	Return ", and a mixed one by a " + who.GetDisplayName()
 EndFunction
 
