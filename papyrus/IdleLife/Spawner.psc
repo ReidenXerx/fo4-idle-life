@@ -387,14 +387,15 @@ Function Draw(Actor akPlayer)
 	_budget = BudgetFor(people.Length + _robots)
 	Trim(akPlayer)
 	Int before = _spots.Length
+	; Chats first: drawn last they found the budget always full (owner's DC test 10-06: "0 chatting", 40 of 40).
+	If _spots.Length < _budget
+		ChatSpots(akPlayer, people)
+	EndIf
 	If _spots.Length < _budget
 		WallAndOpen(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
 		FillFromPool(akPlayer, people)
-	EndIf
-	If _spots.Length < _budget
-		ChatSpots(akPlayer, people)
 	EndIf
 	If _spots.Length < _budget
 		PeopleSpots(akPlayer, people)
