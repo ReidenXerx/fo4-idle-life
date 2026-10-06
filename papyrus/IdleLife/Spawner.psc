@@ -342,9 +342,16 @@ Event OnTimer(Int aiTimerID)
 	If !_chA && Chatters.GetCount() > 0
 		LetGo()      ; a save made mid-chat: nobody stays held
 	EndIf
-	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > 20.0
-		Debug.Trace("Idle Life: a chat called off - " + _chA + " still walking after 20 s", 0)
-		EndChat()    ; a walk that never arrives must not stop every later chat
+	If _chA && !_chBegun && Utility.GetCurrentRealTime() - _chSince > ChatWalkSeconds
+		; a walk that does not arrive (owner's DC test 10-06: Cathy, 72 units short, still walking after 20 s):
+		; near enough by now, they talk where they are; not, it is called off -- never a stuck director
+		If _chB && _chA.GetDistance(_chB) <= ChatTalkMax
+			Debug.Trace("Idle Life: the walk-over ran long - the chat starts where they are", 0)
+			BeginChat(_chId)
+		Else
+			Debug.Trace("Idle Life: a chat called off - " + _chA + " still walking after " + (ChatWalkSeconds as Int) + " s", 0)
+			EndChat()
+		EndIf
 	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_CHAT) && !_chA
 		StartChat(player, False)
@@ -1613,6 +1620,11 @@ Float _chBY
 Float _chNext         ; real time the next chat may start
 Float _chSince        ; real time this chat was picked
 Bool _chBegun         ; the gestures have started (False: someone is still walking over)
+Int _chId             ; this chat's number: a walk that ends late must not touch a newer chat (or none)
+Float Property ChatWalkSeconds = 8.0 Auto Const
+{How long the walk-over may take: then the chat starts where they are if near enough, else it is called off.}
+Float Property ChatTalkMax = 260.0 Auto Const
+{The furthest apart two may still chat once the walk is over.}
 Actor[] _stillWho     ; where everyone stood at the last look: who stands still is free for a chat
 Float[] _stillX
 Float[] _stillY
@@ -1709,6 +1721,7 @@ Function StartChat(Actor akPlayer, Bool abNow)
 	_chSteps = Utility.RandomInt(8, 14)
 	_chSince = Utility.GetCurrentRealTime()
 	_chBegun = False
+	_chId += 1
 	If !ChatQuest.IsRunning()
 		ChatQuest.Start()
 	EndIf
@@ -1723,35 +1736,45 @@ Function StartChat(Actor akPlayer, Bool abNow)
 		ObjectReference goal = best2.PlaceAtMe(Game.GetFormFromFile(0x00003B, "Fallout4.esm"), 1, False, True, True)   ; XMarker
 		goal.SetPosition(tx, ty, best2.GetPositionZ())
 		Debug.Trace("Idle Life: a chat - " + best1 + " (" + best1.GetBaseObject() + ") walks over to " + best2 + " (" + best2.GetBaseObject() + "), " + (apart as Int) + " apart", 0)
-		Var[] args = new Var[1]
+		Var[] args = new Var[2]
 		args[0] = goal
+		args[1] = _chId
 		CallFunctionNoWait("WalkUp", args)       ; PathToReference is latent: never inside the scan's timer
 	Else
-		BeginChat()
+		BeginChat(_chId)
 	EndIf
 EndFunction
 
 ; The first walks up to the second (its own stack: the walk takes seconds). There: the chat begins; lost on
 ; the way, or the chat called off meanwhile: everyone is let go.
-Function WalkUp(ObjectReference akGoal)
+Function WalkUp(ObjectReference akGoal, Int aiChat)
 	Actor walker = _chA
+	Float t0 = Utility.GetCurrentRealTime()
 	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.0)
 	akGoal.Disable()
 	akGoal.Delete()
-	If _chA && _chA == walker && there
-		BeginChat()
-	ElseIf _chA == walker
-		Debug.Trace("Idle Life: a chat called off - " + walker + " did not get there", 0)
+	Debug.Trace("Idle Life: the walk-over " + aiChat + " ended after " + ((Utility.GetCurrentRealTime() - t0) as Int) + " s, arrived " + there, 0)
+	If aiChat != _chId || _chBegun || !_chA
+		Return      ; the chat already began (the walk ran long) or was called off
+	EndIf
+	If there || (_chB && _chA.GetDistance(_chB) <= ChatTalkMax)
+		BeginChat(aiChat)
+	Else
+		Debug.Trace("Idle Life: a chat called off - " + walker + " did not get near", 0)
 		EndChat()
 	EndIf
 EndFunction
 
 ; Both held, face to face, looking at each other; the gestures start.
-Function BeginChat()
+Function BeginChat(Int aiChat)
+	If aiChat != _chId || _chBegun
+		Return
+	EndIf
 	If !_chA || !_chB || !_chA.Is3DLoaded() || !_chB.Is3DLoaded()
 		EndChat()
 		Return
 	EndIf
+	_chBegun = True     ; at once: the calls below can let another thread in
 	Chatters.AddRef(_chA)
 	_chA.EvaluatePackage()
 	_chAX = _chA.GetPositionX()
@@ -1762,7 +1785,9 @@ Function BeginChat()
 	_chB.SetAngle(0.0, 0.0, _chB.GetAngleZ() + _chB.GetHeadingAngle(_chA))
 	_chA.SetLookAt(_chB, False)
 	_chB.SetLookAt(_chA, False)
-	_chBegun = True
+	If aiChat != _chId || !_chA || !_chB
+		Return      ; called off while turning them
+	EndIf
 	Debug.Trace("Idle Life: a chat starts - " + _chA + " (" + _chA.GetBaseObject() + ") and " + _chB + " (" + _chB.GetBaseObject() + "), " + (_chA.GetDistance(_chB) as Int) + " apart, " + _chSteps + " gestures", 0)
 	StartTimer(0.6, CHAT_TIMER)
 EndFunction
@@ -1870,6 +1895,7 @@ Function EndChat()
 	_chA = None
 	_chB = None
 	_chBegun = False
+	_chId += 1
 	_chNext = Utility.GetCurrentRealTime() + ChatCooldown
 EndFunction
 
