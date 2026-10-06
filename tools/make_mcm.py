@@ -88,6 +88,9 @@ def build():
                'Four harmless settlers appear a few steps around you and sandbox right there: they wander, '
                'sit, and take the spots near you. Stand near a fire, counter, bench or radio first.'),
         button('Remove test settlers', 'DebugRemoveTesters', 'Deletes every test settler.'),
+        button('Place a chat pair here', 'DebugPlaceChat',
+               'Two chat spots facing each other a few steps ahead of you: people who take them should gesture at '
+               'each other without a word. A test of the coming chat pairs.'),
         button('Draw spots again', 'DebugRedraw', 'Places the spots near you again, e.g. after changing the settings.'),
         {'text': 'Log', 'type': 'section'},
         switcher('Detailed log', 'Setting_DetailedLog',

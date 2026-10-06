@@ -103,6 +103,8 @@ Quest Property TestQuest Auto Const Mandatory
 RefCollectionAlias Property Testers Auto Const Mandatory
 {The MCM Testing page's settlers: their alias package makes them sandbox where they stand.}
 Form Property TestNpc Auto Const Mandatory
+Form Property Chat Auto Const Mandatory
+{Our chat spot: silent talk and listen gestures (an IDLM like Dance). A pair faces each other.}
 Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
@@ -1217,6 +1219,24 @@ Function Prune(Actor akPlayer, Bool abAll)
 EndFunction
 
 ; ---- the MCM Testing page (buttons that play out in the world wait until the menu closes) --------
+
+; Testing page: a chat pair 150 ahead of the player, the two spots 110 apart, facing each other (vanilla's
+; conversation distance; our bench pairs use the same). The premise test for chat pairs.
+Function DebugPlaceChat()
+	Actor player = Game.GetPlayer()
+	Float h = player.GetAngleZ()
+	Float cx = player.GetPositionX() + 150.0 * Math.Sin(h)
+	Float cy = player.GetPositionY() + 150.0 * Math.Cos(h)
+	Float side = h + 90.0
+	Float ax = cx + 55.0 * Math.Sin(side)
+	Float ay = cy + 55.0 * Math.Cos(side)
+	Float bx = cx - 55.0 * Math.Sin(side)
+	Float by = cy - 55.0 * Math.Cos(side)
+	PlaceWorld(player, Chat, ax, ay, player.GetPositionZ(), side + 180.0)
+	PlaceWorld(player, Chat, bx, by, player.GetPositionZ(), side)
+	Debug.Trace("Idle Life: chat pair placed for a test at " + (cx as Int) + ", " + (cy as Int), 0)
+	Debug.Notification("Idle Life: a chat pair is placed ahead of you.")
+EndFunction
 
 Function DebugSpawnTesters()
 	StartTimer(0.5, DEBUG_SPAWN_TIMER)

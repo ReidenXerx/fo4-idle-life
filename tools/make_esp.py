@@ -106,6 +106,14 @@ TOOLS = [0x0D96C9, 0x0D96C7, 0x0D96CD, 0x0D96C5, 0x0D96C3, 0x0D96C1, 0x0D96BF]  
 # Our dance spot: no dance marker exists in the game. An IDLM cloned from vanilla's shape (IDLF 08, a timer,
 # an idle list) listing the two dance loops nothing in vanilla uses, the drunk sway and the clap.
 DANCE_IDLES = [0x083BE4, 0x083BE5, 0x083BE3, 0x141F3C]   # IdleDrunkDancing, ...Drunker, IdleDrunkFaster, IdleClapping
+# Our chat spot (1.2.0, Nexus user fR1eNd: "NPCs engage in conversations with each other ... hand gestures without
+# actually speaking lines"). No chat marker exists in the game either: an IDLM like the dance one, listing the
+# silent talk and listen gestures of human dialogue (MTBehavior, event dyn_talkGeneric) and a shrug. A pair of
+# them face each other. PREMISE, unproven: that these play from a marker outside real dialogue (the Testing page's
+# "Place a chat pair here" button tests it).
+CHAT_IDLES = [0x062271, 0x085B4A, 0x062270, 0x249011, 0x06226F, 0x249010, 0x038C7C, 0x24900F]
+# RaiderTalkMT_PoseA_S, RaiderListenMT_PoseA, ..._PoseA_M, RaiderListenMT_PoseB, ..._PoseA_L, RaiderTalkMT_PoseB_S,
+# Shrug, RaiderTalkMT_PoseB_M -- talk and listen alternate as the marker runs its list
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
 # ---- wave 2 (owner 2026-10-01: "scale our covered idle markers on maximum") -------------------------
@@ -288,6 +296,17 @@ def build():
     dm += field('IDLA', b''.join(struct.pack('<I', i) for i in DANCE_IDLES))
     idlm = record('IDLM', dance_id, dm)
 
+    chat_id = new_id('ChatMarker')
+    cm = field('EDID', zstring('IL_ChatMarker'))
+    cm += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))
+    cm += field('KSIZ', struct.pack('<I', 1))
+    cm += field('KWDA', struct.pack('<I', KW_RELAXATION))
+    cm += field('IDLF', b'\x08')
+    cm += field('IDLC', struct.pack('<B', len(CHAT_IDLES)))
+    cm += field('IDLT', struct.pack('<f', 5.0))
+    cm += field('IDLA', b''.join(struct.pack('<I', i) for i in CHAT_IDLES))
+    idlm += record('IDLM', chat_id, cm)
+
     # Bounds of every counter/rail/work/bench base, one table (<= 128 entries: a Papyrus array's limit).
     geo = [(b, box) for kind in KINDS for b, _, box in KINDS[kind]]
     assert len(geo) <= 128, len(geo)
@@ -343,6 +362,7 @@ def build():
         ('Newspaper', 1, obj(NEWSPAPER)),
         ('Tools', 11, objs(TOOLS)),
         ('Dance', 1, obj(dance_id)),
+        ('Chat', 1, obj(chat_id)),
         ('GroundSit', 1, obj(GROUND_SIT)),
     ] + [(k + 'Anchors', 1, obj(v)) for k, v in wave2_lists.items()]
       + [(k, 1, obj(v)) for k, v in WAVE2_SPOTS.items()]
