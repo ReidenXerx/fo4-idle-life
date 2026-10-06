@@ -1751,13 +1751,19 @@ Function WalkUp(ObjectReference akGoal, Int aiChat)
 	Actor walker = _chA
 	Float t0 = Utility.GetCurrentRealTime()
 	Bool there = walker && walker.Is3DLoaded() && walker.PathToReference(akGoal, 0.0)
+	String where = ""
+	If walker && _chB
+		where = "; walker " + (walker.GetDistance(akGoal) as Int) + " from the meeting point, " + (walker.GetDistance(_chB) as Int) + " from " + _chB + "; the meeting point " + (akGoal.GetDistance(_chB) as Int) + " from them"
+	EndIf
 	akGoal.Disable()
 	akGoal.Delete()
-	Debug.Trace("Idle Life: the walk-over " + aiChat + " ended after " + ((Utility.GetCurrentRealTime() - t0) as Int) + " s, arrived " + there, 0)
+	Debug.Trace("Idle Life: the walk-over " + aiChat + " ended after " + ((Utility.GetCurrentRealTime() - t0) as Int) + " s, arrived " + there + where, 0)
 	If aiChat != _chId || _chBegun || !_chA
 		Return      ; the chat already began (the walk ran long) or was called off
 	EndIf
-	If there || (_chB && _chA.GetDistance(_chB) <= ChatTalkMax)
+	; near enough to talk, whatever the walk said (DC test: "arrived" after 15 s, still 378 apart -- a patrolling
+	; guard as the other one)
+	If _chB && _chA.GetDistance(_chB) <= ChatTalkMax
 		BeginChat(aiChat)
 	Else
 		Debug.Trace("Idle Life: a chat called off - " + walker + " did not get near", 0)
