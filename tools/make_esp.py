@@ -290,9 +290,7 @@ def build():
 
     dance_id = new_id('DanceMarker')
     dm = field('EDID', zstring('IL_DanceMarker'))
-    dm += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))
-    dm += field('KSIZ', struct.pack('<I', 1))
-    dm += field('KWDA', struct.pack('<I', KW_RELAXATION))
+    dm += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))   # no keyword: see the chat marker
     dm += field('IDLF', b'\x08')
     dm += field('IDLC', struct.pack('<B', len(DANCE_IDLES)))
     dm += field('IDLT', struct.pack('<f', 8.0))
@@ -302,8 +300,9 @@ def build():
     chat_id = new_id('ChatMarker')
     cm = field('EDID', zstring('IL_ChatMarker'))
     cm += field('OBND', struct.pack('<6h', -54, -1, 0, 54, 89, 13))
-    cm += field('KSIZ', struct.pack('<I', 1))
-    cm += field('KWDA', struct.pack('<I', KW_RELAXATION))
+    # No keyword (owner's DC test 10-06): with FurnitureClassRelaxation nobody took a human chat spot in 10 minutes,
+    # while Dogmeat took the untagged dog half. Vanilla's list-driven markers that people use (Examine, Shopping)
+    # carry none; the tag belongs to the smoke marker's QNAM kind.
     cm += field('IDLF', b'\x08')
     cm += field('IDLC', struct.pack('<B', len(CHAT_IDLES)))
     cm += field('IDLT', struct.pack('<f', 5.0))
