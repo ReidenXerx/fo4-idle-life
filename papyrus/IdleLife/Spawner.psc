@@ -1459,6 +1459,7 @@ Function Report()
 	Int used = InUse()
 	Debug.Trace("Idle Life: " + KindCounts() + ", " + used + " of " + FurnitureSpots() + " furniture spots in use", 0)
 	TrackUsers()
+	TrackChats()
 	If used > 0 && !_toldInUse
 		_toldInUse = True
 		Debug.Notification("Idle Life: someone is using one of the new spots.")
@@ -1505,6 +1506,57 @@ Function TrackUsers()
 	_dwSpot = nowSpot
 	_dwUser = nowUser
 	_dwSince = nowSince
+EndFunction
+
+; Who stands at the chat spots (1.2.0): idle markers have no "in use" the engine reports, so by position -- the
+; actor closest to the spot, within ChatAtRange. Logs each arrival, and a pair with both halves taken as a chat on
+; (owner 10-06: "do they take these spots?" -- the furniture log could not say).
+Float Property ChatAtRange = 45.0 Auto Const
+ObjectReference[] _chatAt     ; chat spots taken at the last report
+Actor[] _chatWho
+
+Function TrackChats()
+	ObjectReference[] nowAt = new ObjectReference[0]
+	Actor[] nowWho = new Actor[0]
+	Int i = 0
+	While i < _spots.Length
+		ObjectReference spot = _spots[i]
+		If spot
+			Form b = spot.GetBaseObject()
+			If b == Chat || b == ChatDog || b == ChatHandy
+				Actor who = Game.FindClosestActorFromRef(spot, ChatAtRange)
+				If who && who != Game.GetPlayer()
+					nowAt.Add(spot)
+					nowWho.Add(who)
+					Int prev = -1
+					If _chatAt
+						prev = _chatAt.Find(spot)
+					EndIf
+					If prev < 0 || _chatWho[prev] != who
+						Debug.Trace("Idle Life: " + who + " (" + who.GetBaseObject() + ") is at chat spot " + spot + " (" + b + ")", 0)
+					EndIf
+				EndIf
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	; both halves of a pair taken: they face each other ChatGap apart
+	i = 0
+	While i < nowAt.Length
+		Int j = i + 1
+		While j < nowAt.Length
+			If nowAt[i].GetDistance(nowAt[j]) < ChatGap + 30.0 && nowWho[i] != nowWho[j]
+				Bool was = _chatAt && _chatAt.Find(nowAt[i]) >= 0 && _chatAt.Find(nowAt[j]) >= 0
+				If !was
+					Debug.Trace("Idle Life: a chat is on - " + nowWho[i] + " (" + nowWho[i].GetBaseObject() + ") and " + nowWho[j] + " (" + nowWho[j].GetBaseObject() + ")", 0)
+				EndIf
+			EndIf
+			j += 1
+		EndWhile
+		i += 1
+	EndWhile
+	_chatAt = nowAt
+	_chatWho = nowWho
 EndFunction
 
 ; ---- wave 2 ----------------------------------------------------------------------------------------------
