@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.1 (2026-10-07)
+
+- Fixed: chatting could pull a person out of an AAF scene. Anyone in an AAF scene (or held by another mod through AAF) is left alone.
+
 ## 1.2.0 (2026-10-07)
 
 - New: people standing about turn to each other and talk with their hands, no words; one walks over if they stand apart, and now and then it is a person and a dog (MCM: Chatting). Idea by fR1eNd.

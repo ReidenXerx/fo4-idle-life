@@ -1512,13 +1512,34 @@ Actor[] _stillWho     ; where everyone stood at the last look: who stands still 
 Float[] _stillX
 Float[] _stillY
 
+Keyword _aafBusy      ; AAF.esm AAF_ActorBusy (set for a scene's whole length) and AAF_ActorLocked (another mod's hold)
+Keyword _aafLocked
+Bool _aafLooked       ; looked them up this session (ResetChats clears it on every load)
+
+; In an AAF scene, or held by a mod through AAF's lock. An AAF couple stands still, so the chat picked them: its
+; hold, turn and gestures (PlayIdle) took the man out of his animation, still in AAF's morphs (owner 10-07, Diamond
+; City market). Such an actor is never picked, a chat ends when one gets there, and the chat's own exit never
+; touches them (no idle, no look-at, no package evaluation).
+Bool Function InAAF(Actor akWho)
+	If !_aafLooked
+		_aafLooked = True
+		_aafBusy = None
+		_aafLocked = None
+		If Game.IsPluginInstalled("AAF.esm")
+			_aafBusy = Game.GetFormFromFile(0x00915A, "AAF.esm") as Keyword
+			_aafLocked = Game.GetFormFromFile(0x017CEA, "AAF.esm") as Keyword
+		EndIf
+	EndIf
+	Return akWho && ((_aafBusy && akWho.HasKeyword(_aafBusy)) || (_aafLocked && akWho.HasKeyword(_aafLocked)))
+EndFunction
+
 ; Busy: anything that keeps someone from a chat, now or mid-chat. Loaded first: asking an unloaded actor anything
 ; is how other mods' bridges wedged (shared memory papyrus-resolving-is-not-loaded).
 Bool Function Busy(Actor akWho)
 	If !akWho || !akWho.Is3DLoaded()
 		Return True
 	EndIf
-	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate()
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho)
 EndFunction
 
 ; The player, the switch or Idle Life itself says no chats now.
@@ -1717,7 +1738,7 @@ Function StopWalk()
 		Actor wa = w as Actor
 		If wa
 			wa.SetLinkedRef(_chWalkerLink, kw)
-			If wa.Is3DLoaded()
+			If wa.Is3DLoaded() && !InAAF(wa)
 				wa.EvaluatePackage()
 			EndIf
 		EndIf
@@ -1771,7 +1792,7 @@ Function LetGo()
 		ObjectReference r = Chatters.GetAt(i)
 		Chatters.RemoveRef(r)
 		Actor a = r as Actor
-		If a && a.Is3DLoaded()
+		If a && a.Is3DLoaded() && !InAAF(a)
 			a.EvaluatePackage()
 		EndIf
 		i -= 1
@@ -1855,6 +1876,13 @@ Function ChatStep()
 	Else
 		gesture = Game.GetFormFromFile(IDLE_LAUGH, "Fallout4.esm") as Idle
 	EndIf
+	If id != _chId
+		Return
+	EndIf
+	If InAAF(speaker)
+		EndChat()   ; AAF took the speaker since the check above: no gesture over its animation
+		Return
+	EndIf
 	Bool played = speaker.PlayIdle(gesture)
 	If id != _chId
 		Return
@@ -1876,11 +1904,11 @@ Function EndChat()
 	_chB = None
 	_chBegun = False
 	Idle stop = Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle
-	If a && a.Is3DLoaded()
+	If a && a.Is3DLoaded() && !InAAF(a)
 		a.PlayIdle(stop)
 		a.ClearLookAt()
 	EndIf
-	If b && b.Is3DLoaded()
+	If b && b.Is3DLoaded() && !InAAF(b)
 		b.PlayIdle(stop)
 		b.ClearLookAt()
 	EndIf
@@ -1895,6 +1923,7 @@ EndFunction
 Function ResetChats()
 	CancelTimer(CHAT_TIMER)
 	_chPicking = False
+	_aafLooked = False   ; AAF may have been added or removed since the save
 	If _chA || Chatters.GetCount() > 0 || Walkers.GetCount() > 0
 		EndChat()
 	EndIf
