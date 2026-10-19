@@ -121,6 +121,8 @@ GlobalVariable Property Enabled Auto Const Mandatory
 Float Property ScanSeconds = 5.0 Auto Const
 Float Property Radius = 3000.0 Auto Const
 {About 43 m around the player.}
+Float Property TalkRadius = 1500.0 Auto Const
+{How far from the player someone in a conversation with them is looked for (a Mr. Handy floats off a bit).}
 Float Property Ring = 70.0 Auto Const
 {Units from a fire's centre to a hand-warming spot. Vanilla's 74: median 69, facing the fire (research).}
 Float Property SmokeRing = 170.0 Auto Const
@@ -326,6 +328,13 @@ Event OnTimer(Int aiTimerID)
 		Return
 	EndIf
 	Actor player = Game.GetPlayer()
+	If Talking(player)
+		; Mid-conversation nothing near changes: a deleted or new spot sends whoever stands on one off to
+		; another, the one the player talks to too (alasdairn 10-19: Supervisor White floated off mid-talk
+		; among Graygarden's robot crop spots and the dialogue started over).
+		StartTimer(ScanSeconds, SCAN_TIMER)
+		Return
+	EndIf
 	Prune(player, Enabled.GetValueInt() == 0)
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat()
 		If Arrived(player)
@@ -1533,13 +1542,37 @@ Bool Function InAAF(Actor akWho)
 	Return akWho && ((_aafBusy && akWho.HasKeyword(_aafBusy)) || (_aafLocked && akWho.HasKeyword(_aafLocked)))
 EndFunction
 
+; In a conversation with the player, or (InAAF) in an AAF scene: a chat's hold, gestures and exit leave them be.
+Bool Function HandsOff(Actor akWho)
+	Return akWho && (akWho.IsInDialogueWithPlayer() || InAAF(akWho))
+EndFunction
+
+; The player is in a conversation: anyone near (people, ghouls, robots, dogs) in dialogue with them.
+Bool Function Talking(Actor akPlayer)
+	If akPlayer.GetDialogueTarget()
+		Return True
+	EndIf
+	Return TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_HUMAN, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_GHOUL, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), TalkRadius))
+EndFunction
+
+Bool Function TalkingIn(ObjectReference[] akRefs)
+	Int i = 0
+	While i < akRefs.Length
+		If akRefs[i] && akRefs[i] != Game.GetPlayer() && akRefs[i].IsInDialogueWithPlayer()
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
+EndFunction
+
 ; Busy: anything that keeps someone from a chat, now or mid-chat. Loaded first: asking an unloaded actor anything
 ; is how other mods' bridges wedged (shared memory papyrus-resolving-is-not-loaded).
 Bool Function Busy(Actor akWho)
 	If !akWho || !akWho.Is3DLoaded()
 		Return True
 	EndIf
-	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho)
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho)
 EndFunction
 
 ; The player, the switch or Idle Life itself says no chats now.
@@ -1738,7 +1771,7 @@ Function StopWalk()
 		Actor wa = w as Actor
 		If wa
 			wa.SetLinkedRef(_chWalkerLink, kw)
-			If wa.Is3DLoaded() && !InAAF(wa)
+			If wa.Is3DLoaded() && !HandsOff(wa)
 				wa.EvaluatePackage()
 			EndIf
 		EndIf
@@ -1792,7 +1825,7 @@ Function LetGo()
 		ObjectReference r = Chatters.GetAt(i)
 		Chatters.RemoveRef(r)
 		Actor a = r as Actor
-		If a && a.Is3DLoaded() && !InAAF(a)
+		If a && a.Is3DLoaded() && !HandsOff(a)
 			a.EvaluatePackage()
 		EndIf
 		i -= 1
@@ -1879,8 +1912,8 @@ Function ChatStep()
 	If id != _chId
 		Return
 	EndIf
-	If InAAF(speaker)
-		EndChat()   ; AAF took the speaker since the check above: no gesture over its animation
+	If HandsOff(speaker)
+		EndChat()   ; AAF or the player took the speaker since the check above: no gesture over that
 		Return
 	EndIf
 	Bool played = speaker.PlayIdle(gesture)
@@ -1904,12 +1937,17 @@ Function EndChat()
 	_chB = None
 	_chBegun = False
 	Idle stop = Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle
+	; talking to the player: no idle over the conversation, only the look at the partner is let go
 	If a && a.Is3DLoaded() && !InAAF(a)
-		a.PlayIdle(stop)
+		If !a.IsInDialogueWithPlayer()
+			a.PlayIdle(stop)
+		EndIf
 		a.ClearLookAt()
 	EndIf
 	If b && b.Is3DLoaded() && !InAAF(b)
-		b.PlayIdle(stop)
+		If !b.IsInDialogueWithPlayer()
+			b.PlayIdle(stop)
+		EndIf
 		b.ClearLookAt()
 	EndIf
 	LetGo()

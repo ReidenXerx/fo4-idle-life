@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.2 (2026-10-19)
+
+- Fixed: someone you were talking to (Supervisor White at Graygarden) could wander off to a spot mid-conversation. Nothing near you changes while you talk, and chats leave anyone talking to you alone.
+
 ## 1.2.1 (2026-10-07)
 
 - Fixed: chatting could pull a person out of an AAF scene. Anyone in an AAF scene (or held by another mod through AAF) is left alone.
