@@ -331,7 +331,12 @@ Event OnTimer(Int aiTimerID)
 	If Talking(player)
 		; Mid-conversation nothing near changes: a deleted or new spot sends whoever stands on one off to
 		; another, the one the player talks to too (alasdairn 10-19: Supervisor White floated off mid-talk
-		; among Graygarden's robot crop spots and the dialogue started over).
+		; among Graygarden's robot crop spots and the dialogue started over). No chat runs either: with Chatting
+		; off White stayed put (alasdairn's test), though she is no chat partner (HandyRace: ActorTypeRobot only).
+		If _chA
+			Debug.Trace("Idle Life: the player is in a conversation - the chat ends", 0)
+			EndChat()
+		EndIf
 		StartTimer(ScanSeconds, SCAN_TIMER)
 		Return
 	EndIf

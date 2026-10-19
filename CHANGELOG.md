@@ -2,7 +2,7 @@
 
 ## 1.2.2 (2026-10-19)
 
-- Fixed: someone you were talking to (Supervisor White at Graygarden) could wander off to a spot mid-conversation. Nothing near you changes while you talk, and chats leave anyone talking to you alone.
+- Fixed: someone you were talking to (Supervisor White at Graygarden) could wander off to a spot mid-conversation. Nothing near you changes and no chat runs while you talk.
 
 ## 1.2.1 (2026-10-07)
 
