@@ -401,7 +401,8 @@ Bool Function Arrived(Actor akPlayer)
 	Return dx * dx + dy * dy > RedrawMove * RedrawMove
 EndFunction
 
-; Who could use a spot: people near the player, alive, calm, not hostile.
+; Who could use a spot: people near the player, alive, calm, not hostile. Not companions: spots around them gave
+; them somewhere to walk while the player stood in a window (Quartermaster, Silhouette; alasdairn 10-30).
 Actor[] Function People(Actor akPlayer)
 	Actor[] out = new Actor[0]
 	AddPeople(out, akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_HUMAN, "Fallout4.esm"), Radius), akPlayer)
@@ -413,7 +414,7 @@ Function AddPeople(Actor[] akOut, ObjectReference[] akRefs, Actor akPlayer)
 	Int i = 0
 	While i < akRefs.Length && akOut.Length < 30
 		Actor a = akRefs[i] as Actor
-		If a && a != akPlayer && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsHostileToActor(akPlayer) && akOut.Find(a) < 0
+		If a && a != akPlayer && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsPlayerTeammate() && !a.IsHostileToActor(akPlayer) && akOut.Find(a) < 0
 			akOut.Add(a)
 		EndIf
 		i += 1

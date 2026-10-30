@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.4 (2026-10-30)
+
+- Fixed: companions kept walking in front of you to idle spots. Idle Life no longer places spots around your companions.
+
 ## 1.2.3 (2026-10-19)
 
 - Fixed: a chat already running could still move someone you were talking to. No chat runs while you talk.
