@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.5 (2026-10-30)
+
+- Fixed: 1.2.4 placed too few spots where companions were around. Companions count again; only the spots around companions themselves stay gone.
+
 ## 1.2.4 (2026-10-30)
 
 - Fixed: companions kept walking in front of you to idle spots. Idle Life no longer places spots around your companions.

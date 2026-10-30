@@ -401,8 +401,8 @@ Bool Function Arrived(Actor akPlayer)
 	Return dx * dx + dy * dy > RedrawMove * RedrawMove
 EndFunction
 
-; Who could use a spot: people near the player, alive, calm, not hostile. Not companions: spots around them gave
-; them somewhere to walk while the player stood in a window (Quartermaster, Silhouette; alasdairn 10-30).
+; Who could use a spot: people near the player, alive, calm, not hostile. Companions count (the budget and the places
+; near them): 1.2.4 left them out here and a stop with only companions got no spots at all.
 Actor[] Function People(Actor akPlayer)
 	Actor[] out = new Actor[0]
 	AddPeople(out, akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_HUMAN, "Fallout4.esm"), Radius), akPlayer)
@@ -414,7 +414,7 @@ Function AddPeople(Actor[] akOut, ObjectReference[] akRefs, Actor akPlayer)
 	Int i = 0
 	While i < akRefs.Length && akOut.Length < 30
 		Actor a = akRefs[i] as Actor
-		If a && a != akPlayer && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsPlayerTeammate() && !a.IsHostileToActor(akPlayer) && akOut.Find(a) < 0
+		If a && a != akPlayer && a.Is3DLoaded() && !a.IsDead() && !a.IsInCombat() && !a.IsHostileToActor(akPlayer) && akOut.Find(a) < 0
 			akOut.Add(a)
 		EndIf
 		i += 1
@@ -794,7 +794,8 @@ Float[] Function KindWeights(Actor akPlayer)
 EndFunction
 
 ; Budget left and nothing to anchor it: spots next to the people themselves, 150-300 out, one per
-; person who has no dressed place near -- a smoke, a newspaper, a sit on the ground, a coffee.
+; person who has no dressed place near -- a smoke, a newspaper, a sit on the ground, a coffee. Never around a
+; companion: it walked to its own spot across the player standing in a window (alasdairn, 10-30).
 Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	If !KindIsOn(K_PEOPLE)
 		Return
@@ -804,7 +805,7 @@ Function PeopleSpots(Actor akPlayer, Actor[] akPeople)
 	Int i = 0
 	While i < akPeople.Length && made < MaxPeopleSpots && _spots.Length < _budget
 		Actor person = akPeople[i]
-		If !NearAnyPlace(person, 400.0)
+		If !person.IsPlayerTeammate() && !NearAnyPlace(person, 400.0)
 			Int seed = (Seed(person) % 9973) + day * 31
 			Float angle = (seed % 360) as Float
 			Float r = 150.0 + ((seed / 7) % 151) as Float
