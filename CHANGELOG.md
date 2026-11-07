@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Someone following you for Overture is never picked for a chat.
+
 ## 1.2.5 (2026-10-30)
 
 - Fixed: 1.2.4 placed too few spots where companions were around. Companions count again; only the spots around companions themselves stay gone.

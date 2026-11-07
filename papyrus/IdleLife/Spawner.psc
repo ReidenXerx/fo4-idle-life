@@ -1531,6 +1531,7 @@ Float[] _stillY
 Keyword _aafBusy      ; AAF.esm AAF_ActorBusy (set for a scene's whole length) and AAF_ActorLocked (another mod's hold)
 Keyword _aafLocked
 Bool _aafLooked       ; looked them up this session (ResetChats clears it on every load)
+ActorValue _ovFollowing ; Overture.esp OvertureFollowing (1 while the player asked them to follow), looked up with AAF's
 
 ; In an AAF scene, or held by a mod through AAF's lock. An AAF couple stands still, so the chat picked them: its
 ; hold, turn and gestures (PlayIdle) took the man out of his animation, still in AAF's morphs (owner 10-07, Diamond
@@ -1541,6 +1542,10 @@ Bool Function InAAF(Actor akWho)
 		_aafLooked = True
 		_aafBusy = None
 		_aafLocked = None
+		_ovFollowing = None
+		If Game.IsPluginInstalled("Overture.esp")
+			_ovFollowing = Game.GetFormFromFile(0x000943, "Overture.esp") as ActorValue
+		EndIf
 		If Game.IsPluginInstalled("AAF.esm")
 			_aafBusy = Game.GetFormFromFile(0x00915A, "AAF.esm") as Keyword
 			_aafLocked = Game.GetFormFromFile(0x017CEA, "AAF.esm") as Keyword
@@ -1579,7 +1584,13 @@ Bool Function Busy(Actor akWho)
 	If !akWho || !akWho.Is3DLoaded()
 		Return True
 	EndIf
-	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho)
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho) || Following(akWho)
+EndFunction
+
+; Following the player for Overture (Ivy Rev 28: settlers asked to follow kept chatting). InAAF looks the form up.
+Bool Function Following(Actor akWho)
+	InAAF(None)
+	Return _ovFollowing && akWho.GetValue(_ovFollowing) >= 1.0
 EndFunction
 
 ; The player, the switch or Idle Life itself says no chats now.
