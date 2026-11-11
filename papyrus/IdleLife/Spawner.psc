@@ -238,6 +238,7 @@ Float _drawY = 0.0
 Int _budget = 0
 Bool _native = False         ; IdleLife.dll is loaded: walls and open ground
 Bool _solid = False          ; ... and it can tell a spot inside a pillar (plugin 0.3.0)
+Bool _adopt = False          ; ... and it adds other mods' objects to the anchor lists (plugin 0.4.0)
 Int _robots = 0               ; robots near at the last draw: the Handy spots only when there are some
 ObjectReference[] _dwSpot    ; furniture spots in use at the last report, who was on each, and since when
 Actor[] _dwUser
@@ -298,8 +299,31 @@ Function Begin()
 	AddAnchor(RadioAnchors, DLC04_CAFE_RADIO, "DLCNukaWorld.esm")
 	AddAnchor(CampfireAnchors, DLC05_CAMPFIRE, "DLCworkshop01.esm")
 	CheckSetup()
+	AdoptAnchors()
 	Debug.Trace("Idle Life: started - " + FireAnchors.GetSize() + " fires, " + CounterAnchors.GetSize() + " counters, " + RailAnchors.GetSize() + " rails, " + WorkAnchors.GetSize() + " workbenches, " + BenchAnchors.GetSize() + " benches, " + RadioAnchors.GetSize() + " radios known; " + _anchors.Length + " places dressed, " + _spots.Length + " spots", 0)
 	StartTimer(ScanSeconds, SCAN_TIMER)
+EndFunction
+
+; Other mods' objects as anchors (1.3.0; dferstat and hang50, owner 11-11: auto + a list file): every object using the
+; same 3D model as one of ours, and those named in Data\F4SE\Plugins\IdleLife\*.txt. For this game run only, so every
+; load asks again (the plugin skips what a list holds already). The list kinds are the words those files use.
+Function AdoptAnchors()
+	_adopt = F4SE.GetPluginVersion("IdleLife") > 0 && IdleLife:Navmesh.Version() >= 400
+	If !_adopt
+		Return
+	EndIf
+	Int n = Adopt(FireAnchors, "fire") + Adopt(FireSources, "firesource") + Adopt(LampSources, "lamp")
+	n += Adopt(CounterAnchors, "counter") + Adopt(RailAnchors, "rail") + Adopt(WorkAnchors, "work")
+	n += Adopt(BenchAnchors, "bench") + Adopt(TableAnchors, "table") + Adopt(RadioAnchors, "radio")
+	n += Adopt(CampfireAnchors, "campfire") + Adopt(CropAnchors, "crop") + Adopt(HedgeAnchors, "hedge")
+	n += Adopt(PoolAnchors, "pool") + Adopt(TvAnchors, "tv") + Adopt(GateAnchors, "gate") + Adopt(CrateAnchors, "crate")
+	Debug.Trace("Idle Life: " + n + " objects of other mods joined the anchors", 0)
+EndFunction
+
+Int Function Adopt(FormList akList, String asKind)
+	; Listed first: their lookalikes then join too.
+	Int listed = IdleLife:Navmesh.AdoptListed(akList, asKind)
+	Return listed + IdleLife:Navmesh.AdoptLookalikes(akList)
 EndFunction
 
 Function AddAnchor(FormList akList, Int aiFormID, String asPlugin)
@@ -942,15 +966,30 @@ Function Dress(ObjectReference akRef, Int aiKind)
 		DressRing(akRef, aiKind, seed)
 		Return
 	EndIf
+	Float s = akRef.GetScale()
+	Float x1
+	Float y1
+	Float x2
+	Float y2
 	Int g = GeoBases.Find(akRef.GetBaseObject())
-	If g < 0
+	If g >= 0
+		x1 = GeoX1[g] * s
+		y1 = GeoY1[g] * s
+		x2 = GeoX2[g] * s
+		y2 = GeoY2[g] * s
+	ElseIf _adopt
+		; Another mod's object (1.3.0): its own size box, as the baked ones were read from vanilla's.
+		Float[] box = IdleLife:Navmesh.Bounds(akRef.GetBaseObject())
+		If box.Length < 4
+			Return
+		EndIf
+		x1 = box[0] * s
+		y1 = box[1] * s
+		x2 = box[2] * s
+		y2 = box[3] * s
+	Else
 		Return
 	EndIf
-	Float s = akRef.GetScale()
-	Float x1 = GeoX1[g] * s
-	Float y1 = GeoY1[g] * s
-	Float x2 = GeoX2[g] * s
-	Float y2 = GeoY2[g] * s
 	Bool alongX = (x2 - x1) >= (y2 - y1)      ; the long axis
 	Bool plus = seed % 2 == 0                ; which long side
 	Int count = 0

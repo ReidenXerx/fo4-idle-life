@@ -3,6 +3,7 @@
 // Papyrus asks, C++ answers: three global natives on IdleLife:Navmesh, each returning plain floats.
 // The plugin never calls into the Papyrus VM (fo4-rapport's first rule: it crashed the game twice).
 
+#include "Anchors.h"
 #include "Solid.h"
 #include "Spots.h"
 
@@ -46,6 +47,31 @@ namespace
 		return nullptr;
 	}
 
+	std::int32_t Papyrus_AdoptLookalikes(std::monostate, RE::BGSListForm* a_list)
+	{
+		try {
+			return IL::Anchors::AdoptLookalikes(a_list);
+		} catch (...) {
+			logger::critical("AdoptLookalikes threw");
+		}
+		return 0;
+	}
+
+	std::int32_t Papyrus_AdoptListed(std::monostate, RE::BGSListForm* a_list, RE::BSFixedString a_kind)
+	{
+		try {
+			return IL::Anchors::AdoptListed(a_list, a_kind.c_str());
+		} catch (...) {
+			logger::critical("AdoptListed threw");
+		}
+		return 0;
+	}
+
+	std::vector<float> Papyrus_Bounds(std::monostate, RE::TESForm* a_base)
+	{
+		return IL::Anchors::Bounds(a_base);
+	}
+
 	bool Papyrus_Ready(std::monostate)
 	{
 		return IL::Spots::Ready();
@@ -66,6 +92,9 @@ namespace
 		a_vm->BindNativeMethod(kScript, "Inside"sv, Papyrus_Inside, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Version"sv, Papyrus_Version, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Ready"sv, Papyrus_Ready, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "AdoptLookalikes"sv, Papyrus_AdoptLookalikes, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "AdoptListed"sv, Papyrus_AdoptListed, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "Bounds"sv, Papyrus_Bounds, std::nullopt, false);
 		logger::info("papyrus functions registered on {}", kScript);
 		return true;
 	}

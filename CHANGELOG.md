@@ -1,7 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 (2026-11-11)
 
+- Other mods' objects are used too: a fire barrel, counter, bench or workbench that uses a vanilla model is found by itself.
+- Objects with new models can be added in Data/F4SE/Plugins/IdleLife (how-to inside).
 - Someone following you for Overture is never picked for a chat.
 
 ## 1.2.5 (2026-10-30)

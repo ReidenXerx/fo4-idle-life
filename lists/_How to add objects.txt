@@ -1,0 +1,29 @@
+# Idle Life: other mods' objects as spot places
+#
+# Idle Life already uses other mods' objects that look like vanilla ones: a fire barrel, counter or bench
+# that uses the same 3D model as a vanilla one is found by itself. This folder is for objects with NEW models.
+#
+# Put a .txt file in this folder (Data\F4SE\Plugins\IdleLife), one object per line:
+#   Plugin.esp|0x001234|kind
+# - Plugin: the file name of the mod's plugin (.esp, .esm or .esl).
+# - The id: the object's form id in that plugin, in hex. The load-order digits do not matter
+#   (0x001234, 0x05001234 and 0xFE001234 all work).
+# - kind: what Idle Life does with it, one of:
+#   fire        a lit fire (barrel, brazier): people warm their hands
+#   firesource  the fire itself next to a fire light (makes that light count as a fire)
+#   lamp        an oil lamp: one person warms their hands
+#   counter     a shop counter: customers with a coffee or a bowl
+#   rail        a railing: people lean on it
+#   work        a workbench: someone works at it
+#   bench       a bench: two people stand at it, facing each other
+#   table       a stall table: people stand at it with a coffee or a bowl
+#   radio       a radio: people dance while it plays
+#   campfire    an unlit campfire: people sit around it
+#   crop        crops: tending and weeding
+#   hedge       a hedge: a Mr. Handy trims it
+#   pool        a pool table: two people look it over
+#   tv          a television: people sit on the floor and watch
+#   gate        a gate: a guard stands at it
+#   crate       a crate: someone searches it
+# Lines that start with # are notes. A mod that is not loaded is skipped; a wrong line is named in
+# Documents\My Games\Fallout4\F4SE\IdleLife.log.

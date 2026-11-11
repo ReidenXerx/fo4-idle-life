@@ -37,6 +37,8 @@ New-Item -ItemType Directory -Force $out | Out-Null
 foreach ($item in 'IdleLife.esp', 'Scripts', 'MCM') { Copy-Item -Recurse (Join-Path $data $item) $out }
 New-Item -ItemType Directory -Force (Join-Path $out 'F4SE\Plugins') | Out-Null
 Copy-Item $dll (Join-Path $out 'F4SE\Plugins\IdleLife.dll')
+# The folder other mods' objects are named in (1.3.0), with its how-to.
+Copy-Item -Recurse (Join-Path $root 'lists') (Join-Path $out 'F4SE\Plugins\IdleLife')
 if (Get-ChildItem $out -Recurse -Filter '*dump*') { throw 'a dev dump file reached the release folder' }
 
 $docs = Join-Path $out 'Docs\IdleLife'

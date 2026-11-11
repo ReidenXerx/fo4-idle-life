@@ -18,3 +18,15 @@ Int Function Version() Global Native
 
 ; The navmesh can be read on this runtime: Runtime Database is present and knows it.
 Bool Function Ready() Global Native
+
+; ---- Other mods' objects as anchors, plugin 0.4.0 (Version() >= 400). Both add for this game run only (nothing in saves)
+; and skip what the list holds already; each answers how many joined.
+
+; Every object of any plugin that uses the same 3D model as one in the list.
+Int Function AdoptLookalikes(FormList akList) Global Native
+
+; The objects named for this kind in Data\F4SE\Plugins\IdleLife\*.txt (lines: Plugin.esp|0x001234|kind).
+Int Function AdoptListed(FormList akList, String asKind) Global Native
+
+; An object's size box from its record: x1, y1, x2, y2 (empty when it has none).
+Float[] Function Bounds(Form akBase) Global Native
