@@ -31,7 +31,9 @@ FEATURES = [
      'Near you, people get new places to spend their time, each kind where it belongs, placed by rules measured from '
      'Bethesda\'s own: hands warmed 69 units from a fire and facing it, sitters 131 out round a campfire, leaning '
      'with their back to a rail. NPCs who sandbox nearby walk over, stay a minute or so and move on, often to the next '
-     'spot. Placed around you at run time, deleted as you leave.'),
+     'spot. Placed around you at run time, deleted as you leave. Other mods\' fire barrels, counters and benches '
+     'count too: one with a vanilla model is found by itself, a new model is named in a small list (how-to in '
+     'Data/F4SE/Plugins/IdleLife).'),
     ('Walls and open ground', 'navmesh.png',
      'A small F4SE plugin reads the walkable area around you: its border edges are walls (a drop beyond one is left '
      'out), so people lean on real walls and read a paper; flat ground far from every edge gets a sitting circle. '
