@@ -177,6 +177,90 @@ namespace IL::Anchors
 			logger::info("anchors: {} line(s) in {} list file(s)", lines.size(), files.size());
 			return lines;
 		}
+
+	// The plugin's own IDLE records by EditorID, read from the file itself: the running game kept no IDLE EditorIDs
+	// to match (1.4.0 test, 11-12: "0 idles there" for Funtime2.esm). Lower-case EditorID -> local id.
+	std::unordered_map<std::string, std::uint32_t> IdleIdsInFile(const std::filesystem::path& a_path)
+	{
+		std::unordered_map<std::string, std::uint32_t> ids;
+		std::error_code ec;
+		const auto size = std::filesystem::file_size(a_path, ec);
+		if (ec || size < 24 || size > (256ull << 20)) {
+			return ids;
+		}
+		std::vector<char> bytes(static_cast<std::size_t>(size));
+		std::ifstream in(a_path, std::ios::binary);
+		if (!in.read(bytes.data(), static_cast<std::streamsize>(bytes.size()))) {
+			return ids;
+		}
+		const auto* b = reinterpret_cast<const std::uint8_t*>(bytes.data());
+		const auto u32 = [&](std::size_t a_at) {
+			std::uint32_t v;
+			std::memcpy(&v, b + a_at, 4);
+			return v;
+		};
+		const auto u16 = [&](std::size_t a_at) {
+			std::uint16_t v;
+			std::memcpy(&v, b + a_at, 2);
+			return v;
+		};
+		const std::size_t end = bytes.size();
+		if (std::memcmp(b, "TES4", 4) != 0) {
+			return ids;
+		}
+		// The header's masters: a record whose id names one of them is an override, not the plugin's own.
+		std::uint32_t masters = 0;
+		const std::size_t headerEnd = std::min<std::size_t>(24 + u32(4), end);
+		for (std::size_t at = 24; at + 6 <= headerEnd;) {
+			const auto len = u16(at + 4);
+			if (std::memcmp(b + at, "MAST", 4) == 0) {
+				++masters;
+			}
+			at += 6 + len;
+		}
+		// Groups nest; a plain stack of group ends walks them without recursion.
+		std::vector<std::size_t> groupEnds{ end };
+		std::size_t at = headerEnd;
+		while (at + 24 <= end) {
+			while (groupEnds.size() > 1 && at >= groupEnds.back()) {
+				groupEnds.pop_back();
+			}
+			const auto recSize = u32(at + 4);
+			if (std::memcmp(b + at, "GRUP", 4) == 0) {
+				if (recSize < 24) {
+					break;   // a broken file: stop, keep what was read
+				}
+				groupEnds.push_back(std::min(at + recSize, end));
+				at += 24;
+				continue;
+			}
+			const auto flags = u32(at + 8);
+			const auto formID = u32(at + 12);
+			const std::size_t body = at + 24;
+			const std::size_t bodyEnd = std::min(body + recSize, end);
+			if (std::memcmp(b + at, "IDLE", 4) == 0 && !(flags & 0x40000) && (formID >> 24) >= masters) {
+				for (std::size_t s = body; s + 6 <= bodyEnd;) {
+					const auto len = u16(s + 4);
+					if (std::memcmp(b + s, "EDID", 4) == 0 && s + 6 + len <= bodyEnd && len > 1) {
+						ids.emplace(Lower(std::string_view(reinterpret_cast<const char*>(b + s + 6), len - 1)), formID & 0xFFFFFF);
+						break;
+					}
+					s += 6 + len;
+				}
+			}
+			at = bodyEnd;
+		}
+		return ids;
+	}
+
+		// The folder this DLL is in (Data\F4SE\Plugins), wherever a mod manager put it.
+		std::filesystem::path PluginFolder()
+		{
+			std::wstring self(1024, L'\0');
+			const auto length = F4SE::WinAPI::GetModuleFileName(const_cast<std::byte*>(&__ImageBase), self.data(), static_cast<std::uint32_t>(self.size()));
+			self.resize(length);
+			return length ? std::filesystem::path(self).parent_path() : std::filesystem::path{};
+		}
 	}
 
 	std::int32_t AdoptLookalikes(RE::BGSListForm* a_list)
@@ -276,34 +360,37 @@ namespace IL::Anchors
 	{
 		std::vector<RE::TESForm*> out(a_names.size(), nullptr);
 		auto* data = RE::TESDataHandler::GetSingleton();
-		if (!data || a_names.empty()) {
+		const auto* file = data ? data->LookupModByName(a_plugin) : nullptr;
+		if (!file || file->compileIndex == 0xFF || a_names.empty()) {
 			return out;
 		}
-		const auto plugin = Lower(a_plugin);
-		std::unordered_map<std::string, RE::TESForm*> byName;
-		for (auto* form : data->formArrays[std::to_underlying(RE::ENUM_FORM_ID::kIDLE)]) {
-			const auto* file = form ? form->GetFile(0) : nullptr;
-			const char* name = form ? form->GetFormEditorID() : nullptr;
-			if ((!name || !*name) && form) {
-				// The idle keeps its EditorID in its own member (TESIdleForm +0x60) whatever the virtual answers.
-				name = static_cast<RE::TESIdleForm*>(form)->formEditorID.c_str();
-			}
-			if (file && name && *name && Lower(file->GetFilename()) == plugin) {
-				byName.emplace(Lower(name), form);
-			}
+		// Data\<plugin>: two up from Data\F4SE\Plugins, else from the game's folder.
+		auto path = PluginFolder().parent_path().parent_path() / std::filesystem::path(std::string(a_plugin));
+		std::error_code ec;
+		if (!std::filesystem::exists(path, ec)) {
+			path = std::filesystem::current_path(ec) / "Data" / std::filesystem::path(std::string(a_plugin));
 		}
+		const auto ids = IdleIdsInFile(path);
 		std::size_t found = 0;
 		std::string missing;
 		for (std::size_t i = 0; i < a_names.size(); ++i) {
-			if (const auto it = byName.find(Lower(a_names[i])); it != byName.end()) {
-				out[i] = it->second;
+			RE::TESForm* form = nullptr;
+			if (const auto it = ids.find(Lower(a_names[i])); it != ids.end()) {
+				const auto local = file->IsLight() ? (it->second & 0xFFF) : it->second;
+				form = data->LookupForm(local, a_plugin);
+				if (form && form->GetFormType() != RE::ENUM_FORM_ID::kIDLE) {
+					form = nullptr;   // never anything but an idle
+				}
+			}
+			if (form) {
+				out[i] = form;
 				++found;
 			} else if (missing.size() < 200) {
 				missing += std::format("{}{}", missing.empty() ? "" : ", ", a_names[i]);
 			}
 		}
-		logger::info("idles: {} of {} found in {} ({} idles there){}{}", found, a_names.size(), a_plugin, byName.size(),
-			missing.empty() ? "" : "; missing: ", missing);
+		logger::info("idles: {} of {} found in {} ({} named idles in {}){}{}", found, a_names.size(), a_plugin, ids.size(),
+			path.string(), missing.empty() ? "" : "; missing: ", missing);
 		return out;
 	}
 }
