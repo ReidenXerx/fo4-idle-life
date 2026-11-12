@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.4.0 (2026-11-12)
+
+- With Funtime For Settlers 2 installed, someone standing about now and then does one of its animations: a workout, dancing by a radio, a sway after dark, boxing and taunts among raiders. Companions too.
+- Chats use Funtime's talking gestures as well.
+
 ## 1.3.0 (2026-11-11)
 
 - Other mods' objects are used too: a fire barrel, counter, bench or workbench that uses a vanilla model is found by itself.

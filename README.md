@@ -24,6 +24,12 @@ campfire, a Mr Handy tending the crops. Placed at run time around you, gone when
 - **No overspam, something even in quiet places.** The number of spots follows the people near you (1.5 each, at
   least 3, at most 40), drawn from one pool across every kind with weights for the hour and the place, so a crowded
   market gets a mix and a lone settler still gets a smoke and a sit. Recounted every 30 s.
+- **Funtime moments** (1.4.0, optional): with Funtime For Settlers 2 (Nexus 107658) installed, one person standing
+  about now and then plays one of its own (Mixamo) animations for half a minute or so, held where they stand: a
+  workout on a settlement morning, dancing by a playing radio, a sway after dark, boxing and taunts among raiders, a
+  prayer, or just looking around. Companions too, while you stand still. Chats use its talking gestures. Its
+  furniture is not used: a placed copy seats nobody (FurnitureSpecial). Its idles are found by name through the
+  plugin, so an update of Funtime that renumbers them can never play another animation.
 - **Clean.** Spots exist only around you and are deleted as you leave; the same place keeps its spots for the day.
 - **MCM:** spots per person, the most at once, a daily reshuffle, a switch for every kind; a Testing page that
   spawns a few settlers to watch it work.
