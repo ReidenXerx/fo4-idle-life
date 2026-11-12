@@ -55,7 +55,7 @@ FEATURES = [
      'Every vanilla pose that fits a place: hands on a rail looking out, bent over a map, rummaging a crate, '
      'welding, painting a wall, sweeping, hoeing and weeding, a guard post, push-ups, a prayer, a lookout; '
      'children sit on the ground.'),
-    ('Funtime moments', None,
+    ('Funtime moments', 'funtime.png',
      'Optional, with Funtime For Settlers 2 (Nexus 107658) installed: now and then one person standing about does one '
      'of its animations for half a minute or so, picked for the place and the hour: a workout on a settlement morning, '
      'dancing by a playing radio, a sway after dark, boxing and taunts among raiders, a prayer, or just looking around. '
