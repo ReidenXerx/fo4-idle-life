@@ -114,6 +114,9 @@ RefCollectionAlias Property Chatters Auto Const Mandatory
 {The two in a chat: its package is HoldPosition, so their sandbox package does not walk them off mid-gesture.}
 RefCollectionAlias Property Walkers Auto Const Mandatory
 {The one walking over: its package is vanilla AO_TravelToAO_LinkedRefRealClose, to the linked ref keyed AO_LinkedRef.}
+Quest Property MomentQuest Auto Const Mandatory
+RefCollectionAlias Property Performers Auto Const Mandatory
+{1.4.0: the one in a Funtime moment, held where they stand (HoldPosition) while the loop plays.}
 Int Property TesterCount = 4 Auto Const
 GlobalVariable Property Enabled Auto Const Mandatory
 {IL_On: 0 takes every spot away again.}
@@ -290,6 +293,7 @@ Function Begin()
 	_dwSince = new Float[0]
 	_drawCell = None   ; draw again on the first scan after a load
 	ResetChats()
+	ResetMoments()
 	AddAnchor(FireAnchors, DLC01_BRAZIER01, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER02, "DLCRobot.esm")
 	AddAnchor(FireAnchors, DLC01_BRAZIER03, "DLCRobot.esm")
@@ -348,6 +352,9 @@ Event OnTimer(Int aiTimerID)
 	ElseIf aiTimerID == CHAT_TIMER
 		ChatStep()
 		Return
+	ElseIf aiTimerID == MOMENT_TIMER
+		MomentStep()
+		Return
 	ElseIf aiTimerID != SCAN_TIMER
 		Return
 	EndIf
@@ -360,6 +367,9 @@ Event OnTimer(Int aiTimerID)
 		If _chA
 			Debug.Trace("Idle Life: the player is in a conversation - the chat ends", 0)
 			EndChat()
+		EndIf
+		If _moWho
+			EndMoment()
 		EndIf
 		StartTimer(ScanSeconds, SCAN_TIMER)
 		Return
@@ -397,6 +407,12 @@ Event OnTimer(Int aiTimerID)
 	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_CHAT) && !_chA
 		StartChat(player, False)
+	EndIf
+	If !_moWho && Performers.GetCount() > 0
+		EndMoment()   ; a save made mid-moment: nobody stays held
+	EndIf
+	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_FUN) && !_moWho
+		StartMoment(player, False)
 	EndIf
 	_scans += 1
 	If _scans % REPORT_EVERY == 0 && _spots.Length > 0
@@ -1623,7 +1639,7 @@ Bool Function Busy(Actor akWho)
 	If !akWho || !akWho.Is3DLoaded()
 		Return True
 	EndIf
-	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho) || Following(akWho)
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsPlayerTeammate() || InAAF(akWho) || Following(akWho) || (_moWho && akWho == _moWho)
 EndFunction
 
 ; Following the player for Overture (Ivy Rev 28: settlers asked to follow kept chatting). InAAF looks the form up.
@@ -1940,8 +1956,14 @@ Function ChatStep()
 		dogTurn = _chDog
 	EndIf
 	Idle gesture = None
+	Idle fun = None
+	If !dogTurn
+		fun = FuntimeGesture()   ; 1.4.0: Funtime's talking gestures, a third of the time when it is there
+	EndIf
 	Int r = Utility.RandomInt(0, 9)
-	If dogTurn
+	If fun
+		gesture = fun
+	ElseIf dogTurn
 		If r < 4
 			gesture = Game.GetFormFromFile(IDLE_DOG_YES, "Fallout4.esm") as Idle
 		ElseIf r < 7
@@ -2026,6 +2048,441 @@ Function ResetChats()
 	_stillWho = None
 	_stillX = None
 	_stillY = None
+EndFunction
+
+; ---- Funtime moments (1.4.0) --------------------------------------------------------------------------------
+;
+; Funtime For Settlers 2 (Nexus 107658; coolness11 asked, the owner: "for all NPCs, even companions") ships Mixamo
+; animations as plain IDLE records. Its furniture only triggers them (FunIdleLoopScript: on sit, move onto the marker,
+; PlayIdle, a timer), and a placed copy of it seats nobody: FurnitureSpecial, sandboxing skips it, a Sit package
+; re-seats them every 0.1 s (Fo4-mcp, 11-12, four rounds). Its looping idles DO play on anyone standing (player,
+; settlers, Ivy; round 6). So a moment: one person standing about is held where they stand (HoldPosition, as a chat
+; holds) and plays one loop that fits the place and the hour, for half a minute or so; one at a time. Its 72 radbeetle
+; dances need animations Funtime does not ship, so they are not used. Owner 11-12: moments + chats; leave out what
+; fits no vibe (backflips, magic, referee calls), keep the rude gestures. Idles are found by EditorID (the plugin), so
+; a Funtime update that renumbers them can never play another animation.
+Int Property MOMENT_TIMER = 13 AutoReadOnly
+Int Property K_FUN = 19 AutoReadOnly          ; the Funtime switch (KindOn[19]); not a spot kind (KIND_COUNT stays 19)
+Float Property MomentMin = 20.0 Auto Const
+Float Property MomentMax = 45.0 Auto Const
+{Seconds a moment lasts (a companion's: half that).}
+Float Property MomentCooldown = 40.0 Auto Const
+{Seconds between the end of one moment and the next.}
+Float Property MomentBeat = 2.0 Auto Const
+
+Bool _funLooked              ; looked Funtime up this session (ResetMoments clears it on every load)
+Bool _funOk                  ; ... and found its idles
+Form[] _fnWorkout
+Form[] _fnDance
+Form[] _fnDanceW              ; women's dances
+Form[] _fnMood
+Form[] _fnPray
+Form[] _fnDrunk
+Form[] _fnRough               ; boxing, taunts, anger: raiders
+Form[] _fnTalk                ; one-shot gestures for chats
+Actor _moWho                  ; the one in a moment now (None: no moment)
+Idle _moIdle
+Bool _moPlayed
+Bool _moMate                  ; a companion: the moment ends as soon as the player moves on
+Float _moX
+Float _moY
+Float _moPX
+Float _moPY
+Float _moEnd
+Float _moNext
+Int _moId
+Actor[] _moStillWho
+Float[] _moStillX
+Float[] _moStillY
+Float _moLastPX
+Float _moLastPY
+
+; Funtime is there and its idles were found (the plugin finds them by name). Logged once per session.
+Bool Function FuntimeReady()
+	If !_funLooked
+		_funLooked = True
+		_funOk = False
+		If !Game.IsPluginInstalled("Funtime2.esm")
+			Return False
+		EndIf
+		If F4SE.GetPluginVersion("IdleLife") <= 0 || IdleLife:Navmesh.Version() < 500
+			Debug.Trace("Idle Life: Funtime For Settlers 2 is installed, but its moments need the Idle Life plugin 0.5.0 (F4SE)", 0)
+			Return False
+		EndIf
+		String[] w = new String[0]
+		w.Add("MX_air_squat_workout")
+		w.Add("MX_air_squat_workout_1")
+		w.Add("MX_burpee_workout")
+		w.Add("MX_crunch_position_with_cycling_legs")
+		w.Add("MX_jump_push_up")
+		w.Add("MX_standard_jumping_jacks")
+		w.Add("MX_boxing_warm_up_exercise")
+		w.Add("MX_flexing_muscles")
+		w.Add("MX_jog_in_a_circle")
+		_fnWorkout = Found(w)
+		String[] d = new String[0]
+		d.Add("MX_dancing_the_maraschino_step")
+		d.Add("MX_doing_the_shuffling_dance")
+		d.Add("MX_male_cheering_head_banging")
+		_fnDance = Found(d)
+		String[] dw = new String[0]
+		dw.Add("MX_female_hip_hop_kick_step_dancing")
+		dw.Add("MX_female_hip_hop_raise_the_roof_dancing")
+		dw.Add("MX_female_hip_hop_running_man_dancing")
+		dw.Add("MX_female_rumba_dancing_loop")
+		_fnDanceW = Found(dw)
+		String[] m = new String[0]
+		m.Add("MX_idle_stand_looking_around")
+		m.Add("MX_standing_around_bored_idle")
+		m.Add("MX_thinking_while_standing")
+		m.Add("MX_old_man_standing_idle")
+		m.Add("MX_happy_idle_variation_1")
+		m.Add("MX_happy_idle_variation_2")
+		m.Add("MX_standing_happily")
+		m.Add("MX_nervously_looking_around_left_to_right_loop")
+		m.Add("MX_being_bashful_while_standing")
+		m.Add("MX_sad_idle_variation_1")
+		m.Add("MX_sad_idle_variation_2")
+		m.Add("MX_standing_in_a_sad_disposition")
+		m.Add("MX_standing_pout_gesture")
+		m.Add("MX_shoulder_shrug")
+		m.Add("MX_male_with_headphones_listening_to_music")
+		_fnMood = Found(m)
+		String[] p = new String[0]
+		p.Add("MX_kneeling_in_prayer")
+		p.Add("MX_standing_praying_while_swaying")
+		p.Add("MX_buckled_stand_and_praying")
+		_fnPray = Found(p)
+		String[] k = new String[0]
+		k.Add("MX_drunk_idle_variation_hiccup")
+		k.Add("MX_drunk_idle_variation_stumble")
+		k.Add("MX_rocking_back_and_forth_as_if_dizzy")
+		_fnDrunk = Found(k)
+		String[] r = new String[0]
+		r.Add("MX_standing_angrily")
+		r.Add("MX_bouncing_boxing_idle")
+		r.Add("MX_bouncing_fight_idle_with_guard_up")
+		r.Add("MX_boxing_idle")
+		r.Add("MX_boxing_taunt")
+		r.Add("MX_angrily_pumping_fists_forward")
+		r.Add("MX_taunting_pointing_at_wrist")
+		r.Add("MX_taunting_throwing_arms_back")
+		r.Add("MX_male_cheering_with_two_fists_pump")
+		_fnRough = Found(r)
+		String[] t = new String[0]
+		t.Add("MX_asking_a_question_with_one_hand")
+		t.Add("MX_asking_a_question_with_two_hands")
+		t.Add("MX_aj_pointing_gesture")
+		t.Add("MX_counting_to_five_on_one_hand")
+		t.Add("MX_dismissing_with_back_hand")
+		t.Add("MX_dismissing_with_hand_forward")
+		t.Add("MX_pointing_behind_with_thumb")
+		t.Add("MX_pointing_with_arm_bent")
+		t.Add("MX_raising_a_hand")
+		t.Add("MX_telling_a_secret")
+		t.Add("MX_disappointed_aweshucks")
+		t.Add("MX_vexed_shaking_of_the_fist")
+		t.Add("MX_insulting_with_rude_gesture")
+		t.Add("MX_crazy_hand_gesture")
+		t.Add("MX_big_yawn_while_standing")
+		t.Add("MX_pumping_a_fist")
+		_fnTalk = Found(t)
+		_funOk = _fnMood.Length + _fnWorkout.Length + _fnDance.Length + _fnDanceW.Length > 0
+		Debug.Trace("Idle Life: Funtime For Settlers 2 - " + _fnWorkout.Length + " workouts, " + (_fnDance.Length + _fnDanceW.Length) + " dances, " + _fnMood.Length + " moods, " + _fnPray.Length + " prayers, " + _fnDrunk.Length + " sways, " + _fnRough.Length + " rough, " + _fnTalk.Length + " chat gestures", 0)
+	EndIf
+	Return _funOk
+EndFunction
+
+Form[] Function Found(String[] asNames)
+	Form[] all = IdleLife:Navmesh.IdlesNamed("Funtime2.esm", asNames)
+	Form[] out = new Form[0]
+	Int i = 0
+	While i < all.Length
+		If all[i]
+			out.Add(all[i])
+		EndIf
+		i += 1
+	EndWhile
+	Return out
+EndFunction
+
+Idle Function AnyOf(Form[] akList)
+	If !akList || akList.Length == 0
+		Return None
+	EndIf
+	Return akList[Utility.RandomInt(0, akList.Length - 1)] as Idle
+EndFunction
+
+; Not free for a moment. Busy without "a companion" or "following": companions are welcome while the player stands still
+; (the owner: "even companions"); the rest as for a chat.
+Bool Function MomentBusy(Actor akWho)
+	If !akWho || !akWho.Is3DLoaded()
+		Return True
+	EndIf
+	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsDoingFavor() || InAAF(akWho) || akWho == _chA || akWho == _chB
+EndFunction
+
+Bool Function MomentOff()
+	Return Enabled.GetValueInt() == 0 || !KindIsOn(K_FUN) || Game.GetPlayer().IsInCombat()
+EndFunction
+
+; A radio playing near: a dance fits.
+Bool Function NearPlayingRadio(ObjectReference akWho)
+	Int i = 0
+	While i < _anchors.Length
+		If _anchorKind[i] == K_RADIO && _anchors[i] && _anchors[i].IsRadioOn() && akWho.GetDistance(_anchors[i]) < 900.0
+			Return True
+		EndIf
+		i += 1
+	EndWhile
+	Return False
+EndFunction
+
+; The loop for this person here and now: weights by the place and the hour, then any of that set.
+Idle Function MomentIdle(Actor akWho)
+	Float hour = (Game.GetFormFromFile(GAME_HOUR, "Fallout4.esm") as GlobalVariable).GetValue()
+	Bool night = hour >= 20.0 || hour < 3.0
+	Bool morning = hour >= 6.0 && hour < 11.0
+	Bool woman = akWho.GetLeveledActorBase().GetSex() == 1
+	Form[] dances = _fnDance
+	If woman && _fnDanceW.Length > 0 && (_fnDance.Length == 0 || Utility.RandomInt(0, 2) > 0)
+		dances = _fnDanceW
+	EndIf
+	Int r = Utility.RandomInt(0, 99)
+	If NearPlayingRadio(akWho)
+		If r < 75
+			Return AnyOf(dances)
+		EndIf
+		Return AnyOf(_fnMood)
+	ElseIf Raiders()
+		If r < 45
+			Return AnyOf(_fnRough)
+		ElseIf r < 60
+			Return AnyOf(_fnDrunk)
+		ElseIf r < 70
+			Return AnyOf(_fnWorkout)
+		EndIf
+		Return AnyOf(_fnMood)
+	ElseIf night
+		If r < 25
+			Return AnyOf(_fnDrunk)
+		ElseIf r < 45
+			Return AnyOf(dances)
+		ElseIf r < 50
+			Return AnyOf(_fnPray)
+		EndIf
+		Return AnyOf(_fnMood)
+	ElseIf Settlement() && morning
+		If r < 45
+			Return AnyOf(_fnWorkout)
+		ElseIf r < 55
+			Return AnyOf(_fnPray)
+		ElseIf r < 60
+			Return AnyOf(dances)
+		EndIf
+		Return AnyOf(_fnMood)
+	EndIf
+	If r < 15 && Settlement()
+		Return AnyOf(_fnWorkout)
+	ElseIf r < 22
+		Return AnyOf(dances)
+	ElseIf r < 26
+		Return AnyOf(_fnPray)
+	ElseIf r < 30
+		Return AnyOf(_fnRough)
+	EndIf
+	Return AnyOf(_fnMood)
+EndFunction
+
+; Every scan with no moment running: who stood still since the last look (and, for a companion, the player too) may get
+; one, once the cooldown is over.
+Function StartMoment(Actor akPlayer, Bool abNow)
+	If !FuntimeReady()
+		Return   ; no Funtime: not even the look round
+	EndIf
+	Actor[] w0 = _moStillWho
+	Float[] x0 = _moStillX
+	Float[] y0 = _moStillY
+	Float px = akPlayer.GetPositionX()
+	Float py = akPlayer.GetPositionY()
+	Bool playerStill = (px - _moLastPX) * (px - _moLastPX) + (py - _moLastPY) * (py - _moLastPY) < 40.0 * 40.0
+	_moLastPX = px
+	_moLastPY = py
+	Actor[] people = People(akPlayer)
+	Actor[] w = new Actor[0]
+	Float[] x = new Float[0]
+	Float[] y = new Float[0]
+	Int i = 0
+	While i < people.Length
+		w.Add(people[i])
+		x.Add(people[i].GetPositionX())
+		y.Add(people[i].GetPositionY())
+		i += 1
+	EndWhile
+	_moStillWho = w
+	_moStillX = x
+	_moStillY = y
+	If _moWho || (!abNow && Utility.GetCurrentRealTime() < _moNext)
+		Return
+	EndIf
+	If abNow && !w0
+		w0 = w
+		x0 = x
+		y0 = y
+		playerStill = True
+	EndIf
+	If !w0
+		Return
+	EndIf
+	Keyword child = Game.GetFormFromFile(KW_CHILD, "Fallout4.esm") as Keyword
+	Actor[] free = new Actor[0]
+	i = 0
+	While i < w.Length
+		Actor a = w[i]
+		Int at = w0.Find(a)
+		If at >= 0
+			Float dx = x[i] - x0[at]
+			Float dy = y[i] - y0[at]
+			Bool mate = a.IsPlayerTeammate() || Following(a)
+			If dx * dx + dy * dy < 30.0 * 30.0 && (!mate || playerStill) && !a.HasKeyword(child) && !MomentBusy(a)
+				free.Add(a)
+			EndIf
+		EndIf
+		i += 1
+	EndWhile
+	If free.Length == 0
+		If abNow
+			Debug.Notification("Idle Life: nobody standing about near you right now.")
+		EndIf
+		Return
+	EndIf
+	Actor who = free[Utility.RandomInt(0, free.Length - 1)]
+	Idle loop = MomentIdle(who)
+	If !loop
+		Return
+	EndIf
+	_moId += 1
+	_moWho = who
+	_moIdle = loop
+	_moPlayed = False
+	_moMate = who.IsPlayerTeammate() || Following(who)
+	_moX = who.GetPositionX()
+	_moY = who.GetPositionY()
+	_moPX = px
+	_moPY = py
+	Float last = Utility.RandomFloat(MomentMin, MomentMax)
+	If _moMate
+		last = last / 2.0
+	EndIf
+	_moEnd = Utility.GetCurrentRealTime() + last
+	If !MomentQuest.IsRunning()
+		MomentQuest.Start()
+	EndIf
+	Performers.AddRef(who)
+	who.EvaluatePackage()
+	Debug.Trace("Idle Life: a Funtime moment - " + who + " (" + who.GetBaseObject() + ") " + loop + " for " + (last as Int) + " s", 0)
+	StartTimer(0.5, MOMENT_TIMER)    ; the hold first, then the loop
+EndFunction
+
+; Twice a beat: the first step plays the loop; every later one checks the moment still fits.
+Function MomentStep()
+	Int id = _moId
+	Actor a = _moWho
+	If !a
+		Return
+	EndIf
+	Bool over = MomentBusy(a) || MomentOff() || Utility.GetCurrentRealTime() > _moEnd
+	If !over
+		Float dx = a.GetPositionX() - _moX
+		Float dy = a.GetPositionY() - _moY
+		over = dx * dx + dy * dy > 80.0 * 80.0
+	EndIf
+	If !over && _moMate
+		Actor player = Game.GetPlayer()
+		Float qx = player.GetPositionX() - _moPX
+		Float qy = player.GetPositionY() - _moPY
+		over = qx * qx + qy * qy > 150.0 * 150.0    ; the player walks on: the companion follows, not dances
+	EndIf
+	If id != _moId
+		Return
+	EndIf
+	If over
+		EndMoment()
+		Return
+	EndIf
+	If !_moPlayed
+		_moPlayed = True
+		Bool played = a.PlayIdle(_moIdle)
+		If id != _moId
+			Return
+		EndIf
+		If !played
+			Debug.Trace("Idle Life: the Funtime moment did not play - " + a + " " + _moIdle, 0)
+			EndMoment()
+			_moNext = Utility.GetCurrentRealTime() + 10.0
+			Return
+		EndIf
+	EndIf
+	StartTimer(MomentBeat, MOMENT_TIMER)
+EndFunction
+
+Function EndMoment()
+	CancelTimer(MOMENT_TIMER)
+	_moId += 1
+	Actor a = _moWho
+	_moWho = None
+	_moIdle = None
+	If a && a.Is3DLoaded() && !InAAF(a) && !a.IsInDialogueWithPlayer()
+		a.PlayIdle(Game.GetFormFromFile(IDLE_STOP, "Fallout4.esm") as Idle)
+	EndIf
+	Int i = Performers.GetCount() - 1
+	While i >= 0
+		ObjectReference r = Performers.GetAt(i)
+		Performers.RemoveRef(r)
+		Actor ra = r as Actor
+		If ra && ra.Is3DLoaded() && !HandsOff(ra)
+			ra.EvaluatePackage()
+		EndIf
+		i -= 1
+	EndWhile
+	If a
+		Debug.Trace("Idle Life: the Funtime moment ends - " + a, 0)
+	EndIf
+	_moNext = Utility.GetCurrentRealTime() + MomentCooldown
+EndFunction
+
+; A game loaded: real time starts over, a moment saved mid-way is ended, Funtime is looked up again.
+Function ResetMoments()
+	CancelTimer(MOMENT_TIMER)
+	_funLooked = False
+	If _moWho || Performers.GetCount() > 0
+		EndMoment()
+	EndIf
+	_moNext = 0.0
+	_moStillWho = None
+	_moStillX = None
+	_moStillY = None
+EndFunction
+
+; Testing page: someone standing about near the player gets a moment right away.
+Function DebugMoment()
+	If _moWho
+		EndMoment()
+	EndIf
+	_moNext = 0.0
+	If !FuntimeReady()
+		Debug.Notification("Idle Life: Funtime moments need Funtime For Settlers 2 and the Idle Life plugin.")
+		Return
+	EndIf
+	StartMoment(Game.GetPlayer(), True)
+EndFunction
+
+; A chat gesture from Funtime: its one-shots, a third of the time when it is there.
+Idle Function FuntimeGesture()
+	If !KindIsOn(K_FUN) || !FuntimeReady() || _fnTalk.Length == 0 || Utility.RandomInt(0, 2) > 0
+		Return None
+	EndIf
+	Return AnyOf(_fnTalk)
 EndFunction
 
 ; ---- wave 2 ----------------------------------------------------------------------------------------------

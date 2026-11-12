@@ -6,7 +6,7 @@ set(VCPKG_TARGET_TRIPLET "x64-windows-static-md" CACHE STRING "")
 
 project(
 	IdleLife
-	VERSION 0.4.0
+	VERSION 0.5.0
 	LANGUAGES CXX
 )
 

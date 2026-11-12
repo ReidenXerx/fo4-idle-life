@@ -271,4 +271,35 @@ namespace IL::Anchors
 		return { static_cast<float>(b.boundMin.x), static_cast<float>(b.boundMin.y), static_cast<float>(b.boundMax.x),
 			static_cast<float>(b.boundMax.y) };
 	}
+
+	std::vector<RE::TESForm*> IdlesNamed(std::string_view a_plugin, const std::vector<std::string>& a_names)
+	{
+		std::vector<RE::TESForm*> out(a_names.size(), nullptr);
+		auto* data = RE::TESDataHandler::GetSingleton();
+		if (!data || a_names.empty()) {
+			return out;
+		}
+		const auto plugin = Lower(a_plugin);
+		std::unordered_map<std::string, RE::TESForm*> byName;
+		for (auto* form : data->formArrays[std::to_underlying(RE::ENUM_FORM_ID::kIDLE)]) {
+			const auto* file = form ? form->GetFile(0) : nullptr;
+			const char* name = form ? form->GetFormEditorID() : nullptr;
+			if (file && name && *name && Lower(file->GetFilename()) == plugin) {
+				byName.emplace(Lower(name), form);
+			}
+		}
+		std::size_t found = 0;
+		std::string missing;
+		for (std::size_t i = 0; i < a_names.size(); ++i) {
+			if (const auto it = byName.find(Lower(a_names[i])); it != byName.end()) {
+				out[i] = it->second;
+				++found;
+			} else if (missing.size() < 200) {
+				missing += std::format("{}{}", missing.empty() ? "" : ", ", a_names[i]);
+			}
+		}
+		logger::info("idles: {} of {} found in {} ({} idles there){}{}", found, a_names.size(), a_plugin, byName.size(),
+			missing.empty() ? "" : "; missing: ", missing);
+		return out;
+	}
 }

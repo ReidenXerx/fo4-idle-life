@@ -57,7 +57,8 @@ SETTINGS = [('On', 1.0), ('SpotsPerPerson', 1.5), ('MaxBudget', 40.0), ('DailyRe
 # One switch per kind (MCM). Script kind order: fire, counter, rail, work, bench, radio, people, table,
 # campfire, crop, hedge, pool, TV, gate, dog -- crops+hedges share "Robots", pool tables+TVs share one.
 KIND_SWITCHES = ['Fire', 'Counter', 'Rail', 'Work', 'Bench', 'Radio', 'People', 'Table', 'Camp',
-                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs', 'Wall', 'Open', 'Crate', 'Chat']
+                 'Robots', 'Robots', 'PoolTv', 'PoolTv', 'Gate', 'Dogs', 'Wall', 'Open', 'Crate', 'Chat',
+                 'Funtime']
 for _k in dict.fromkeys(KIND_SWITCHES):
     SETTINGS.append(('Kind' + _k, 1.0))
 
@@ -118,7 +119,6 @@ CHAT_IDLES = [0x038C7B, 0x038C7C, 0x1793E3, 0x038C7A, 0x118013, 0x1793E4, 0x038C
 CHAT_DOG_IDLES = [0x02B99E, 0x02B9A0, 0x02B9A1, 0x02B99F, 0x02B9A2]   # Dogmeat_Neutral_TalkYes1/No1, Playful Yes1, Neutral Yes2, Playful No1
 CHAT_HANDY_IDLES = [0x1428E3, 0x1428E2, 0x18A2FD]                     # HandyScanHigh, HandyScanLow, HandyMaintenanceIdle1
 TRAVEL_PACKAGE = 0x0849AF   # PACK AO_TravelToAO_LinkedRefRealClose: to the AO_LinkedRef-keyed linked ref, within 50
-FUN_SIT_PACKAGE = 0x1C4E73   # PACK DefaultSitLinkCustom01NoEating: Sit template, target = linked ref LinkCustom01, no conditions
 HOLD_PACKAGE = 0x01D415   # Fallout4.esm PACK HoldPosition, no conditions (AN76 Toilets: reached 14 of 14)
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
@@ -277,6 +277,7 @@ def build():
 
     test_quest_id = new_id('TestQuest')
     chat_quest_id = new_id('ChatQuest')
+    moment_quest_id = new_id('FunQuest')   # 1.4.0 Funtime moments (the key is the test build's)
 
     kind_lists = {}
     for kind, rows in KINDS.items():
@@ -368,6 +369,8 @@ def build():
         ('ChatQuest', 1, obj(chat_quest_id)),
         ('Chatters', 1, struct.pack('<HhI', 0, 0, chat_quest_id)),
         ('Walkers', 1, struct.pack('<HhI', 0, 1, chat_quest_id)),
+        ('MomentQuest', 1, obj(moment_quest_id)),
+        ('Performers', 1, struct.pack('<HhI', 0, 0, moment_quest_id)),
         ('TestNpc', 1, obj(TEST_NPC)),
         ('CounterAnchors', 1, obj(kind_lists['Counter'])),
         ('RailAnchors', 1, obj(kind_lists['Rail'])),
@@ -442,24 +445,23 @@ def build():
     c += field('ALED', b'')
     quest += record('QUST', chat_quest_id, c)
 
-    # Funtime dancers (FFS2 test, 11-12): FFS2's furniture is only a trigger (FunIdleLoopScript: on sit, move the
-    # actor onto it, PlayIdle, a timer), and a Sit package re-seats them every 0.1 s, killing the idle (round 3).
-    # So FFS2's IDLE forms are played directly on someone held by HoldPosition, as Idle Life's chats do. Its own quest: a new start-game quest
+    # Funtime moments (1.4.0): Funtime For Settlers 2's furniture is only a trigger (FunIdleLoopScript: on sit, move
+    # the actor onto it, PlayIdle, a timer); a Sit package re-seated people every 0.1 s and killed the idle (11-12
+    # tests). So its IDLE forms are played directly on someone held by HoldPosition, as Idle Life's chats are. Its own quest: a new start-game quest
     # starts on an old save, a new alias in a running one would not.
-    fun_quest_id = new_id('FunQuest')
-    f = field('EDID', zstring('IL_FunSitters'))
+    f = field('EDID', zstring('IL_Moments'))
     f += field('DNAM', bytes.fromhex('110064670000000000000000'))
     f += field('NEXT', b'')
     f += field('ANAM', struct.pack('<I', 1))
     f += field('ALCS', struct.pack('<I', 0))
     f += field('ALMI', b'\x00')
     f += field('ALST', struct.pack('<I', 0))
-    f += field('ALID', zstring('FunSitters'))
+    f += field('ALID', zstring('Performers'))
     f += field('FNAM', struct.pack('<I', 0x202))
-    f += field('ALPC', struct.pack('<I', HOLD_PACKAGE))   # round 4: held in place, the idle played by script
+    f += field('ALPC', struct.pack('<I', HOLD_PACKAGE))
     f += field('VTCK', struct.pack('<I', 0))
     f += field('ALED', b'')
-    quest += record('QUST', fun_quest_id, f)
+    quest += record('QUST', moment_quest_id, f)
 
     for fid in ids.values():
         if not 0x800 <= (fid & 0xFFFFFF) <= 0xFFF:

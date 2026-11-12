@@ -75,6 +75,10 @@ def build():
         ('Dogs', 'Dogs', 'Dogs sniffing and scratching about.'),
         ('Chat', 'Chatting', 'Two people standing about turn to each other and talk with their hands: nods, shrugs, '
                  'pointing, a laugh, no words. Now and then a person and a dog.'),
+        ('Funtime', 'Funtime moments', 'With Funtime For Settlers 2 installed: now and then someone standing about '
+                    'does one of its animations for a while: a workout on a settlement morning, dancing by a playing '
+                    'radio, a sway after dark, boxing and taunts among raiders, a prayer, or just looking around. '
+                    'Companions too, while you stand still. Chats get its talking gestures. Needs the Idle Life plugin.'),
         ('Wall', 'Along walls', 'Leaning back on walls, reading a paper; in settlements painting or welding '
                  'them. Needs the Idle Life plugin (F4SE) that reads the navmesh.'),
         ('Open', 'In the open', 'A sitting circle on flat open ground; someone sweeping, doing push-ups, '
@@ -93,6 +97,9 @@ def build():
         button('Start a chat here', 'DebugPlaceChat',
                'Two people standing about near each other (or a person and a dog) turn face to face and talk with '
                'their hands for half a minute, no words. Nobody near standing still: nothing happens.'),
+        button('Start a Funtime moment here', 'DebugMoment',
+               'Someone standing about near you does a Funtime For Settlers 2 animation right away. Needs Funtime '
+               'For Settlers 2 and the Idle Life plugin.'),
         button('Draw spots again', 'DebugRedraw', 'Takes away every spot near you and draws them all again, e.g. after changing the settings.'),
         {'text': 'Log', 'type': 'section'},
         switcher('Detailed log', 'Setting_DetailedLog',

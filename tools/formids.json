@@ -45,5 +45,6 @@
  "ChatHandyMarker": "82B",
  "Setting_KindChat": "82C",
  "ChatQuest": "82D",
- "FunQuest": "82E"
+ "FunQuest": "82E",
+ "Setting_KindFuntime": "82F"
 }

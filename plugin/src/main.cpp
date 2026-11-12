@@ -72,6 +72,21 @@ namespace
 		return IL::Anchors::Bounds(a_base);
 	}
 
+	std::vector<RE::TESForm*> Papyrus_IdlesNamed(std::monostate, RE::BSFixedString a_plugin, std::vector<RE::BSFixedString> a_names)
+	{
+		std::vector<std::string> names;
+		names.reserve(a_names.size());
+		for (const auto& name : a_names) {
+			names.emplace_back(name.c_str());
+		}
+		try {
+			return IL::Anchors::IdlesNamed(a_plugin.c_str(), names);
+		} catch (...) {
+			logger::critical("IdlesNamed threw");
+		}
+		return std::vector<RE::TESForm*>(names.size(), nullptr);
+	}
+
 	bool Papyrus_Ready(std::monostate)
 	{
 		return IL::Spots::Ready();
@@ -95,6 +110,7 @@ namespace
 		a_vm->BindNativeMethod(kScript, "AdoptLookalikes"sv, Papyrus_AdoptLookalikes, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "AdoptListed"sv, Papyrus_AdoptListed, std::nullopt, false);
 		a_vm->BindNativeMethod(kScript, "Bounds"sv, Papyrus_Bounds, std::nullopt, false);
+		a_vm->BindNativeMethod(kScript, "IdlesNamed"sv, Papyrus_IdlesNamed, std::nullopt, false);
 		logger::info("papyrus functions registered on {}", kScript);
 		return true;
 	}

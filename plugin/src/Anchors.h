@@ -17,4 +17,9 @@ namespace IL::Anchors
 
 	// The object's size box from its record (OBND): x1, y1, x2, y2; empty when it has none.
 	std::vector<float> Bounds(RE::TESForm* a_base);
+
+	// Idles of one plugin by EditorID (1.4.0, Funtime For Settlers 2): one answer per name, in order, nullptr where
+	// that plugin has no idle of that name. By name, not form id: an update of the plugin that renumbers its records
+	// must never make a name play another animation.
+	std::vector<RE::TESForm*> IdlesNamed(std::string_view a_plugin, const std::vector<std::string>& a_names);
 }

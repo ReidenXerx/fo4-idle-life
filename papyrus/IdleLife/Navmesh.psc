@@ -30,3 +30,8 @@ Int Function AdoptListed(FormList akList, String asKind) Global Native
 
 ; An object's size box from its record: x1, y1, x2, y2 (empty when it has none).
 Float[] Function Bounds(Form akBase) Global Native
+
+; ---- Funtime For Settlers 2's animations, plugin 0.5.0 (Version() >= 500).
+
+; Idles of one plugin by EditorID: one per name, in order, None where that plugin has none of that name.
+Form[] Function IdlesNamed(String asPlugin, String[] asNames) Global Native
