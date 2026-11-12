@@ -44,5 +44,6 @@
  "ChatDogMarker": "82A",
  "ChatHandyMarker": "82B",
  "Setting_KindChat": "82C",
- "ChatQuest": "82D"
+ "ChatQuest": "82D",
+ "FunQuest": "82E"
 }

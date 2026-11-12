@@ -118,6 +118,7 @@ CHAT_IDLES = [0x038C7B, 0x038C7C, 0x1793E3, 0x038C7A, 0x118013, 0x1793E4, 0x038C
 CHAT_DOG_IDLES = [0x02B99E, 0x02B9A0, 0x02B9A1, 0x02B99F, 0x02B9A2]   # Dogmeat_Neutral_TalkYes1/No1, Playful Yes1, Neutral Yes2, Playful No1
 CHAT_HANDY_IDLES = [0x1428E3, 0x1428E2, 0x18A2FD]                     # HandyScanHigh, HandyScanLow, HandyMaintenanceIdle1
 TRAVEL_PACKAGE = 0x0849AF   # PACK AO_TravelToAO_LinkedRefRealClose: to the AO_LinkedRef-keyed linked ref, within 50
+FUN_SIT_PACKAGE = 0x1C4E73   # PACK DefaultSitLinkCustom01NoEating: Sit template, target = linked ref LinkCustom01, no conditions
 HOLD_PACKAGE = 0x01D415   # Fallout4.esm PACK HoldPosition, no conditions (AN76 Toilets: reached 14 of 14)
 KW_RELAXATION = 0x18F692   # FurnitureClassRelaxation (vanilla's smoke IDLM carries it)
 
@@ -440,6 +441,25 @@ def build():
     c += field('VTCK', struct.pack('<I', 0))
     c += field('ALED', b'')
     quest += record('QUST', chat_quest_id, c)
+
+    # Funtime sitters (FFS2 test, 11-12): FFS2's furniture is FurnitureSpecial -- sandboxing skips it, owned or not,
+    # and a snapped NPC gets up in 33 ms (Fo4-mcp). This collection's vanilla package sits each one on their
+    # LinkCustom01 linked ref; FFS2's own OnActivate then plays the idle. Its own quest: a new start-game quest
+    # starts on an old save, a new alias in a running one would not.
+    fun_quest_id = new_id('FunQuest')
+    f = field('EDID', zstring('IL_FunSitters'))
+    f += field('DNAM', bytes.fromhex('110064670000000000000000'))
+    f += field('NEXT', b'')
+    f += field('ANAM', struct.pack('<I', 1))
+    f += field('ALCS', struct.pack('<I', 0))
+    f += field('ALMI', b'\x00')
+    f += field('ALST', struct.pack('<I', 0))
+    f += field('ALID', zstring('FunSitters'))
+    f += field('FNAM', struct.pack('<I', 0x202))
+    f += field('ALPC', struct.pack('<I', FUN_SIT_PACKAGE))
+    f += field('VTCK', struct.pack('<I', 0))
+    f += field('ALED', b'')
+    quest += record('QUST', fun_quest_id, f)
 
     for fid in ids.values():
         if not 0x800 <= (fid & 0xFFFFFF) <= 0xFFF:
