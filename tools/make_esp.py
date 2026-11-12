@@ -442,9 +442,9 @@ def build():
     c += field('ALED', b'')
     quest += record('QUST', chat_quest_id, c)
 
-    # Funtime sitters (FFS2 test, 11-12): FFS2's furniture is FurnitureSpecial -- sandboxing skips it, owned or not,
-    # and a snapped NPC gets up in 33 ms (Fo4-mcp). This collection's vanilla package sits each one on their
-    # LinkCustom01 linked ref; FFS2's own OnActivate then plays the idle. Its own quest: a new start-game quest
+    # Funtime dancers (FFS2 test, 11-12): FFS2's furniture is only a trigger (FunIdleLoopScript: on sit, move the
+    # actor onto it, PlayIdle, a timer), and a Sit package re-seats them every 0.1 s, killing the idle (round 3).
+    # So FFS2's IDLE forms are played directly on someone held by HoldPosition, as Idle Life's chats do. Its own quest: a new start-game quest
     # starts on an old save, a new alias in a running one would not.
     fun_quest_id = new_id('FunQuest')
     f = field('EDID', zstring('IL_FunSitters'))
@@ -456,7 +456,7 @@ def build():
     f += field('ALST', struct.pack('<I', 0))
     f += field('ALID', zstring('FunSitters'))
     f += field('FNAM', struct.pack('<I', 0x202))
-    f += field('ALPC', struct.pack('<I', FUN_SIT_PACKAGE))
+    f += field('ALPC', struct.pack('<I', HOLD_PACKAGE))   # round 4: held in place, the idle played by script
     f += field('VTCK', struct.pack('<I', 0))
     f += field('ALED', b'')
     quest += record('QUST', fun_quest_id, f)

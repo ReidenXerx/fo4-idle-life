@@ -32,12 +32,31 @@ Function Send(Int aiActor, Int aiMarker) Global
 	Debug.Notification("FunTest: sent")
 EndFunction
 
+; Round 4: hold the actor where they stand (the collection's HoldPosition) and play an FFS2 idle on them directly.
+; aiIdle: the IDLE's id inside Funtime2.esm (decimal), e.g. 2703 = 0xA8F dcy_salsa, 2704 = 0xA90 dcy_salsaclap.
+Function Play(Int aiActor, Int aiIdle) Global
+	Actor who = Game.GetForm(aiActor) as Actor
+	Idle dance = Game.GetFormFromFile(aiIdle, "Funtime2.esm") as Idle
+	RefCollectionAlias sitters = Sitters()
+	If !who || !dance || !sitters
+		Debug.Trace("IdleLife FunTest: Play needs an actor, a Funtime2 idle and the collection (" + who + ", " + dance + ", " + sitters + ")", 0)
+		Return
+	EndIf
+	sitters.AddRef(who)
+	who.EvaluatePackage()
+	Utility.Wait(0.5)
+	Bool played = who.PlayIdle(dance)
+	Debug.Trace("IdleLife FunTest: " + who + " plays " + dance + " -> " + played + ", package " + who.GetCurrentPackage(), 0)
+	Debug.Notification("FunTest: play " + played)
+EndFunction
+
 Function Release(Int aiActor) Global
 	Actor who = Game.GetForm(aiActor) as Actor
 	RefCollectionAlias sitters = Sitters()
 	If !who || !sitters
 		Return
 	EndIf
+	who.PlayIdle(Game.GetFormFromFile(0x029380, "Fallout4.esm") as Idle)   ; LooseIdleStop
 	sitters.RemoveRef(who)
 	who.SetLinkedRef(None, LinkKeyword())
 	who.EvaluatePackage()
