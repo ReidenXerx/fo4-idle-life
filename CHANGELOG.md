@@ -4,6 +4,7 @@
 
 - With Funtime For Settlers 2 installed, someone standing about now and then does one of its animations: a workout, dancing by a radio, a sway after dark, boxing and taunts among raiders. Companions too.
 - Chats use Funtime's talking gestures as well.
+- Fixed: after a conversation that a scene or another mod ended, spots and chats could stay frozen until a reload.
 
 ## 1.3.0 (2026-11-11)
 

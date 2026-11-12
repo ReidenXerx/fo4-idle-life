@@ -1619,7 +1619,11 @@ EndFunction
 
 ; The player is in a conversation: anyone near (people, ghouls, robots, dogs) in dialogue with them.
 Bool Function Talking(Actor akPlayer)
-	If akPlayer.GetDialogueTarget()
+	; The player's dialogue target alone is not enough: after a conversation a scene or a script ended, it kept naming
+	; the old speaker, and every moment and chat died at once until a reload (Fo4-mcp, 1.4.0 test 11-12). It counts
+	; while that speaker is still in the conversation, or the dialogue menu is open.
+	Actor target = akPlayer.GetDialogueTarget()
+	If target && ((target.Is3DLoaded() && target.IsInDialogueWithPlayer()) || UI.IsMenuOpen("DialogueMenu"))
 		Return True
 	EndIf
 	Return TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_HUMAN, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_ROBOT, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_GHOUL, "Fallout4.esm"), TalkRadius)) || TalkingIn(akPlayer.FindAllReferencesWithKeyword(Game.GetFormFromFile(KW_DOG, "Fallout4.esm"), TalkRadius))
@@ -2088,6 +2092,7 @@ Actor _moWho                  ; the one in a moment now (None: no moment)
 Idle _moIdle
 Bool _moPlayed
 Bool _moMate                  ; a companion: the moment ends as soon as the player moves on
+Float _moSince                ; real time it started
 Float _moX
 Float _moY
 Float _moPX
@@ -2158,7 +2163,6 @@ Bool Function FuntimeReady()
 		p.Add("MX_buckled_stand_and_praying")
 		_fnPray = Found(p)
 		String[] k = new String[0]
-		k.Add("MX_drunk_idle_variation_hiccup")
 		k.Add("MX_drunk_idle_variation_stumble")
 		k.Add("MX_rocking_back_and_forth_as_if_dizzy")
 		_fnDrunk = Found(k)
@@ -2408,7 +2412,8 @@ Function StartMoment(Actor akPlayer, Bool abNow)
 	If _moMate
 		last = last / 2.0
 	EndIf
-	_moEnd = Utility.GetCurrentRealTime() + last
+	_moSince = Utility.GetCurrentRealTime()
+	_moEnd = _moSince + last
 	If !MomentQuest.IsRunning()
 		MomentQuest.Start()
 	EndIf
@@ -2509,6 +2514,9 @@ EndFunction
 
 ; Testing page: someone standing about near the player gets a moment right away.
 Function DebugMoment()
+	If _moWho && Utility.GetCurrentRealTime() - _moSince < 3.0
+		Return      ; the same press arriving twice (seen from the console, 11-12): the moment it started stays
+	EndIf
 	If _moWho
 		EndMoment("the test button starts another")
 	EndIf
