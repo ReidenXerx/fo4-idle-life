@@ -2007,6 +2007,13 @@ Function ChatStep()
 	If id != _chId
 		Return
 	EndIf
+	If !played && fun
+		gesture = Game.GetFormFromFile(IDLE_LAUGH, "Fallout4.esm") as Idle   ; refused: the beat is not lost
+		played = speaker.PlayIdle(gesture)
+		If id != _chId
+			Return
+		EndIf
+	EndIf
 	If DetailedLog.GetValueInt() == 1
 		Debug.Trace("Idle Life: chat gesture " + _chStep + " - " + speaker + " " + gesture + (played as String), 0)
 	EndIf
@@ -2154,7 +2161,6 @@ Bool Function FuntimeReady()
 		m.Add("MX_sad_idle_variation_2")
 		m.Add("MX_standing_in_a_sad_disposition")
 		m.Add("MX_standing_pout_gesture")
-		m.Add("MX_shoulder_shrug")
 		m.Add("MX_male_with_headphones_listening_to_music")
 		_fnMood = Found(m)
 		String[] p = new String[0]
@@ -2163,7 +2169,6 @@ Bool Function FuntimeReady()
 		p.Add("MX_buckled_stand_and_praying")
 		_fnPray = Found(p)
 		String[] k = new String[0]
-		k.Add("MX_drunk_idle_variation_stumble")
 		k.Add("MX_rocking_back_and_forth_as_if_dizzy")
 		_fnDrunk = Found(k)
 		String[] r = new String[0]
