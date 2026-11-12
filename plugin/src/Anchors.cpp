@@ -284,6 +284,10 @@ namespace IL::Anchors
 		for (auto* form : data->formArrays[std::to_underlying(RE::ENUM_FORM_ID::kIDLE)]) {
 			const auto* file = form ? form->GetFile(0) : nullptr;
 			const char* name = form ? form->GetFormEditorID() : nullptr;
+			if ((!name || !*name) && form) {
+				// The idle keeps its EditorID in its own member (TESIdleForm +0x60) whatever the virtual answers.
+				name = static_cast<RE::TESIdleForm*>(form)->formEditorID.c_str();
+			}
 			if (file && name && *name && Lower(file->GetFilename()) == plugin) {
 				byName.emplace(Lower(name), form);
 			}

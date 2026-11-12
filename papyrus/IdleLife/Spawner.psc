@@ -410,6 +410,9 @@ Event OnTimer(Int aiTimerID)
 	EndIf
 	If !_moWho && Performers.GetCount() > 0
 		EndMoment()   ; a save made mid-moment: nobody stays held
+	ElseIf _moWho && Utility.GetCurrentRealTime() > _moEnd + 15.0
+		Debug.Trace("Idle Life: a Funtime moment outlived its time - ended", 0)
+		EndMoment()   ; its step chain died: never a stuck director
 	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_FUN) && !_moWho
 		StartMoment(player, False)
@@ -2361,6 +2364,9 @@ Function StartMoment(Actor akPlayer, Bool abNow)
 	If !loop
 		Return
 	EndIf
+	If _moWho
+		Return      ; another start got here first during the calls above (the MCM button against the scan)
+	EndIf
 	_moId += 1
 	_moWho = who
 	_moIdle = loop
@@ -2429,6 +2435,7 @@ EndFunction
 Function EndMoment()
 	CancelTimer(MOMENT_TIMER)
 	_moId += 1
+	_moNext = Utility.GetCurrentRealTime() + MomentCooldown   ; at once: no new moment starts during the release below
 	Actor a = _moWho
 	_moWho = None
 	_moIdle = None
@@ -2448,7 +2455,6 @@ Function EndMoment()
 	If a
 		Debug.Trace("Idle Life: the Funtime moment ends - " + a, 0)
 	EndIf
-	_moNext = Utility.GetCurrentRealTime() + MomentCooldown
 EndFunction
 
 ; A game loaded: real time starts over, a moment saved mid-way is ended, Funtime is looked up again.
