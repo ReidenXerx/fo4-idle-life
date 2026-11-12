@@ -369,7 +369,7 @@ Event OnTimer(Int aiTimerID)
 			EndChat()
 		EndIf
 		If _moWho
-			EndMoment()
+			EndMoment("the player is in a conversation")
 		EndIf
 		StartTimer(ScanSeconds, SCAN_TIMER)
 		Return
@@ -409,10 +409,10 @@ Event OnTimer(Int aiTimerID)
 		StartChat(player, False)
 	EndIf
 	If !_moWho && Performers.GetCount() > 0
-		EndMoment()   ; a save made mid-moment: nobody stays held
+		EndMoment("a hold left from a save")   ; a save made mid-moment: nobody stays held
 	ElseIf _moWho && Utility.GetCurrentRealTime() > _moEnd + 15.0
 		Debug.Trace("Idle Life: a Funtime moment outlived its time - ended", 0)
-		EndMoment()   ; its step chain died: never a stuck director
+		EndMoment("outlived its time")   ; its step chain died: never a stuck director
 	EndIf
 	If Enabled.GetValueInt() == 1 && !player.IsInCombat() && KindIsOn(K_FUN) && !_moWho
 		StartMoment(player, False)
@@ -1751,6 +1751,7 @@ Function PickChat(Actor akPlayer, Bool abNow)
 	EndIf
 	If !best1
 		If abNow
+			Debug.Trace("Idle Life: chat pick - nobody fits: " + free.Length + " free of " + _stillWho.Length + " people near", 0)
 			Debug.Notification("Idle Life: nobody standing about near each other right now.")
 		EndIf
 		Return
@@ -2219,10 +2220,34 @@ EndFunction
 ; Not free for a moment. Busy without "a companion" or "following": companions are welcome while the player stands still
 ; (the owner: "even companions"); the rest as for a chat.
 Bool Function MomentBusy(Actor akWho)
+	Return MomentWhyBusy(akWho) != ""
+EndFunction
+
+; Why someone is not free for a moment ("" = free). Busy without "a companion" or "following": companions are welcome
+; while the player stands still (the owner: "even companions"); the rest as for a chat, clause by clause for the log.
+String Function MomentWhyBusy(Actor akWho)
 	If !akWho || !akWho.Is3DLoaded()
-		Return True
+		Return "not loaded"
+	ElseIf akWho.IsDead()
+		Return "dead"
+	ElseIf akWho.IsInCombat()
+		Return "in combat"
+	ElseIf akWho.IsInScene()
+		Return "in a scene"
+	ElseIf akWho.IsInDialogueWithPlayer()
+		Return "talking to the player"
+	ElseIf akWho.GetDialogueTarget()
+		Return "talking to " + akWho.GetDialogueTarget()
+	ElseIf akWho.GetFurnitureReference()
+		Return "in furniture " + akWho.GetFurnitureReference()
+	ElseIf akWho.IsDoingFavor()
+		Return "doing a favor"
+	ElseIf InAAF(akWho)
+		Return "in AAF"
+	ElseIf akWho == _chA || akWho == _chB
+		Return "in a chat"
 	EndIf
-	Return akWho.IsDead() || akWho.IsInCombat() || akWho.IsInScene() || akWho.GetDialogueTarget() || akWho.IsInDialogueWithPlayer() || akWho.GetFurnitureReference() || akWho.IsDoingFavor() || InAAF(akWho) || akWho == _chA || akWho == _chB
+	Return ""
 EndFunction
 
 Bool Function MomentOff()
@@ -2353,6 +2378,9 @@ Function StartMoment(Actor akPlayer, Bool abNow)
 		EndIf
 		i += 1
 	EndWhile
+	If abNow || DetailedLog.GetValueInt() == 1
+		Debug.Trace("Idle Life: Funtime pick - " + free.Length + " free of " + w.Length + " people near (player still " + playerStill + ")", 0)
+	EndIf
 	If free.Length == 0
 		If abNow
 			Debug.Notification("Idle Life: nobody standing about near you right now.")
@@ -2397,23 +2425,33 @@ Function MomentStep()
 	If !a
 		Return
 	EndIf
-	Bool over = MomentBusy(a) || MomentOff() || Utility.GetCurrentRealTime() > _moEnd
-	If !over
+	String why = MomentWhyBusy(a)
+	If why == "" && MomentOff()
+		why = "switched off or the player fights"
+	EndIf
+	If why == "" && Utility.GetCurrentRealTime() > _moEnd
+		why = "time"
+	EndIf
+	If why == ""
 		Float dx = a.GetPositionX() - _moX
 		Float dy = a.GetPositionY() - _moY
-		over = dx * dx + dy * dy > 80.0 * 80.0
+		If dx * dx + dy * dy > 80.0 * 80.0
+			why = "moved " + (Math.Sqrt(dx * dx + dy * dy) as Int)
+		EndIf
 	EndIf
-	If !over && _moMate
+	If why == "" && _moMate
 		Actor player = Game.GetPlayer()
 		Float qx = player.GetPositionX() - _moPX
 		Float qy = player.GetPositionY() - _moPY
-		over = qx * qx + qy * qy > 150.0 * 150.0    ; the player walks on: the companion follows, not dances
+		If qx * qx + qy * qy > 150.0 * 150.0
+			why = "the player walked on"    ; the companion follows, not dances
+		EndIf
 	EndIf
 	If id != _moId
 		Return
 	EndIf
-	If over
-		EndMoment()
+	If why != ""
+		EndMoment(why)
 		Return
 	EndIf
 	If !_moPlayed
@@ -2423,8 +2461,7 @@ Function MomentStep()
 			Return
 		EndIf
 		If !played
-			Debug.Trace("Idle Life: the Funtime moment did not play - " + a + " " + _moIdle, 0)
-			EndMoment()
+			EndMoment("did not play " + _moIdle + ", package " + a.GetCurrentPackage())
 			_moNext = Utility.GetCurrentRealTime() + 10.0
 			Return
 		EndIf
@@ -2432,7 +2469,7 @@ Function MomentStep()
 	StartTimer(MomentBeat, MOMENT_TIMER)
 EndFunction
 
-Function EndMoment()
+Function EndMoment(String asWhy = "")
 	CancelTimer(MOMENT_TIMER)
 	_moId += 1
 	_moNext = Utility.GetCurrentRealTime() + MomentCooldown   ; at once: no new moment starts during the release below
@@ -2453,7 +2490,7 @@ Function EndMoment()
 		i -= 1
 	EndWhile
 	If a
-		Debug.Trace("Idle Life: the Funtime moment ends - " + a, 0)
+		Debug.Trace("Idle Life: the Funtime moment ends - " + a + ": " + asWhy, 0)
 	EndIf
 EndFunction
 
@@ -2462,7 +2499,7 @@ Function ResetMoments()
 	CancelTimer(MOMENT_TIMER)
 	_funLooked = False
 	If _moWho || Performers.GetCount() > 0
-		EndMoment()
+		EndMoment("a game loaded")
 	EndIf
 	_moNext = 0.0
 	_moStillWho = None
@@ -2473,7 +2510,7 @@ EndFunction
 ; Testing page: someone standing about near the player gets a moment right away.
 Function DebugMoment()
 	If _moWho
-		EndMoment()
+		EndMoment("the test button starts another")
 	EndIf
 	_moNext = 0.0
 	If !FuntimeReady()
