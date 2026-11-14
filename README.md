@@ -41,8 +41,9 @@ campfire, a Mr Handy tending the crops. Placed at run time around you, gone when
   next-gen and the Anniversary Edition.
 - **MCM** (Nexus 21497) for the settings; without it they keep their defaults.
 
-Without F4SE or Runtime Database the spots along walls and in the open are off and Idle Life says so in game; every
-other kind still works. Install with Vortex or Mod Organizer 2; manual installs are not supported.
+Without F4SE the spots along walls and in the open are off and Idle Life says so in game; every other kind still
+works. With F4SE but without Runtime Database the game stops at launch with an error box naming IdleLife.dll
+(CommonLibF4RD cannot open `Data/F4SE/Plugins/f4rd-runtime.bin` and closes the game). Install with Vortex or Mod Organizer 2; manual installs are not supported.
 
 ## Build
 

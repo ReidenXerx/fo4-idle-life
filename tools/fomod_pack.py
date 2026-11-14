@@ -69,8 +69,8 @@ SETUP = ('Your setup',
          'Runtime Database: check this yourself -- finds the game\'s functions on 1.10.163, next-gen and Anniversary '
          '(Nexus 108394).\n'
          'MCM: check this yourself -- the settings (Nexus 21497).\n'
-         'Without F4SE or Runtime Database only the spots along walls and in the open are off. Idle Life checks all '
-         'three in game and says what is missing.')
+         'Without F4SE only the spots along walls and in the open are off, and Idle Life says so in game. With F4SE '
+         'but WITHOUT Runtime Database the game stops at launch with an error box naming IdleLife.dll.')
 
 
 def esc(text):
